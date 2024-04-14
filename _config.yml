@@ -1,0 +1,38 @@
+title: Brenden Brusberg
+description: >
+  Brenden Brusberg
+  Data Scientist
+  McKinsey & Company
+permalink: ':title/'
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://brendenbrusberg.com/"
+site-twitter:
+
+# Author Settings
+author: Brenden Brusberg
+author-img: headshot.jpg
+about-author: Data Scientist | People Analytics | McKinsey & Company
+social-twitter: BrendenBrusberg
+#social-facebook:
+# social-google-scholar: https://scholar.google.com/citations?user=9NjmhkYAAAAJ&hl=en
+social-github: brusberg
+social-linkedin: brendenbrusberg
+social-email: brenbrus@gmail.com
+
+# Disqus
+#discus-identifier: Nathaniel # add your discus identifier
+
+# Tracker
+analytics: # Google Analytics
+
+# Build Settings
+markdown: kramdown
+plugins:
+  - jekyll-sitemap
+  - jekyll-paginate
+  - jemoji
+
+paginate: 8
+paginate_path: "/page/:num"
+
+exclude: ["node_modules", "gulpfile.js", "package.json", "yarn.lock"]
