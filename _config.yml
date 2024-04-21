@@ -25,6 +25,11 @@ social-email: brenbrus@gmail.com
 # Tracker
 analytics: # Google Analytics
 
+collections:
+  poems:
+    output: true
+    permalink: /poems/:path/
+
 # Build Settings
 markdown: kramdown
 plugins:
