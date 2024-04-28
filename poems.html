@@ -1,6 +1,9 @@
 <div>
     <h1>Poetry</h1>
-    {% for post in site.poems %}
+    <p>
+        Here is a selection of poems that I have written. Every week, my friends and I try to write one, share it, and give each other feedback. 
+    </p>
+    {% for post in site.poems reversed %}
     <article class="post">
     {% if post.img %}
         <a class="post-thumbnail" style="background-image: url({{"/assets/img/" | prepend: site.baseurl | append : post.img}})" href="{{post.url | prepend: site.baseurl}}"></a>

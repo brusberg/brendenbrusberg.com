@@ -29,6 +29,7 @@ collections:
   poems:
     output: true
     permalink: /poems/:path/
+    sort_by: date
 
 # Build Settings
 markdown: kramdown
