@@ -1,0 +1,109 @@
+# WebGL Stick Figure Project - Cursor Rules
+
+## Project Overview
+This is a TypeScript WebGL 2.0 project for an interactive stick figure website. The character is controlled via keyboard (WASD/arrows) or mobile tap, with hand-drawn sprite animations.
+
+## Tech Stack
+- TypeScript (strict mode)
+- Vite (build tool)
+- pnpm (package manager)
+- Raw WebGL 2.0 (no libraries like Three.js or PixiJS)
+- Static hosting on GitHub Pages
+
+## Code Style Rules
+
+### TypeScript
+- Use strict mode - no `any` types unless absolutely necessary
+- Prefer `interface` over `type` for object shapes
+- Use explicit return types on all functions
+- Use `readonly` for immutable properties
+- Prefer `const` over `let`, never use `var`
+- Use template literals over string concatenation
+
+### Naming Conventions
+- Classes: PascalCase (e.g., `SpriteBatch`)
+- Interfaces: PascalCase with `I` prefix optional (e.g., `Sprite` or `ISprite`)
+- Functions/methods: camelCase (e.g., `loadTexture`)
+- Constants: SCREAMING_SNAKE_CASE (e.g., `MAX_SPRITES`)
+- Private members: prefix with underscore (e.g., `_gl`)
+- Files: PascalCase for classes (e.g., `WebGLRenderer.ts`)
+
+### WebGL Specific
+- Always check for WebGL 2.0 support and show fallback message
+- Clean up WebGL resources (textures, buffers, programs) when done
+- Use typed arrays (Float32Array, Uint16Array) for buffer data
+- Prefer instanced rendering for multiple similar objects
+- Keep shaders simple and well-commented
+
+### Architecture
+- Keep engine code (WebGL) separate from game logic
+- Use dependency injection where possible
+- Single responsibility principle for classes
+- Events/callbacks for communication between systems
+
+## File Organization
+```
+src/
+├── engine/     # WebGL rendering, shaders, textures
+├── game/       # Game logic, entities, interactions
+├── input/      # Input handling (keyboard, touch)
+├── shaders/    # GLSL shader files
+└── types/      # Shared TypeScript interfaces
+```
+
+## Common Patterns
+
+### Creating a new renderable entity
+```typescript
+interface Renderable {
+  update(deltaTime: number): void;
+  render(batch: SpriteBatch): void;
+}
+```
+
+### Input direction vector
+```typescript
+interface Vector2 {
+  x: number;  // -1, 0, or 1
+  y: number;  // -1, 0, or 1
+}
+```
+
+### Interactable events
+```typescript
+type InteractEvent = 
+  | { type: 'visual'; effect: string }
+  | { type: 'dialog'; text: string }
+  | { type: 'link'; url: string }
+  | { type: 'animation'; name: string };
+```
+
+## Do NOT
+- Use any WebGL helper libraries (Three.js, PixiJS, etc.)
+- Use `any` type without explicit justification
+- Commit node_modules or dist folders
+- Make git commits or pushes (user will do manually)
+- Add features not explicitly requested
+
+## Do
+- Write clean, readable code with comments for complex WebGL operations
+- Handle errors gracefully with user-friendly messages
+- Support both desktop and mobile
+- Keep the code modular for future expansion
+- Use requestAnimationFrame for the game loop
+- Normalize diagonal movement (so diagonal isn't faster than cardinal)
+
+## Asset Guidelines
+- Sprites should be PNG with transparency
+- Power-of-2 dimensions preferred for textures (128x128, 256x256, etc.)
+- Keep file sizes small for fast loading
+- Placeholder assets are acceptable during development
+
+## Testing
+- Test on both desktop (Chrome, Firefox, Safari) and mobile
+- Verify WebGL 2.0 fallback message works
+- Check all 8 movement directions
+- Verify touch input on mobile devices
+
+
+
