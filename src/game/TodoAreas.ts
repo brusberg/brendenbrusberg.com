@@ -1,11 +1,11 @@
 /**
  * TodoAreas - Coming Soon areas with placeholder content
- * 5 areas: Projects, Art/Poetry Gallery, House, Inspiration, Mentors
+ * 3 areas: Projects/Articles, Art/Poetry Gallery, Inspiration/Mentors
  */
 
 import type { Sprite, Color, Vector2 } from '@/types';
 import type { SpriteBatch } from '@/engine/SpriteBatch';
-import type { MockupTextureLoader } from '@/engine/MockupTextureLoader';
+import type { SpriteLoader } from '@/engine/SpriteLoader';
 import { TODO_LOCATIONS } from './WorldLayout';
 import { getDarkMode } from './DarkMode';
 
@@ -18,10 +18,10 @@ export interface TodoAreaContent {
 
 const AREA_CONTENT: Record<string, TodoAreaContent> = {
   projects: {
-    title: 'Projects',
+    title: 'Projects & Articles',
     description: 'Coming Soon',
     placeholderContent: `
-      <h3>🚀 Featured Project</h3>
+      <h3>🚀 Featured Projects</h3>
       <div class="project-card">
         <h4>Example Project Name</h4>
         <p>A brief description of an amazing project that showcases skills in TypeScript, WebGL, and creative coding.</p>
@@ -31,7 +31,13 @@ const AREA_CONTENT: Record<string, TodoAreaContent> = {
           <span class="tag">Creative</span>
         </div>
       </div>
-      <p class="hint">More projects coming soon...</p>
+      <h3>📝 Articles</h3>
+      <div class="article-preview">
+        <h4>Sample Article Title</h4>
+        <p class="date">January 1, 2025</p>
+        <p>Technical articles and thoughts on ML, data science, and software engineering.</p>
+      </div>
+      <p class="hint">More projects and articles coming soon...</p>
     `,
     icon: '🚀',
   },
@@ -41,33 +47,20 @@ const AREA_CONTENT: Record<string, TodoAreaContent> = {
     placeholderContent: `
       <h3>🎨 Gallery</h3>
       <div class="article-preview">
-        <h4>Sample Article Title</h4>
-        <p class="date">January 1, 2025</p>
-        <p>This is a preview of what articles and poetry will look like. Markdown support coming soon...</p>
+        <h4>Poems</h4>
+        <p>Original poetry and creative writing.</p>
         <blockquote>"A sample quote or poem excerpt would go here."</blockquote>
       </div>
-      <p class="hint">Articles, poetry, and paintings coming soon...</p>
+      <div class="article-preview">
+        <h4>Paintings</h4>
+        <p>Artwork with title and description of materials used.</p>
+      </div>
+      <p class="hint">Poetry and paintings coming soon...</p>
     `,
     icon: '🎨',
   },
-  house: {
-    title: 'House',
-    description: 'Home Base',
-    placeholderContent: `
-      <h3>🏠 Welcome Home</h3>
-      <p>This is your home base in the game world.</p>
-      <p>Future features:</p>
-      <ul>
-        <li>Character customization</li>
-        <li>Achievement display</li>
-        <li>Settings and preferences</li>
-      </ul>
-      <p class="hint">Make yourself at home...</p>
-    `,
-    icon: '🏠',
-  },
   inspiration: {
-    title: 'Inspiration',
+    title: 'Inspiration & Mentors',
     description: 'Coming Soon',
     placeholderContent: `
       <h3>💡 Inspiration</h3>
@@ -77,14 +70,6 @@ const AREA_CONTENT: Record<string, TodoAreaContent> = {
         </blockquote>
         <cite>— Steve Jobs</cite>
       </div>
-      <p class="hint">More quotes and inspiration coming soon...</p>
-    `,
-    icon: '💡',
-  },
-  mentors: {
-    title: 'Mentors',
-    description: 'Coming Soon',
-    placeholderContent: `
       <h3>👥 Mentors</h3>
       <div class="mentor-card">
         <div class="mentor-avatar">👤</div>
@@ -94,9 +79,9 @@ const AREA_CONTENT: Record<string, TodoAreaContent> = {
           <p>A brief tribute to people who have helped along the way.</p>
         </div>
       </div>
-      <p class="hint">Gratitude section coming soon...</p>
+      <p class="hint">More inspiration and gratitude coming soon...</p>
     `,
-    icon: '👥',
+    icon: '💡',
   },
 };
 
@@ -105,8 +90,8 @@ export class TodoAreas {
   private _openPanel: string | null = null;
   private _panelContainer: HTMLDivElement | null = null;
 
-  constructor(mockupLoader: MockupTextureLoader) {
-    this._signSprite = mockupLoader.getSprite('sign');
+  constructor(spriteLoader: SpriteLoader) {
+    this._signSprite = spriteLoader.getSprite('sign');
     this._addStyles();
   }
 

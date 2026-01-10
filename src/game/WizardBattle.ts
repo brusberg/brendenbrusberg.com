@@ -8,7 +8,7 @@
 
 import type { Sprite, Color, Vector2 } from '@/types';
 import type { SpriteBatch } from '@/engine/SpriteBatch';
-import type { MockupTextureLoader } from '@/engine/MockupTextureLoader';
+import type { SpriteLoader } from '@/engine/SpriteLoader';
 import { generateLightningPath } from '@/utils/PerlinNoise';
 
 export type BattleState = 'idle' | 'active' | 'playerWin' | 'wizardWin';
@@ -48,8 +48,8 @@ export class WizardBattle {
   private _resultMessage: string = '';
   private _resultColor: Color = { r: 1, g: 1, b: 1, a: 1 };
 
-  constructor(mockupLoader: MockupTextureLoader) {
-    this._wizardSprite = mockupLoader.getSprite('wizard');
+  constructor(spriteLoader: SpriteLoader) {
+    this._wizardSprite = spriteLoader.getSprite('wizard');
   }
 
   /**
@@ -420,9 +420,9 @@ export class WizardBattle {
 // Singleton instance
 let _instance: WizardBattle | null = null;
 
-export function getWizardBattle(mockupLoader: MockupTextureLoader): WizardBattle {
+export function getWizardBattle(spriteLoader: SpriteLoader): WizardBattle {
   if (!_instance) {
-    _instance = new WizardBattle(mockupLoader);
+    _instance = new WizardBattle(spriteLoader);
   }
   return _instance;
 }

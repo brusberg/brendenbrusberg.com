@@ -21,8 +21,9 @@ interface SpriteConfig {
 
 /**
  * Generate a mockup sprite as a canvas, which can be used as a WebGL texture
+ * Includes prominent "MOCKUP" label and sprite name for easy identification
  */
-export function generateMockupCanvas(config: SpriteConfig): HTMLCanvasElement {
+export function generateMockupCanvas(config: SpriteConfig, name?: string): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = config.width;
   canvas.height = config.height;
@@ -36,6 +37,30 @@ export function generateMockupCanvas(config: SpriteConfig): HTMLCanvasElement {
 
   // Draw the sprite
   config.draw(ctx, config.width, config.height);
+
+  // Add "MOCKUP" label at top
+  const labelHeight = Math.min(20, config.height * 0.15);
+  ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+  ctx.fillRect(0, 0, config.width, labelHeight);
+  
+  ctx.fillStyle = WHITE;
+  ctx.font = `bold ${Math.max(10, labelHeight * 0.7)}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText('MOCKUP', config.width / 2, labelHeight * 0.75);
+  
+  // Add sprite name at bottom if provided
+  if (name) {
+    const bottomLabelHeight = Math.min(16, config.height * 0.12);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, config.height - bottomLabelHeight, config.width, bottomLabelHeight);
+    
+    ctx.fillStyle = '#00FF00';
+    ctx.font = `bold ${Math.max(8, bottomLabelHeight * 0.7)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(name.toUpperCase(), config.width / 2, config.height - bottomLabelHeight * 0.25);
+  }
+  
+  ctx.textAlign = 'left';
 
   return canvas;
 }
@@ -397,64 +422,6 @@ export const SIGN_CONFIG: SpriteConfig = {
 };
 
 /**
- * Stats billboard mockup (3x scale: 600x400) - Large readable billboard
- */
-export const STATS_BOARD_CONFIG: SpriteConfig = {
-  width: 200 * SCALE,  // 600px
-  height: 133 * SCALE, // ~400px
-  draw: (ctx, w, h) => {
-    ctx.strokeStyle = BLACK;
-    ctx.lineWidth = 2 * SCALE;
-
-    const s = SCALE;
-
-    // Board frame
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(4 * s, 4 * s, w - 8 * s, h - 20 * s);
-    ctx.strokeRect(4 * s, 4 * s, w - 8 * s, h - 20 * s);
-
-    // Border glow
-    ctx.strokeStyle = '#00d9ff';
-    ctx.lineWidth = 3 * s;
-    ctx.strokeRect(6 * s, 6 * s, w - 12 * s, h - 24 * s);
-
-    // Title
-    ctx.fillStyle = '#888888';
-    ctx.font = `bold ${10 * s}px monospace`;
-    ctx.fillText('SOME STATS ABOUT ME', 12 * s, 24 * s);
-
-    // Stats lines
-    ctx.fillStyle = '#cccccc';
-    ctx.font = `${8 * s}px monospace`;
-    ctx.fillText('Current age:', 12 * s, 42 * s);
-    ctx.fillText('Countries visited:', 12 * s, 56 * s);
-    ctx.fillText('Current city:', 12 * s, 70 * s);
-    
-    ctx.fillStyle = '#888888';
-    ctx.font = `bold ${10 * s}px monospace`;
-    ctx.fillText('SOME STATS ABOUT THIS SITE', 12 * s, 90 * s);
-    
-    ctx.fillStyle = '#cccccc';
-    ctx.font = `${8 * s}px monospace`;
-    ctx.fillText('Number of spoons:', 12 * s, 108 * s);
-    
-    // Values column
-    ctx.fillStyle = '#00d9ff';
-    ctx.font = `${8 * s}px monospace`;
-    ctx.fillText('[LIVE]', 140 * s, 42 * s);
-    ctx.fillText('5', 170 * s, 56 * s);
-    ctx.fillText('NYC', 150 * s, 70 * s);
-    ctx.fillStyle = '#ff6b6b';
-    ctx.fillText('0', 175 * s, 108 * s);
-
-    // Stand posts
-    ctx.fillStyle = '#555555';
-    ctx.fillRect(w / 2 - 30 * s, h - 18 * s, 12 * s, 16 * s);
-    ctx.fillRect(w / 2 + 18 * s, h - 18 * s, 12 * s, 16 * s);
-  },
-};
-
-/**
  * Resume stand mockup (3x scale: 192x240)
  */
 export const RESUME_STAND_CONFIG: SpriteConfig = {
@@ -519,7 +486,6 @@ export const SPRITE_CONFIGS = {
   lightswitch_on: LIGHTSWITCH_ON_CONFIG,
   lightswitch_off: LIGHTSWITCH_OFF_CONFIG,
   sign: SIGN_CONFIG,
-  stats_board: STATS_BOARD_CONFIG,
   resume_stand: RESUME_STAND_CONFIG,
 } as const;
 
