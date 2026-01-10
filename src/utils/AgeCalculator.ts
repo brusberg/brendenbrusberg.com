@@ -4,7 +4,7 @@
  */
 
 // Birth date: May 11, 1999, 10:00 AM (assuming local time)
-const BIRTH_DATE = new Date(1999, 4, 11, 10, 0, 0, 0); // Month is 0-indexed
+const BIRTH_DATE = new Date(1999, 4, 11, 3, 10, 0, 0); // Month is 0-indexed
 
 /**
  * Calculate age in years with high precision
@@ -122,4 +122,6 @@ export function stopLiveAgeElement(span: HTMLSpanElement): void {
     clearInterval(interval);
   }
 }
+
+
 

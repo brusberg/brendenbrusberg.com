@@ -5,7 +5,7 @@
 
 import type { Sprite, Color } from '@/types';
 import type { SpriteBatch } from '@/engine/SpriteBatch';
-import type { MockupTextureLoader } from '@/engine/MockupTextureLoader';
+import type { SpriteLoader } from '@/engine/SpriteLoader';
 import { DECORATION_PLACEMENTS, INTERACTIVE_LOCATIONS, type DecorationPlacement } from './WorldLayout';
 
 interface DecorationInstance {
@@ -15,13 +15,13 @@ interface DecorationInstance {
 }
 
 export class Decorations {
-  private readonly _mockupLoader: MockupTextureLoader;
+  private readonly _spriteLoader: SpriteLoader;
   private _instances: DecorationInstance[] = [];
   private _fountainSprite: Sprite | null = null;
   private _fountainAnimTime: number = 0;
 
-  constructor(mockupLoader: MockupTextureLoader) {
-    this._mockupLoader = mockupLoader;
+  constructor(spriteLoader: SpriteLoader) {
+    this._spriteLoader = spriteLoader;
     this._initDecorations();
   }
 
@@ -34,13 +34,13 @@ export class Decorations {
 
       switch (placement.type) {
         case 'tree':
-          sprite = this._mockupLoader.getSprite('tree');
+          sprite = this._spriteLoader.getSprite('tree');
           break;
         case 'grass':
-          sprite = this._mockupLoader.getSprite('grass');
+          sprite = this._spriteLoader.getSprite('grass');
           break;
         case 'flower':
-          sprite = this._mockupLoader.getSprite('flower');
+          sprite = this._spriteLoader.getSprite('flower');
           break;
         default:
           continue;
@@ -54,7 +54,7 @@ export class Decorations {
     }
 
     // Load fountain sprite separately (for special animation)
-    this._fountainSprite = this._mockupLoader.getSprite('fountain');
+    this._fountainSprite = this._spriteLoader.getSprite('fountain');
   }
 
   /**

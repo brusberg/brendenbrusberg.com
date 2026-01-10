@@ -164,3 +164,5 @@ export function generateLightningPath(
   return points;
 }
 
+
+
