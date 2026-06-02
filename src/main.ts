@@ -1,6 +1,10 @@
 import './styles.css';
+import { inject } from '@vercel/analytics';
 import { AntPatchSimulation } from './sim/AntPatchSimulation';
 import type { TaskAllocation } from './sim/AntModel';
+
+// Initialize Vercel Web Analytics
+inject();
 
 const canvas = document.querySelector<HTMLCanvasElement>('#patch-canvas');
 const loading = document.querySelector<HTMLElement>('#loading');
