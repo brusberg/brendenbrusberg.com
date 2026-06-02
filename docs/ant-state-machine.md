@@ -135,23 +135,27 @@ stateDiagram-v2
   LarvaStarved --> [*]
 ```
 
-## Flat Action Names
+## Flat Action And Event Names
 
-Flat action names for grep-friendly debugging. These are `lastAction` style labels, plus queen activity labels where useful:
+Flat action names for grep-friendly debugging. These are `lastAction` style labels, plus queen activity labels where useful. One-frame actions that call `emitEvent()` also point at `RecentEvents`; snapshot consumers should de-duplicate by `event.id`.
 
 ```mermaid
 stateDiagram-v2
   DirectFood --> PickupFood
+  PickupFood --> RecentEvents
   PickupFood --> CarryFood
   CarryFood --> FollowHomePheromone
   CarryFood --> ReturnHomeFallback
   FollowHomePheromone --> CarryToStorage
   ReturnHomeFallback --> CarryToStorage
   CarryToStorage --> DepositFood
+  DepositFood --> RecentEvents
   CarryFood --> EatCarriedFood
+  EatCarriedFood --> RecentEvents
 
   HungrySeekFood --> EatFieldFood
   SeekStoredFood --> EatStoredFood
+  EatStoredFood --> RecentEvents
   LeaveNest --> HungrySeekFood
 
   FollowFoodPheromone --> StaleFoodTrail
@@ -161,26 +165,38 @@ stateDiagram-v2
   EnterNest --> SeekDigSite
   SeekDigSite --> Digging
   Digging --> OpenTunnel
+  OpenTunnel --> RecentEvents
 
   NurseIdle --> SeekCareFood
   SeekCareFood --> PickupCareFood
+  PickupCareFood --> RecentEvents
   PickupCareFood --> DeliverCareFood
   DeliverCareFood --> FeedQueen
   DeliverCareFood --> FeedLarva
+  FeedQueen --> RecentEvents
+  FeedLarva --> RecentEvents
   FeedQueen --> QueenEatStoredFood
   FeedLarva --> LarvaEatStoredFood
 
   QueenIdle --> QueenSeekStoredFood
   QueenSeekStoredFood --> QueenEatStoredFood
+  QueenEatStoredFood --> RecentEvents
   QueenIdle --> QueenBroodCare
   QueenIdle --> QueenPacing
   QueenIdle --> QueenLayLarva
+  QueenLayLarva --> RecentEvents
 
   LarvaIdle --> LarvaSeekStoredFood
   LarvaSeekStoredFood --> LarvaEatStoredFood
+  LarvaEatStoredFood --> RecentEvents
   LarvaIdle --> LarvaMature
+  LarvaMature --> RecentEvents
   LarvaMature --> HatchLarva
+  HatchLarva --> RecentEvents
   LarvaIdle --> LarvaStarved
+  LarvaStarved --> RecentEvents
+
+  RecentEvents --> SnapshotAudit: ring keeps last 240 events
 ```
 
 ## Stuck Cases
@@ -244,75 +260,73 @@ Some of these are implemented contracts, and some are proposed next contracts. T
 
 ## Battle-Test Results
 
-Latest retest after `recentEvents`, tunnel-safe stored-food placement, and carrier stuck fallbacks:
+Latest retest after rejecting the dynamic dig-room experiment, restoring the cleaner room/corridor dig planner, keeping organic pantry/brood scoring, and preserving tunnel-safe stored-food placement plus carrier stuck fallbacks:
 
 - Production build: `pnpm build`.
 - Normal audit: `pnpm run audit`, seeds `1-4`, 720 simulated seconds each, default speed, sampled once per second.
-- Fast dig quick audit: seeds `1-4`, 600 simulated seconds each, `digRatePerSecond * 1000`, sampled every `30s`.
+- Visual fast-forward: seed `2`, 720 simulated seconds, default dig rate, rendered from the final SVG artifact.
 
 Summary:
 
 | Test | Result | What it means |
 | --- | --- | --- |
 | Normal 720s seeds 1-4 | All four seeds reached `24` ants | Brood loop is currently reliable across this small seed set |
-| Normal 720s seeds 1-4 | Final larvae ranged `4-7`; max sampled larva starvation was `0s` | Nursing is no longer flirting with the larva starvation edge in this run |
-| Normal 720s seeds 1-4 | Worker max hunger hit `1.0` in seeds `1`, `2`, `3`, and `4` | Hunger panic recovers often, but worker death would expose economy variance |
-| Normal 720s seeds 1-4 | Longest sampled carrier trip was `42.60s`; long-carrier samples were `0` | Stale carrier fallback now prevents visible food-hoarding loops in this seed set |
-| Normal 720s seeds 1-4 | Final stored food ranged `7-55`; storage sites ranged `3-13` | Storage creation is dynamic and food clusters, but site proliferation needs visual audit |
+| Normal 720s seeds 1-4 | Final larvae ranged `4-5`; max sampled larva starvation was `0s` | Restored dig scoring returns to the healthier brood loop |
+| Normal 720s seeds 1-4 | Worker max hunger reached `0.889-0.994` | Food is still tense, but less broken than the rejected dynamic-room pass |
+| Normal 720s seeds 1-4 | Longest sampled carrier trip was `41.18s`; long-carrier samples were `0` | Carrier loops stay below the stuck threshold |
+| Normal 720s seeds 1-4 | Final stored food ranged `3-27`; active storage sites ranged `2-14` | Pantry spread is acceptable enough to continue, though food events still need tuning |
 | Normal 720s seeds 1-4 | Bad stored-food pellet samples were `0`; final bad stored pellets were `0` | Stored-food entities now stay in open tunnel cells instead of being offset into soil |
 | Normal 720s seeds 1-4 | Event counts captured `depositFood`, `openTunnel`, `queenLayLarva`, `larvaMature`, and `hatchLarva` | `recentEvents` fixes the one-frame action blind spot |
-| Fast dig seeds 1-4 | Reached `2434-2678` tunnels and `2379-2623` newly dug cells | Current expansion templates no longer hit the old `703`-tunnel ceiling |
-| Fast dig seeds 1-4 | Final frontier stayed high at `835-875`; idle-digger samples were only `1-2` of `20` | Diggers mostly keep working, but the plan is broad and still template-driven |
-| Fast dig seeds 1-4 | Final active dig cells were `0` | With `digScale = 1000`, cells open almost instantly, so this is not by itself a stall signal |
+| Visual seed 2 720s | Reached `24` ants, `5` larvae, `12` stored food, `593` tunnels | Restored room/corridor planner is visually clearer and state-healthier than the dynamic attempt |
 
 Problems found:
 
-- Worker hunger reaches max but has no death or lasting injury. Add death timers only after giving panic behavior enough readable warning.
-- Carrier trips no longer cross the `45s` stuck threshold in the latest normal audit. Watch whether emergency cache deposits make storage sites feel too scattered in long visual runs.
-- Diggers no longer run out of plan quickly, but the macro plan is still authored as a room template array. That is why seeds matter for jitter and behavior, not for proving fully emergent colony architecture.
+- Worker hunger nearly reaches max but has no death or lasting injury. Add death timers only after giving panic behavior enough readable warning.
+- Carrier trips no longer cross the `45s` stuck threshold in the latest normal audit.
+- The first dynamic-room attempt regressed into random-looking erosion and perforated blobs. It was reverted because the old room/corridor planner looked more like intentional ant architecture.
 - `recentEvents` now captures one-frame actions, including `larvaStarved` before a larva is removed. Audit scripts should use event ids rather than `lastAction` sampling.
 - Food economy variance is large. Before worker death ships, tune food spawn/vision so low-food seeds are recoverable without feeling arbitrary.
-- Storage sites are now dynamic but still biased by planned room kinds. If the visual goal is more organic, storage and brood sites should be claimed from the opened tunnel graph, not only from `DigRoomKind` affinity.
+- Storage and brood sites are now claimed from the opened tunnel graph. Macro dig rooms are intentionally back to the authored room/corridor baseline until a better organic-room planner exists.
 
 Current fix pass:
 
-- Dynamic dig expansion now unlocks from population, larvae, stored-food, and `tunnelsDug` pressure instead of stopping at the same three planned rooms.
-- Expansion rooms are seed-jittered and corridor-linked to the closest earlier room, so long runs should branch from the existing nest instead of converging on one identical layout.
-- Storage-site scoring now prefers storage/expansion rooms, penalizes brood/queen rooms, fills non-full existing sites first, and gives corridors smaller capacity.
-- Carriers now clear stale storage targets, ignore looping pheromones when stale, emergency-cache at the tunnel/entrance, and eat carried food when starving.
+- Dynamic dig-room proposals were tested and rejected for now. The implementation is back to the cleaner room/corridor planner with seed-jittered expansion rooms.
+- The next organic digging attempt should preserve explicit room claims and corridor intent instead of scoring every frontier cell into noisy expansion.
+- Pantry scoring now uses actual tunnel morphology, nearby stored-food sites, crowding pressure, entrance distance, and brood/queen conflicts instead of planned room labels.
+- Brood scoring now picks readable nursery pockets from open tunnel cells, nudges the queen toward them, and settles fed larvae into the chosen pocket.
+- Carriers now clear stale storage targets, ignore looping pheromones when stale, emergency-cache at the tunnel/entrance, steer harder when stale, and eat carried food when starving.
 - Stored-food pellet coordinates now snap safely inside open tunnel cells, so snapshot rounding cannot push food into adjacent soil.
 - `recentEvents` now records exact transition events in snapshots, and `pnpm run audit` de-duplicates them by id.
 - Fast-forward analysis SVGs must stay visually aligned with the live renderer; the queen pixel-sprite mismatch was fixed in `scripts/fast-forward-digging.mjs`.
 
 Next fixes, in order:
 
-1. Add clearer brood-room scoring so larvae gather in readable nursery pockets as the queen moves.
-2. Audit whether emergency cache deposits create too many tiny storage sites, then merge nearby/low-count sites if needed.
-3. Add worker starvation timers and death reasons, but only after the food economy is less seed-swingy.
-4. Add `FoodEvent` spawns, starting with scatter/windfall, then the playful seeded `B` glyph.
+1. Tune food events/economy so seeds `1-4` keep a small but nonzero pantry without making abundance feel fake.
+2. Redesign organic digging as claimed rooms plus corridors, with visual regression tests against the restored room/corridor baseline.
+3. Add worker starvation timers and death reasons once the food economy is less seed-swingy.
+4. Add `FoodEvent` spawns, starting with scatter/windfall, then the playful seeded `B` glyph if it still fits the tone.
 5. Add red ant scouts as rare pressure events once death/event logs exist.
 
 ### Seed Scope And Room Planning
 
-Seeds are still useful, but the current room plan is not truly generated from scratch. Today, seeds influence outside food placement, ant behavior, pheromone decisions, room jitter, and the timing pressure that unlocks template rooms. They do not decide the broad sequence of chambers.
+Seeds are still useful, but the current macro room plan is intentionally back on a fixed room/corridor scaffold with seed jitter. Today, seeds influence outside food placement, ant behavior, pheromone decisions, room jitter, and the timing pressure that unlocks more rooms.
 
-That means multi-seed tests are good for finding stuck ants, food variance, starvation risk, carrier loops, and jittered-room edge cases. They are not proof that the colony layout feels discovered. For that, the next dig planner should create candidate rooms from the tunnel graph and colony needs, then let workers claim, retire, or expand those rooms over time.
+That means multi-seed tests are good for finding stuck ants, food variance, starvation risk, carrier loops, and jittered-room edge cases. They are still not proof that the colony layout feels good. Visual regression testing matters here because the rejected dynamic attempt passed many invariants while looking worse.
 
 ```mermaid
 stateDiagram-v2
-  ColonyPressure --> UnlockTemplateRoom: current code
+  ColonyPressure --> UnlockJitteredRoom: current code
   Seed --> JitterRoom: current code
-  UnlockTemplateRoom --> RoomCorridorPlan
+  UnlockJitteredRoom --> RoomCorridorPlan
   JitterRoom --> RoomCorridorPlan
   RoomCorridorPlan --> ScoreFrontier
-  TunnelGraph --> ScoreFrontier
   ScoreFrontier --> OpenTunnel
 
-  TunnelGraph --> ProposeDynamicRoom: proposed next planner
-  ColonyNeeds --> ProposeDynamicRoom
-  ProposeDynamicRoom --> ClaimRoom
-  ClaimRoom --> ScoreFrontier
-  ClaimRoom --> RetireRoom: crowded, stale, or unsafe
+  TunnelGraph --> ClaimOrganicRoom: proposed next planner
+  ColonyNeeds --> ClaimOrganicRoom
+  ClaimOrganicRoom --> CorridorIntent
+  CorridorIntent --> ScoreFrontier
+  ClaimOrganicRoom --> RetireRoom: crowded, stale, or unsafe
 ```
 
 ### Hunger Death
