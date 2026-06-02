@@ -1,14 +1,17 @@
 {
-  "name": "webgl-stick-figure",
+  "name": "brendenbrusberg-com",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "audit": "pnpm exec tsc -p tsconfig.tune.json && node scripts/audit-ant-model.mjs",
+    "tune": "pnpm exec tsc -p tsconfig.tune.json && node scripts/tune-ant-model.mjs",
+    "dig:fast": "pnpm exec tsc -p tsconfig.tune.json && node scripts/fast-forward-digging.mjs",
+    "dig:collage": "node scripts/build-fast-dig-collage.mjs"
   },
   "devDependencies": {
-    "@napi-rs/canvas": "^0.1.86",
     "typescript": "^5.3.3",
     "vite": "^5.0.10"
   }

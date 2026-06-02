@@ -26,8 +26,7 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src/main.ts", "src/sim/**/*.ts"]
 }
-
 
 
