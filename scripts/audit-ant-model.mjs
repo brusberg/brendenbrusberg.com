@@ -39,11 +39,16 @@ function badStoredPellets(model, snapshot) {
 function summarizeStorage(snapshot) {
   const filledSites = snapshot.storageSites.filter((site) => site.stored >= site.capacity).length;
   const siteStored = snapshot.storageSites.reduce((sum, site) => sum + site.stored, 0);
+  const activeSites = snapshot.storageSites.filter((site) => site.stored > 0);
+  const largestSiteStored = activeSites.reduce((max, site) => Math.max(max, site.stored), 0);
 
   return {
     siteCount: snapshot.storageSites.length,
+    activeSiteCount: activeSites.length,
     filledSites,
     siteStored,
+    largestSiteStored,
+    largestSiteShare: siteStored === 0 ? 0 : Number((largestSiteStored / siteStored).toFixed(2)),
     loosePellets: snapshot.storedFoodPellets.filter((pellet) => pellet.siteId === null).length,
     averagePelletsPerSite: snapshot.storageSites.length === 0 ? 0 : Number((siteStored / snapshot.storageSites.length).toFixed(2)),
   };
@@ -167,7 +172,10 @@ function renderText(results) {
       `  final: ${result.final.ants} ants, ${result.final.larvae} larvae, ${result.final.storedFood} stored food, ${result.final.tunnelCount} tunnels`,
     );
     lines.push(
-      `  storage: ${result.final.storage.siteCount} sites, ${result.final.storage.filledSites} full, ${result.final.storage.loosePellets} loose pellets, ${result.final.storage.averagePelletsPerSite} avg/site`,
+      `  storage: ${result.final.storage.siteCount} sites, ${result.final.storage.activeSiteCount} active, ${result.final.storage.filledSites} full, ${result.final.storage.loosePellets} loose pellets, ${result.final.storage.averagePelletsPerSite} avg/site`,
+    );
+    lines.push(
+      `  storage spread: largest site ${result.final.storage.largestSiteStored} food, largest share ${result.final.storage.largestSiteShare}`,
     );
     lines.push(
       `  risk: max carrier ${result.maxCarrierSeconds}s, long carrier samples ${result.longCarrierSamples}, max hunger ${result.maxWorkerHunger}, max larva starvation ${result.maxLarvaStarvationSeconds}s`,

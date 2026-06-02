@@ -382,6 +382,8 @@ export class AntModel {
   private seed: number;
   private taskRebalanceTimer = 0;
   private recentEvents: ColonyEvent[] = [];
+  private broodSiteCellIndex: number | null = null;
+  private broodSiteRefreshAt = 0;
 
   constructor(config: Partial<AntModelConfig> = {}) {
     this.config = { ...DEFAULT_ANT_MODEL_CONFIG, ...config };
@@ -741,8 +743,10 @@ export class AntModel {
     ant.activity = 'returnHome';
     ant.state = 'carryFood';
     ant.carryingSeconds += delta;
+    const carrierStale = ant.carryingSeconds > 30;
     const carrierStuck = ant.carryingSeconds > 38;
-    const atNestMouth = this.distance(ant, NEST_ENTRANCE) < (carrierStuck ? 4.6 : 2.8);
+    const carrierDesperate = ant.carryingSeconds > 42;
+    const atNestMouth = this.distance(ant, NEST_ENTRANCE) < (carrierDesperate ? 10.5 : carrierStale ? 5.6 : 2.8);
     const insideTunnel = this.isOpenTunnel(ant.x, ant.y);
 
     if (ant.hunger >= 0.92 && ant.carryingSeconds > 35) {
@@ -787,7 +791,7 @@ export class AntModel {
       }
     }
 
-    if (!insideTunnel && atNestMouth && ant.carryingSeconds > 41.5) {
+    if (!insideTunnel && atNestMouth && ant.carryingSeconds > 40.5) {
       const entryCell = this.cellAt(NEST_ENTRANCE.x, SURFACE_ROWS);
 
       if (entryCell && entryCell.zone === 'inside' && entryCell.terrain === 'tunnel') {
@@ -827,7 +831,9 @@ export class AntModel {
     this.steerToward(
       ant,
       depositTarget,
-      insideTunnel || atNestMouth ? (carrierStuck ? 0.58 : 0.42) : carrierStuck ? 0.62 : this.config.homeFallbackSteer,
+      insideTunnel || atNestMouth
+        ? carrierStuck ? 0.64 : 0.42
+        : carrierDesperate ? 0.88 : carrierStale ? 0.68 : this.config.homeFallbackSteer,
     );
 
     if (insideTunnel && this.distance(ant, storageDestination) < (carrierStuck ? 2.9 : 2.1)) {
@@ -996,7 +1002,8 @@ export class AntModel {
         ant.carriedFoodKind = null;
         ant.activity = 'nurseIdle';
         ant.lastAction = 'nurseIdle';
-        this.steerToward(ant, QUEEN_CELL, 0.1);
+        const idleCell = this.bestBroodCell(ant) ?? this.openTunnelCellNear(this.queen, 4);
+        this.steerToward(ant, idleCell ?? QUEEN_CELL, 0.1);
         return;
       }
 
@@ -1033,7 +1040,8 @@ export class AntModel {
       ant.carriedFoodKind = null;
       ant.activity = 'nurseIdle';
       ant.lastAction = 'nurseIdle';
-      this.steerToward(ant, QUEEN_CELL, 0.08);
+      const idleCell = this.bestBroodCell(ant) ?? this.openTunnelCellNear(this.queen, 4);
+      this.steerToward(ant, idleCell ?? QUEEN_CELL, 0.08);
       ant.heading += this.randomBetween(-0.25, 0.25) * delta * 4;
       return;
     }
@@ -1161,6 +1169,12 @@ export class AntModel {
     }
 
     if (this.larvae.length > 0) {
+      const nurseryCell = this.bestBroodCell(this.queen);
+
+      if (nurseryCell) {
+        return nurseryCell;
+      }
+
       const broodCenter = this.larvae.reduce(
         (center, larva) => ({
           x: center.x + larva.x / this.larvae.length,
@@ -1248,7 +1262,8 @@ export class AntModel {
   }
 
   private layLarva(): Larva {
-    const point = this.openPointNear(this.queen, 3.2);
+    const nurseryCell = this.bestBroodCell(this.queen);
+    const point = nurseryCell ? this.openPointInCell(nurseryCell, 0.38) : this.openPointNear(this.queen, 3.2);
     const larva = {
       id: this.nextLarvaId++,
       x: point.x,
@@ -1356,6 +1371,7 @@ export class AntModel {
       larva.starvationSeconds = 0;
       larva.lastAction = 'larvaEatStoredFood';
       this.emitEvent('larvaEatStoredFood', larva, { larvaId: larva.id });
+      this.settleLarvaInBroodSite(larva);
     }
 
     return 'larva';
@@ -1457,6 +1473,33 @@ export class AntModel {
     }
 
     return { x: point.x, y: point.y };
+  }
+
+  private openPointInCell(cell: Cell, jitter = 0.35): Vec2 {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const point = {
+        x: cell.x + this.randomBetween(-jitter, jitter),
+        y: cell.y + this.randomBetween(-jitter, jitter),
+      };
+
+      if (this.isOpenTunnel(point.x, point.y)) {
+        return point;
+      }
+    }
+
+    return { x: cell.x, y: cell.y };
+  }
+
+  private settleLarvaInBroodSite(larva: Larva): void {
+    const cell = this.bestBroodCell(larva);
+
+    if (!cell || this.distance(larva, cell) < 1.05) {
+      return;
+    }
+
+    const point = this.openPointInCell(cell, 0.42);
+    larva.x = point.x;
+    larva.y = point.y;
   }
 
   private moveAnt(ant: Ant, delta: number): void {
@@ -2110,41 +2153,87 @@ export class AntModel {
   private storageDestinationFor(ant: Ant): StorageDestination {
     const storageSearchPoint = this.isOpenTunnel(ant.x, ant.y) ? ant : STORAGE_CELL;
     const targetCell = this.isOpenTunnel(ant.x, ant.y) && ant.targetCellIndex !== null ? this.cells[ant.targetCellIndex] ?? null : null;
+    const availableSite = this.nearestAvailableStorageSite(storageSearchPoint);
+    const shouldLookForNewCell = !availableSite || this.hasStorageSpreadPressure(availableSite);
+    const newCell = shouldLookForNewCell ? this.bestNewStorageCell(storageSearchPoint) : null;
+    const preferNewCell = shouldLookForNewCell && this.shouldPreferNewStorageCell(availableSite, newCell, storageSearchPoint);
 
     if (targetCell && targetCell.zone === 'inside' && targetCell.terrain === 'tunnel') {
       const targetSite = this.storageSiteAt(targetCell);
 
       if (targetSite && targetSite.stored < targetSite.capacity) {
-        return this.storageDestinationFromSite(targetSite);
+        const closeEnoughToFinish = this.distance(ant, targetSite) < 2.6;
+        const stillSparse = targetSite.stored <= 2 || targetSite.stored / targetSite.capacity < 0.32;
+
+        if (!preferNewCell || closeEnoughToFinish || stillSparse) {
+          return this.storageDestinationFromSite(targetSite);
+        }
       }
 
       if (!targetSite && this.storageCapacityFor(targetCell) > 0) {
-        return {
-          x: targetCell.x,
-          y: targetCell.y,
-          cellIndex: this.index(targetCell.x, targetCell.y),
-          siteId: null,
-        };
+        const targetScore = this.newStorageCellScore(storageSearchPoint, targetCell);
+        const preferredScore = newCell ? this.newStorageCellScore(storageSearchPoint, newCell) : Number.POSITIVE_INFINITY;
+
+        if (!preferNewCell || targetScore <= preferredScore + 1.4 || this.distance(ant, targetCell) < 2.6) {
+          return this.storageDestinationFromCell(targetCell);
+        }
       }
     }
 
-    const availableSite = this.nearestAvailableStorageSite(storageSearchPoint);
+    if (preferNewCell && newCell) {
+      return this.storageDestinationFromCell(newCell);
+    }
 
     if (availableSite) {
       return this.storageDestinationFromSite(availableSite);
     }
 
-    const newCell = this.bestNewStorageCell(storageSearchPoint);
-
     if (newCell) {
-      return {
-        x: newCell.x,
-        y: newCell.y,
-        cellIndex: this.index(newCell.x, newCell.y),
-        siteId: null,
-      };
+      return this.storageDestinationFromCell(newCell);
     }
 
+    return this.storageDestinationFallback();
+  }
+
+  private shouldPreferNewStorageCell(availableSite: StorageSite | null, newCell: Cell | null, point: Vec2): boolean {
+    if (!newCell) {
+      return false;
+    }
+
+    if (!availableSite) {
+      return true;
+    }
+
+    if (!this.hasStorageSpreadPressure(availableSite)) {
+      return false;
+    }
+
+    const fullness = availableSite.stored / availableSite.capacity;
+    const siteScore = this.storageSiteScore(point, availableSite);
+    const newScore = this.newStorageCellScore(point, newCell);
+    const tolerance = availableSite.stored >= 8 || fullness > 0.55 ? 5.2 : 2.8;
+
+    return newScore <= siteScore + tolerance;
+  }
+
+  private hasStorageSpreadPressure(site: StorageSite): boolean {
+    const fullness = site.stored / site.capacity;
+    const storedPressure = site.stored >= 4 || fullness >= 0.38;
+    const siteCountPressure = this.storageSites.filter((candidate) => candidate.stored > 0).length < Math.ceil(Math.max(1, this.storedFood) / 9);
+
+    return storedPressure || siteCountPressure;
+  }
+
+  private storageDestinationFromCell(cell: Cell): StorageDestination {
+    return {
+      x: cell.x,
+      y: cell.y,
+      cellIndex: this.index(cell.x, cell.y),
+      siteId: null,
+    };
+  }
+
+  private storageDestinationFallback(): StorageDestination {
     return {
       x: NEST_ENTRANCE.x,
       y: NEST_ENTRANCE.y,
@@ -2193,8 +2282,9 @@ export class AntModel {
 
         const tunnelNeighborCount = this.tunnelNeighbors(cell).length;
         const chamberBonus = tunnelNeighborCount >= 3 ? 1.8 : 0;
-        const storageAffinity = this.storageAffinityScore(cell) * 0.45;
-        const score = distance + storageAffinity - chamberBonus + this.random() * 0.12;
+        const storageAffinity = this.organicPantryScore(point, cell) * 0.45;
+        const sitePressure = site ? (site.stored / site.capacity) * 4.5 + site.stored * 0.22 : 0;
+        const score = distance + storageAffinity - chamberBonus + sitePressure + this.storageCrowdingPenalty(cell, site?.id ?? null) * 0.45 + this.random() * 0.12;
 
         if (score < bestScore) {
           bestScore = score;
@@ -2308,19 +2398,13 @@ export class AntModel {
   private nearestAvailableStorageSite(point: Vec2): StorageSite | null {
     let best: StorageSite | null = null;
     let bestScore = Number.POSITIVE_INFINITY;
-    const rooms = this.digRooms();
 
     for (const site of this.storageSites) {
       if (site.stored >= site.capacity) {
         continue;
       }
 
-      const fullness = site.stored / site.capacity;
-      const score =
-        this.distance(point, site) * 0.28 +
-        fullness * 7 +
-        this.storageAffinityScore(site, rooms) * 2.4 +
-        this.broodStoragePenalty(site, rooms);
+      const score = this.storageSiteScore(point, site);
 
       if (score < bestScore) {
         best = site;
@@ -2334,7 +2418,6 @@ export class AntModel {
   private bestNewStorageCell(point: Vec2): Cell | null {
     let best: Cell | null = null;
     let bestScore = Number.POSITIVE_INFINITY;
-    const rooms = this.digRooms();
 
     for (const cell of this.cells) {
       if (cell.zone !== 'inside' || cell.terrain !== 'tunnel' || this.storageSiteAt(cell)) {
@@ -2347,19 +2430,7 @@ export class AntModel {
         continue;
       }
 
-      const distanceFromEntry = this.distance(cell, NEST_ENTRANCE);
-      const entryPenalty = distanceFromEntry < 5 ? 12 : 0;
-      const tunnelNeighborCount = this.tunnelNeighbors(cell).length;
-      const corridorPenalty = tunnelNeighborCount < 3 ? 2.4 : 0;
-      const score =
-        this.distance(point, cell) * 0.18 +
-        this.storageAffinityScore(cell, rooms) * 3.2 +
-        this.broodStoragePenalty(cell, rooms) +
-        corridorPenalty -
-        capacity * 0.45 -
-        Math.min(distanceFromEntry, 22) * 0.06 +
-        entryPenalty +
-        this.random() * 0.35;
+      const score = this.newStorageCellScore(point, cell) + this.random() * 0.35;
 
       if (score < bestScore) {
         best = cell;
@@ -2370,39 +2441,206 @@ export class AntModel {
     return best;
   }
 
-  private storageAffinityScore(point: Vec2, rooms = this.digRooms()): number {
-    let best = Number.POSITIVE_INFINITY;
+  private storageSiteScore(point: Vec2, site: StorageSite): number {
+    const fullness = site.stored / site.capacity;
+    const loadPressure = fullness * fullness * 12 + site.stored * 0.42;
 
-    for (const room of rooms) {
-      if (room.kind === 'brood') {
-        continue;
-      }
-
-      const normalized = this.ellipseDistance(point, room);
-      const centerBias = this.distance(point, room) * 0.015;
-      const score = normalized <= 1 ? Math.abs(normalized - 0.45) * 0.7 : (normalized - 1) * 6 + 0.9;
-      best = Math.min(best, score + room.priority * 0.08 + centerBias);
-    }
-
-    return Number.isFinite(best) ? best : 8;
+    return (
+      this.distance(point, site) * 0.28 +
+      loadPressure +
+      this.organicPantryScore(point, site) * 2.4 +
+      this.broodStoragePenalty(site) +
+      this.storageCrowdingPenalty(site, site.id) * 0.35
+    );
   }
 
-  private broodStoragePenalty(point: Vec2, rooms = this.digRooms()): number {
-    let penalty = this.distance(point, this.queen) < 5 ? 3.5 : 0;
+  private newStorageCellScore(point: Vec2, cell: Cell): number {
+    const capacity = this.storageCapacityFor(cell);
+    const distanceFromEntry = this.distance(cell, NEST_ENTRANCE);
+    const entryPenalty = distanceFromEntry < 5 ? 12 : 0;
+    const tunnelNeighborCount = this.tunnelNeighbors(cell).length;
+    const corridorPenalty = tunnelNeighborCount < 3 ? 2.4 : 0;
 
-    for (const room of rooms) {
-      if (room.kind !== 'brood') {
+    return (
+      this.distance(point, cell) * 0.18 +
+      this.organicPantryScore(point, cell) * 3.2 +
+      this.broodStoragePenalty(cell) +
+      this.storageCrowdingPenalty(cell) +
+      corridorPenalty -
+      capacity * 0.45 -
+      Math.min(distanceFromEntry, 22) * 0.06 +
+      entryPenalty
+    );
+  }
+
+  private organicPantryScore(searchPoint: Vec2, cell: Vec2): number {
+    const tunnelCell = this.cellAt(cell.x, cell.y);
+
+    if (!tunnelCell || tunnelCell.zone !== 'inside' || tunnelCell.terrain !== 'tunnel') {
+      return 20;
+    }
+
+    const neighborCount = this.tunnelNeighbors(tunnelCell).length;
+    const localTunnelCount = this.tunnelCountNear(tunnelCell, 3);
+    const distanceFromEntry = this.distance(tunnelCell, NEST_ENTRANCE);
+    const chamberPenalty = neighborCount >= 3 ? 0 : neighborCount === 2 ? 1.8 : 6;
+    const localDensityPenalty = Math.max(0, 12 - localTunnelCount) * 0.26;
+    const entryPenalty = distanceFromEntry < 8 ? (8 - distanceFromEntry) * 2.5 : distanceFromEntry < 13 ? (13 - distanceFromEntry) * 0.22 : 0;
+    const travelPenalty = this.distance(searchPoint, tunnelCell) * 0.03;
+    const queenPenalty = Math.max(0, 7 - this.distance(tunnelCell, this.queen)) * 0.72;
+    const larvaPenalty = this.larvae.reduce((penalty, larva) => penalty + Math.max(0, 5.5 - this.distance(tunnelCell, larva)) * 0.4, 0);
+
+    return (
+      chamberPenalty +
+      localDensityPenalty +
+      entryPenalty +
+      travelPenalty +
+      queenPenalty +
+      larvaPenalty +
+      this.storageRoomAffinityScore(tunnelCell)
+    );
+  }
+
+  private storageRoomAffinityScore(point: Vec2, ignoreSiteId: number | null = null): number {
+    let score = 0;
+
+    for (const site of this.storageSites) {
+      if (site.id === ignoreSiteId || site.stored <= 0) {
         continue;
       }
 
-      const normalized = this.ellipseDistance(point, room);
+      const distance = this.distance(point, site);
 
-      if (normalized < 1.28) {
-        penalty += (1.28 - normalized) * 3.4;
+      if (distance < 2.4) {
+        score += (2.4 - distance) * 4 + Math.min(site.stored, 12) * 0.12;
+      } else if (distance < 9) {
+        score -= Math.min(2.4, (9 - distance) * 0.28 + Math.min(site.stored, 10) * 0.08);
+      }
+    }
+
+    return score;
+  }
+
+  private storageCrowdingPenalty(point: Vec2, ignoreSiteId: number | null = null): number {
+    let penalty = 0;
+
+    for (const site of this.storageSites) {
+      if (site.id === ignoreSiteId || site.stored <= 0) {
+        continue;
+      }
+
+      const distance = this.distance(point, site);
+
+      if (distance < 2.6) {
+        penalty += (2.6 - distance) * 4.2 + Math.min(site.stored, 14) * 0.12;
       }
     }
 
     return penalty;
+  }
+
+  private broodStoragePenalty(point: Vec2): number {
+    let penalty = Math.max(0, 5.5 - this.distance(point, this.queen)) * 0.85;
+
+    for (const larva of this.larvae) {
+      penalty += Math.max(0, 5.2 - this.distance(point, larva)) * 0.58;
+    }
+
+    return penalty;
+  }
+
+  private bestBroodCell(point: Vec2): Cell | null {
+    const cached = this.broodSiteCellIndex === null ? null : this.cells[this.broodSiteCellIndex] ?? null;
+
+    if (cached && cached.zone === 'inside' && cached.terrain === 'tunnel' && this.elapsed < this.broodSiteRefreshAt) {
+      return cached;
+    }
+
+    let best: Cell | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (const cell of this.cells) {
+      if (cell.zone !== 'inside' || cell.terrain !== 'tunnel') {
+        continue;
+      }
+
+      const distance = this.distance(point, cell);
+
+      if (distance > 18 && this.larvae.length < 4) {
+        continue;
+      }
+
+      const score = this.broodCellScore(point, cell) + this.random() * 0.22;
+
+      if (score < bestScore) {
+        best = cell;
+        bestScore = score;
+      }
+    }
+
+    this.broodSiteCellIndex = best ? this.index(best.x, best.y) : null;
+    this.broodSiteRefreshAt = this.elapsed + 3.5;
+    return best;
+  }
+
+  private broodCellScore(point: Vec2, cell: Cell): number {
+    const neighborCount = this.tunnelNeighbors(cell).length;
+    const localTunnelCount = this.tunnelCountNear(cell, 3);
+    const distanceFromEntry = this.distance(cell, NEST_ENTRANCE);
+    const chamberPenalty = neighborCount >= 3 ? 0 : neighborCount === 2 ? 1.4 : 5.2;
+    const localDensityPenalty = Math.max(0, 10 - localTunnelCount) * 0.24;
+    const entryPenalty = distanceFromEntry < 10 ? (10 - distanceFromEntry) * 1.8 : 0;
+    const queenDistance = this.distance(cell, this.queen);
+    const queenPenalty = Math.max(0, queenDistance - 10) * 0.14 + Math.max(0, 1.4 - queenDistance) * 2.2;
+    const storagePenalty = this.storageSites.reduce((penalty, site) => {
+      if (site.stored <= 0) {
+        return penalty;
+      }
+
+      return penalty + Math.max(0, 7 - this.distance(cell, site)) * 0.92;
+    }, 0);
+
+    if (this.larvae.length === 0) {
+      return (
+        this.distance(point, cell) * 0.24 +
+        chamberPenalty +
+        localDensityPenalty +
+        entryPenalty +
+        queenPenalty +
+        storagePenalty
+      );
+    }
+
+    const broodCenter = this.larvae.reduce(
+      (center, larva) => ({
+        x: center.x + larva.x / this.larvae.length,
+        y: center.y + larva.y / this.larvae.length,
+      }),
+      { x: 0, y: 0 },
+    );
+    let spacingPenalty = 0;
+    let pocketBonus = 0;
+
+    for (const larva of this.larvae) {
+      const distance = this.distance(cell, larva);
+      spacingPenalty += Math.max(0, 1.35 - distance) * 3.2;
+
+      if (distance >= 1.8 && distance <= 6.5) {
+        pocketBonus = Math.max(pocketBonus, 1.35);
+      }
+    }
+
+    return (
+      this.distance(point, cell) * 0.18 +
+      this.distance(cell, broodCenter) * 0.24 +
+      chamberPenalty +
+      localDensityPenalty +
+      entryPenalty +
+      queenPenalty +
+      storagePenalty +
+      spacingPenalty -
+      pocketBonus
+    );
   }
 
   private storageCapacityFor(cell: Cell): number {
