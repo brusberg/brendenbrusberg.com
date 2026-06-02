@@ -380,7 +380,6 @@ export class AntPatchSimulation {
     this.canvas.addEventListener('pointermove', this.handlePointerMove);
     this.canvas.addEventListener('pointerup', this.handlePointerEnd);
     this.canvas.addEventListener('pointercancel', this.handlePointerEnd);
-    this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
     this.canvas.addEventListener('keydown', this.handleKeyDown);
     this.canvas.addEventListener('keyup', this.handleKeyUp);
     this.canvas.addEventListener('blur', this.handleBlur);
@@ -391,7 +390,6 @@ export class AntPatchSimulation {
     this.canvas.removeEventListener('pointermove', this.handlePointerMove);
     this.canvas.removeEventListener('pointerup', this.handlePointerEnd);
     this.canvas.removeEventListener('pointercancel', this.handlePointerEnd);
-    this.canvas.removeEventListener('wheel', this.handleWheel);
     this.canvas.removeEventListener('keydown', this.handleKeyDown);
     this.canvas.removeEventListener('keyup', this.handleKeyUp);
     this.canvas.removeEventListener('blur', this.handleBlur);
@@ -402,6 +400,10 @@ export class AntPatchSimulation {
   };
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
     this.activePointerId = event.pointerId;
     this.lastPointerX = event.clientX;
     this.lastPointerY = event.clientY;
@@ -411,6 +413,11 @@ export class AntPatchSimulation {
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
     if (this.activePointerId !== event.pointerId) {
+      return;
+    }
+
+    if (event.pointerType === 'mouse' && event.buttons !== 1) {
+      this.activePointerId = null;
       return;
     }
 
@@ -429,14 +436,6 @@ export class AntPatchSimulation {
 
     this.activePointerId = null;
     this.canvas.releasePointerCapture(event.pointerId);
-  };
-
-  private readonly handleWheel = (event: WheelEvent): void => {
-    event.preventDefault();
-    const rect = this.canvas.getBoundingClientRect();
-    const deltaX = (event.deltaX / Math.max(1, rect.width)) * this.cameraViewWidth;
-    const deltaY = (event.deltaY / Math.max(1, rect.height)) * this.cameraViewHeight;
-    this.panCamera(deltaX, deltaY);
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
@@ -493,19 +492,19 @@ export class AntPatchSimulation {
   private panKeyDirection(key: string): { x: number; y: number } | null {
     const normalized = key.toLowerCase();
 
-    if (normalized === 'arrowleft' || normalized === 'a') {
+    if (normalized === 'arrowleft') {
       return { x: -1, y: 0 };
     }
 
-    if (normalized === 'arrowright' || normalized === 'd') {
+    if (normalized === 'arrowright') {
       return { x: 1, y: 0 };
     }
 
-    if (normalized === 'arrowup' || normalized === 'w') {
+    if (normalized === 'arrowup') {
       return { x: 0, y: -1 };
     }
 
-    if (normalized === 'arrowdown' || normalized === 's') {
+    if (normalized === 'arrowdown') {
       return { x: 0, y: 1 };
     }
 
