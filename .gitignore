@@ -25,5 +25,7 @@ npm-debug.log*
 # Vite
 .vite/
 
+# Local simulation audit artifacts
+analysis/
 
 

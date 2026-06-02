@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "outDir": "/private/tmp/ant-model-build",
+    "sourceMap": false
+  },
+  "include": ["src/sim/AntModel.ts"]
+}
