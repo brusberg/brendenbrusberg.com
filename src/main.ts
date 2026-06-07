@@ -17,6 +17,8 @@ const nursePercent = document.querySelector<HTMLElement>('#nurse-percent');
 const antCount = document.querySelector<HTMLElement>('#ant-count');
 const foodCount = document.querySelector<HTMLElement>('#food-count');
 const broodCount = document.querySelector<HTMLElement>('#brood-count');
+const hungerBars = document.querySelector<HTMLElement>('#hunger-bars');
+const hungerMax = document.querySelector<HTMLElement>('#hunger-max');
 const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 let simulation: AntPatchSimulation | null = null;
@@ -112,6 +114,35 @@ function updateTracker(): void {
   if (broodCount) {
     broodCount.textContent = String(snapshot.larvae.length);
   }
+
+  renderHungerChart(
+    snapshot.ants
+      .map((ant) => ({ id: ant.id, hunger: Math.max(0, Math.min(1, ant.hunger)) }))
+      .sort((a, b) => b.hunger - a.hunger),
+  );
+}
+
+function renderHungerChart(ants: Array<{ id: number; hunger: number }>): void {
+  if (hungerMax) {
+    const highestHunger = ants[0]?.hunger ?? 0;
+    hungerMax.textContent = `${Math.round(highestHunger * 100)}%`;
+  }
+
+  if (!hungerBars) {
+    return;
+  }
+
+  hungerBars.replaceChildren(
+    ...ants.map((ant) => {
+      const bar = document.createElement('span');
+      const hunger = Math.round(ant.hunger * 100);
+      bar.className = 'hunger-bar';
+      bar.style.setProperty('--hunger', ant.hunger.toFixed(3));
+      bar.style.setProperty('--danger', Math.max(0, (ant.hunger - 0.72) / 0.28).toFixed(3));
+      bar.title = `Ant ${ant.id}: ${hunger}% hungry`;
+      return bar;
+    }),
+  );
 }
 
 function allocationToPoint(allocation: TaskAllocation): { x: number; y: number } {
@@ -196,18 +227,6 @@ allocationTriangle?.addEventListener('keydown', (event) => {
 
 reduceMotionQuery.addEventListener('change', (event) => {
   simulation?.setReducedMotion(event.matches);
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (!simulation) {
-    return;
-  }
-
-  if (document.hidden) {
-    simulation.stop();
-  } else {
-    simulation.start();
-  }
 });
 
 window.addEventListener('beforeunload', () => {

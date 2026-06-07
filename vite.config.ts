@@ -15,6 +15,12 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        ant: resolve(__dirname, 'ant.html'),
+      },
+    },
   },
   
   server: {
@@ -25,6 +31,5 @@ export default defineConfig({
   // Handle shader files as raw text
   assetsInclude: ['**/*.vert', '**/*.frag'],
 });
-
 
 

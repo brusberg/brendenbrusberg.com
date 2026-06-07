@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Brenden Brusberg, applied AI systems designer working across data science, software engineering, and organizational strategy."
+    />
+    <meta name="theme-color" content="#191d19" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Brenden Brusberg</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <div class="site-shell">
+        <section class="simulation-panel" aria-label="Ant colony simulation">
+          <canvas id="patch-canvas" tabindex="0" aria-label="Animated ant colony patch overview"></canvas>
+          <div id="loading" class="status-panel">Loading colony...</div>
+          <div id="error-message" class="status-panel" hidden></div>
+          <div class="hunger-chart sim-hunger-chart" aria-label="Worker hunger chart">
+            <div class="hunger-chart-heading">
+              <span>Hunger</span>
+              <strong id="hunger-max">0%</strong>
+            </div>
+            <div id="hunger-bars" class="hunger-bars" aria-hidden="true"></div>
+          </div>
+        </section>
+
+        <aside class="profile-panel" aria-label="Brenden Brusberg resume links">
+          <section class="identity" aria-labelledby="site-title">
+            <h1 id="site-title">Brenden Brusberg</h1>
+            <p class="summary">
+              I work on designing platforms to better understand and evaluate complex systems in organizations,
+              leveraging multidisciplinary skills and teams to nurture real value.
+            </p>
+            <nav class="links" aria-label="Primary links">
+              <a href="/assets/brenden-brusberg-resume.pdf" target="_blank" rel="noreferrer">Resume</a>
+              <a href="https://github.com/brusberg" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="https://www.linkedin.com/in/brendends/" target="_blank" rel="noreferrer">LinkedIn</a>
+              <a href="mailto:brenbrus@gmail.com">Email</a>
+            </nav>
+          </section>
+
+          <section class="simant-panel" aria-label="SimAnt inspiration and worker hunger">
+            <p class="simant-note">
+              One of the first computer games I played was
+              <a href="https://en.wikipedia.org/wiki/SimAnt" target="_blank" rel="noopener noreferrer">SimAnt</a>. Even
+              before I could read I would sneak onto the family computer where my much older brother had working DOS
+              games like Sim City and Sim Ant. This simulation is a recreation of what started my journey into computers : )
+            </p>
+          </section>
+
+          <section class="allocation-panel" aria-label="Colony task allocation">
+            <div class="allocation-control">
+              <div class="allocation-heading">
+                <span>Colony</span>
+                <strong>Task mix</strong>
+              </div>
+              <svg id="allocation-triangle" class="allocation-triangle" viewBox="0 0 100 86" role="slider" tabindex="0" aria-label="Colony task mix">
+                <polygon class="allocation-field" points="50,6 8,78 92,78"></polygon>
+                <line x1="50" y1="6" x2="8" y2="78"></line>
+                <line x1="8" y1="78" x2="92" y2="78"></line>
+                <line x1="92" y1="78" x2="50" y2="6"></line>
+                <circle id="allocation-thumb" class="allocation-thumb" cx="44" cy="52" r="5"></circle>
+              </svg>
+              <div class="allocation-values" aria-live="polite">
+                <span><b id="forage-percent">62</b>% Forage</span>
+                <span><b id="dig-percent">34</b>% Dig</span>
+                <span><b id="nurse-percent">4</b>% Nurse</span>
+              </div>
+              <div class="ant-tracker" aria-label="Live ant colony tracker">
+                <div>
+                  <span>Ants</span>
+                  <strong id="ant-count">3</strong>
+                </div>
+                <div>
+                  <span>Food</span>
+                  <strong id="food-count">8</strong>
+                </div>
+                <div>
+                  <span>Brood</span>
+                  <strong id="brood-count">0</strong>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="profile-facts" aria-label="Resume summary">
+            <div>
+              <span>Current</span>
+              <strong>Data Science Specialist, McKinsey &amp; Company</strong>
+            </div>
+            <div>
+              <span>Focus</span>
+              <strong>Agentic AI harness design and orchestration, cloud systems, deep learning and diffusion, embeddings/RAG, knowledge graphs</strong>
+            </div>
+            <div>
+              <span>Tools</span>
+              <strong>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</strong>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="resume-details" aria-label="Resume details">
+        <div>
+          <span>Current</span>
+          <strong>Data Science Specialist, McKinsey &amp; Company</strong>
+        </div>
+        <div>
+          <span>Focus</span>
+          <strong>Agentic AI harness design and orchestration, cloud systems, deep learning and diffusion, embeddings/RAG, knowledge graphs</strong>
+        </div>
+        <div>
+          <span>Tools</span>
+          <strong>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</strong>
+        </div>
+      </section>
+
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
