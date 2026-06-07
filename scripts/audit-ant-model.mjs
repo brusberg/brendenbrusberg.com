@@ -62,11 +62,16 @@ function runSeed(modelModule, seed) {
   const seenEvents = new Set();
   const eventCounts = {};
   let maxWorkerHunger = 0;
+  let maxWorkerStarvationSeconds = 0;
+  let maxQueenStarvationSeconds = 0;
   let maxLarvaStarvationSeconds = 0;
   let maxCarrierSeconds = 0;
+  let maxCorpseCount = 0;
+  let maxRedScoutCount = 0;
   let finalCarrierCount = 0;
   let finalCarrierMaxSeconds = 0;
   let longCarrierSamples = 0;
+  let redScoutSamples = 0;
   let maxBadStoredPellets = 0;
   let badStoredPelletSamples = 0;
 
@@ -92,6 +97,7 @@ function runSeed(modelModule, seed) {
 
     for (const ant of snapshot.ants) {
       maxWorkerHunger = Math.max(maxWorkerHunger, ant.hunger);
+      maxWorkerStarvationSeconds = Math.max(maxWorkerStarvationSeconds, ant.starvingSeconds);
 
       if (ant.carryingFood) {
         maxCarrierSeconds = Math.max(maxCarrierSeconds, ant.carryingSeconds);
@@ -104,6 +110,14 @@ function runSeed(modelModule, seed) {
 
     for (const larva of snapshot.larvae) {
       maxLarvaStarvationSeconds = Math.max(maxLarvaStarvationSeconds, larva.starvationSeconds);
+    }
+
+    maxQueenStarvationSeconds = Math.max(maxQueenStarvationSeconds, snapshot.queen.starvingSeconds);
+    maxCorpseCount = Math.max(maxCorpseCount, snapshot.corpses.length);
+    maxRedScoutCount = Math.max(maxRedScoutCount, snapshot.redScouts.length);
+
+    if (snapshot.redScouts.length > 0) {
+      redScoutSamples += 1;
     }
 
     const badPellets = badStoredPellets(model, snapshot).length;
@@ -132,6 +146,12 @@ function runSeed(modelModule, seed) {
       frontierCount: finalSnapshot.frontierCount,
       taskCounts: finalSnapshot.taskCounts,
       activityCounts: finalSnapshot.activityCounts,
+      corpses: finalSnapshot.corpses.length,
+      workerDeathsByReason: finalSnapshot.workerDeathsByReason,
+      queenAlive: finalSnapshot.queen.alive,
+      queenStarvingSeconds: finalSnapshot.queen.starvingSeconds,
+      redScouts: finalSnapshot.redScouts.length,
+      redScoutStateCounts: finalSnapshot.redScoutStateCounts,
       storage: summarizeStorage(finalSnapshot),
       badStoredPellets: badStoredPellets(model, finalSnapshot).map((pellet) => ({
         id: pellet.id,
@@ -143,8 +163,13 @@ function runSeed(modelModule, seed) {
       carrierMaxSeconds: Number(finalCarrierMaxSeconds.toFixed(2)),
     },
     maxWorkerHunger: Number(maxWorkerHunger.toFixed(3)),
+    maxWorkerStarvationSeconds: Number(maxWorkerStarvationSeconds.toFixed(2)),
+    maxQueenStarvationSeconds: Number(maxQueenStarvationSeconds.toFixed(2)),
     maxLarvaStarvationSeconds: Number(maxLarvaStarvationSeconds.toFixed(2)),
     maxCarrierSeconds: Number(maxCarrierSeconds.toFixed(2)),
+    maxCorpseCount,
+    maxRedScoutCount,
+    redScoutSamples,
     longCarrierSamples,
     maxBadStoredPellets,
     badStoredPelletSamples,
@@ -178,8 +203,15 @@ function renderText(results) {
       `  storage spread: largest site ${result.final.storage.largestSiteStored} food, largest share ${result.final.storage.largestSiteShare}`,
     );
     lines.push(
-      `  risk: max carrier ${result.maxCarrierSeconds}s, long carrier samples ${result.longCarrierSamples}, max hunger ${result.maxWorkerHunger}, max larva starvation ${result.maxLarvaStarvationSeconds}s`,
+      `  risk: max carrier ${result.maxCarrierSeconds}s, long carrier samples ${result.longCarrierSamples}, max hunger ${result.maxWorkerHunger}, max worker starvation ${result.maxWorkerStarvationSeconds}s, max larva starvation ${result.maxLarvaStarvationSeconds}s`,
     );
+    lines.push(
+      `  colony health: queen alive ${result.final.queenAlive}, queen starvation max ${result.maxQueenStarvationSeconds}s, final corpses ${result.final.corpses}, max corpses ${result.maxCorpseCount}`,
+    );
+    lines.push(
+      `  red scouts: final ${result.final.redScouts}, max ${result.maxRedScoutCount}, sampled ${result.redScoutSamples} times, states ${JSON.stringify(result.final.redScoutStateCounts)}`,
+    );
+    lines.push(`  worker deaths: ${JSON.stringify(result.final.workerDeathsByReason)}`);
     lines.push(
       `  carriers: final ${result.final.carrierCount}, final max ${result.final.carrierMaxSeconds}s`,
     );
@@ -193,13 +225,17 @@ function renderText(results) {
   const totalBadSamples = results.reduce((sum, result) => sum + result.badStoredPelletSamples, 0);
   const totalFinalBad = results.reduce((sum, result) => sum + result.final.badStoredPellets.length, 0);
   const worstCarrier = Math.max(...results.map((result) => result.maxCarrierSeconds));
+  const worstWorkerStarvation = Math.max(...results.map((result) => result.maxWorkerStarvationSeconds));
   const worstLarvaStarvation = Math.max(...results.map((result) => result.maxLarvaStarvationSeconds));
+  const maxRedScouts = Math.max(...results.map((result) => result.maxRedScoutCount));
 
   lines.push(`Totals`);
   lines.push(`  bad stored pellet samples: ${totalBadSamples}`);
   lines.push(`  final bad stored pellets: ${totalFinalBad}`);
   lines.push(`  worst carrier trip: ${worstCarrier.toFixed(2)}s`);
+  lines.push(`  worst worker starvation: ${worstWorkerStarvation.toFixed(2)}s`);
   lines.push(`  worst larva starvation: ${worstLarvaStarvation.toFixed(2)}s`);
+  lines.push(`  max red scouts: ${maxRedScouts}`);
 
   return `${lines.join('\n')}\n`;
 }

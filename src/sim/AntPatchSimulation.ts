@@ -17,6 +17,10 @@ interface AntPatchOptions {
   reducedMotion: boolean;
 }
 
+const THROTTLED_MAX_DELTA = 1;
+const RESUME_MAX_DELTA = 30;
+const BACKGROUND_FRAME_MS = 125;
+
 const VERTEX_SHADER = `#version 300 es
 in vec2 a_position;
 out vec2 v_uv;
@@ -55,6 +59,7 @@ export class AntPatchSimulation {
   private readonly noise = new Uint8Array(FIELD_SIZE);
 
   private frameId = 0;
+  private backgroundTimerId = 0;
   private lastTime = 0;
   private accumulator = 0;
   private snapshotPublishTimer = 0;
@@ -106,21 +111,26 @@ export class AntPatchSimulation {
   }
 
   start(): void {
-    if (this.frameId !== 0) {
-      return;
+    if (this.frameId === 0) {
+      this.lastTime = performance.now();
+      this.frameId = window.requestAnimationFrame(this.tick);
     }
 
-    this.lastTime = performance.now();
-    this.frameId = window.requestAnimationFrame(this.tick);
+    if (this.backgroundTimerId === 0) {
+      this.backgroundTimerId = window.setInterval(this.backgroundTick, BACKGROUND_FRAME_MS);
+    }
   }
 
   stop(): void {
-    if (this.frameId === 0) {
-      return;
+    if (this.frameId !== 0) {
+      window.cancelAnimationFrame(this.frameId);
+      this.frameId = 0;
     }
 
-    window.cancelAnimationFrame(this.frameId);
-    this.frameId = 0;
+    if (this.backgroundTimerId !== 0) {
+      window.clearInterval(this.backgroundTimerId);
+      this.backgroundTimerId = 0;
+    }
   }
 
   dispose(): void {
@@ -168,7 +178,22 @@ export class AntPatchSimulation {
   }
 
   private readonly tick = (time: number): void => {
-    const delta = Math.min((time - this.lastTime) / 1000, MAX_DELTA);
+    this.advanceFrame(time);
+    this.frameId = window.requestAnimationFrame(this.tick);
+  };
+
+  private readonly backgroundTick = (): void => {
+    if (!document.hidden) {
+      return;
+    }
+
+    this.advanceFrame(performance.now());
+  };
+
+  private advanceFrame(time: number): void {
+    const rawDelta = Math.max(0, (time - this.lastTime) / 1000);
+    const maxDelta = rawDelta > THROTTLED_MAX_DELTA ? RESUME_MAX_DELTA : document.hidden ? THROTTLED_MAX_DELTA : MAX_DELTA;
+    const delta = Math.min(rawDelta, maxDelta);
     this.lastTime = time;
 
     if (this.reducedMotion) {
@@ -183,8 +208,7 @@ export class AntPatchSimulation {
     }
 
     this.draw();
-    this.frameId = window.requestAnimationFrame(this.tick);
-  };
+  }
 
   private seedNoise(): void {
     let seed = 0x8f2d3a4b;
@@ -211,8 +235,10 @@ export class AntPatchSimulation {
     this.paintCells();
     this.paintFood();
     this.paintStorage();
+    this.paintCorpses();
     this.paintQueenAndLarvae();
     this.paintAnts();
+    this.paintRedScouts();
     this.uploadScene();
     this.renderTexture();
   }
@@ -298,6 +324,11 @@ export class AntPatchSimulation {
     }
 
     const queen = this.model.queen;
+
+    if (!queen.alive) {
+      return;
+    }
+
     const forward = { x: Math.cos(queen.heading), y: Math.sin(queen.heading) };
     const side = { x: -forward.y, y: forward.x };
     const pixel = (forwardOffset: number, sideOffset: number, color: [number, number, number], alpha: number): void => {
@@ -335,6 +366,53 @@ export class AntPatchSimulation {
         this.paintRect(x, y - 1, 1, 1, this.foodPalette(ant.carriedFoodKind ?? 'crumb'), 0.95);
       } else if (ant.carryingCareFood) {
         this.paintRect(x, y - 1, 1, 1, [230, 209, 147], 0.95);
+      }
+    }
+  }
+
+  private paintCorpses(): void {
+    for (const corpse of this.model.corpses) {
+      const fade = Math.max(0, 1 - corpse.age / corpse.ttl);
+      const x = Math.round(corpse.x);
+      const y = Math.round(corpse.y);
+      const alpha = 0.18 + fade * 0.5;
+
+      if (corpse.kind === 'larva') {
+        this.paintDisc(corpse.x, corpse.y, 0.65, [91, 79, 59], alpha);
+        continue;
+      }
+
+      if (corpse.kind === 'queen') {
+        this.paintDisc(corpse.x, corpse.y, 1.7, [14, 12, 10], alpha);
+        this.paintRect(x - 1, y, 3, 1, [6, 7, 5], alpha);
+        continue;
+      }
+
+      const color: [number, number, number] = corpse.kind === 'redScout' ? [62, 22, 20] : [10, 11, 9];
+      this.paintRect(x - 1, y, 2, 1, color, alpha);
+      this.paintRect(x, y + 1, 1, 1, [4, 5, 4], alpha * 0.75);
+    }
+  }
+
+  private paintRedScouts(): void {
+    for (const scout of this.model.redScouts) {
+      if (scout.state === 'dead') {
+        continue;
+      }
+
+      const x = Math.round(scout.x);
+      const y = Math.round(scout.y);
+      const retreatGlow = scout.state === 'retreat' ? 0.18 : 0;
+
+      if (scout.state === 'enterNest' || scout.state === 'stealFood') {
+        this.paintDisc(x, y, 1.5, [124, 43, 38], 0.18 + retreatGlow);
+      }
+
+      this.paintRect(x - 1, y, 2, 1, [42, 13, 11], 0.96);
+      this.paintRect(x + Math.round(Math.cos(scout.heading)), y + Math.round(Math.sin(scout.heading)), 1, 1, [8, 4, 4], 0.92);
+
+      if (scout.carryingFood) {
+        this.paintRect(x, y - 1, 1, 1, [207, 175, 96], 0.95);
       }
     }
   }

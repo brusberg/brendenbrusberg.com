@@ -260,7 +260,7 @@ Some of these are implemented contracts, and some are proposed next contracts. T
 
 ## Battle-Test Results
 
-Latest retest after rejecting the dynamic dig-room experiment, restoring the cleaner room/corridor dig planner, keeping organic pantry/brood scoring, and preserving tunnel-safe stored-food placement plus carrier stuck fallbacks:
+Latest retest after adding starvation/death debug plumbing, corpse snapshots, and the first non-combat red-scout pressure loop:
 
 - Production build: `pnpm build`.
 - Normal audit: `pnpm run audit`, seeds `1-4`, 720 simulated seconds each, default speed, sampled once per second.
@@ -271,22 +271,24 @@ Summary:
 | Test | Result | What it means |
 | --- | --- | --- |
 | Normal 720s seeds 1-4 | All four seeds reached `24` ants | Brood loop is currently reliable across this small seed set |
-| Normal 720s seeds 1-4 | Final larvae ranged `4-5`; max sampled larva starvation was `0s` | Restored dig scoring returns to the healthier brood loop |
-| Normal 720s seeds 1-4 | Worker max hunger reached `0.889-0.994` | Food is still tense, but less broken than the rejected dynamic-room pass |
-| Normal 720s seeds 1-4 | Longest sampled carrier trip was `41.18s`; long-carrier samples were `0` | Carrier loops stay below the stuck threshold |
-| Normal 720s seeds 1-4 | Final stored food ranged `3-27`; active storage sites ranged `2-14` | Pantry spread is acceptable enough to continue, though food events still need tuning |
+| Normal 720s seeds 1-4 | Final larvae ranged `5-8`; max sampled larva starvation was `0s` | Brood loop is currently stable with the death/scout additions |
+| Normal 720s seeds 1-4 | Worker max hunger reached `0.889-0.982`; worker deaths were `0` | Starvation timers are visible in snapshots but do not collapse normal seeds |
+| Normal 720s seeds 1-4 | Longest sampled carrier trip was `40.37s`; long-carrier samples were `0` | Carrier loops stay below the stuck threshold |
+| Normal 720s seeds 1-4 | Final stored food ranged `3-15`; active storage sites ranged `2-8` | Pantry spread remains acceptable, though food events still need tuning |
 | Normal 720s seeds 1-4 | Bad stored-food pellet samples were `0`; final bad stored pellets were `0` | Stored-food entities now stay in open tunnel cells instead of being offset into soil |
-| Normal 720s seeds 1-4 | Event counts captured `depositFood`, `openTunnel`, `queenLayLarva`, `larvaMature`, and `hatchLarva` | `recentEvents` fixes the one-frame action blind spot |
+| Normal 720s seeds 1-4 | Event counts captured `depositFood`, `openTunnel`, `queenLayLarva`, `larvaMature`, `hatchLarva`, `redScoutEnterNest`, `redScoutStealFood`, and `redScoutRetreat` | `recentEvents` now covers both colony growth and scout pressure |
+| Normal 720s seeds 1-4 | Red scouts appeared in seeds `2-4`, stole one pellet per successful raid, and had max active count `2` | The first scout loop is working without combat |
 | Visual seed 2 720s | Reached `24` ants, `5` larvae, `12` stored food, `593` tunnels | Restored room/corridor planner is visually clearer and state-healthier than the dynamic attempt |
 
 Problems found:
 
-- Worker hunger nearly reaches max but has no death or lasting injury. Add death timers only after giving panic behavior enough readable warning.
+- Worker starvation timers and death reasons are implemented, but normal seeds do not currently kill workers. Add a low-food stress harness before tuning death timing further.
 - Carrier trips no longer cross the `45s` stuck threshold in the latest normal audit.
 - The first dynamic-room attempt regressed into random-looking erosion and perforated blobs. It was reverted because the old room/corridor planner looked more like intentional ant architecture.
 - `recentEvents` now captures one-frame actions, including `larvaStarved` before a larva is removed. Audit scripts should use event ids rather than `lastAction` sampling.
-- Food economy variance is large. Before worker death ships, tune food spawn/vision so low-food seeds are recoverable without feeling arbitrary.
+- Food economy variance is still meaningful. Food events should make scarcity readable rather than arbitrary.
 - Storage and brood sites are now claimed from the opened tunnel graph. Macro dig rooms are intentionally back to the authored room/corridor baseline until a better organic-room planner exists.
+- Red scouts are non-combat for now. They can spawn, enter, steal one stored pellet, retreat, and time out; worker defense/combat is intentionally deferred.
 
 Current fix pass:
 
@@ -297,15 +299,26 @@ Current fix pass:
 - Carriers now clear stale storage targets, ignore looping pheromones when stale, emergency-cache at the tunnel/entrance, steer harder when stale, and eat carried food when starving.
 - Stored-food pellet coordinates now snap safely inside open tunnel cells, so snapshot rounding cannot push food into adjacent soil.
 - `recentEvents` now records exact transition events in snapshots, and `pnpm run audit` de-duplicates them by id.
+- Workers and queen now track starvation timers. Worker deaths, queen death, larva starvation, and red-scout failures create corpse markers and event reasons instead of invisible removals.
+- Red scouts are now modeled entities with `scout`, `enterNest`, `stealFood`, `retreat`, and `dead` states. The first pass is deliberately non-combat.
+- `pnpm run audit` now reports worker deaths by reason, corpse counts, queen starvation seconds, red-scout counts, and red-scout state counts.
 - Fast-forward analysis SVGs must stay visually aligned with the live renderer; the queen pixel-sprite mismatch was fixed in `scripts/fast-forward-digging.mjs`.
 
 Next fixes, in order:
 
-1. Tune food events/economy so seeds `1-4` keep a small but nonzero pantry without making abundance feel fake.
+1. Add a low-food starvation stress harness so worker/queen death and corpse events are proven under controlled scarcity.
 2. Redesign organic digging as claimed rooms plus corridors, with visual regression tests against the restored room/corridor baseline.
-3. Add worker starvation timers and death reasons once the food economy is less seed-swingy.
-4. Add `FoodEvent` spawns, starting with scatter/windfall, then the playful seeded `B` glyph if it still fits the tone.
-5. Add red ant scouts as rare pressure events once death/event logs exist.
+3. Add `FoodEvent` spawns, starting with scatter/windfall, then the playful seeded `B` glyph if it still fits the tone.
+4. Add worker response to red scouts: avoid first, then defend storage/brood, then combat only after pathing remains stable.
+5. Tune food events/economy so seeds `1-4` keep a small but nonzero pantry without making abundance feel fake.
+
+Debug list for the death/threat pass:
+
+- Snapshots should expose live worker count, corpse count, worker deaths by reason, queen starvation seconds, red-scout count, and red-scout state counts.
+- `recentEvents` should capture `workerStarving`, `workerDied`, `queenStarving`, `queenDied`, `redScoutSpawn`, `redScoutEnterNest`, `redScoutStealFood`, `redScoutRetreat`, and `redScoutDied`.
+- Audit should prove worker deaths are not one-frame invisible removals, death reasons are counted separately from larva starvation, and red scouts can enter/retreat without getting stuck in closed soil.
+- Red-scout tests should begin non-combat: one scout finds a trail or entrance, steals at most one stored pellet, retreats, and leaves an event trail before any worker-vs-red combat ships.
+- Starvation tests should run a low-food stress seed and a normal-food control seed so death timers are visible under pressure but do not randomly collapse healthy colonies.
 
 ### Seed Scope And Room Planning
 

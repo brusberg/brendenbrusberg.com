@@ -4,6 +4,9 @@ export type AntState = 'wander' | 'seekFood' | 'carryFood';
 export type AntTask = 'forage' | 'dig' | 'nurse';
 export type FoodKind = 'crumb' | 'seed' | 'leaf';
 export type AntOrigin = 'seed' | 'hatched';
+export type DeathReason = 'starvation' | 'queenStarvation' | 'larvaStarvation' | 'redScout';
+export type CorpseKind = 'worker' | 'queen' | 'larva' | 'redScout';
+export type RedScoutState = 'scout' | 'enterNest' | 'stealFood' | 'retreat' | 'dead';
 export type CareTarget = { type: 'queen' } | { type: 'larva'; id: number };
 export type QueenActivity = 'nurseIdle' | 'broodCare' | 'seekStoredFood' | 'pacing';
 export type AntActivity =
@@ -57,7 +60,16 @@ export type AntActionReason =
   | 'openTunnel'
   | 'nurseIdle'
   | 'avoidBoundary'
-  | 'depositFood';
+  | 'depositFood'
+  | 'workerStarving'
+  | 'workerDied'
+  | 'queenStarving'
+  | 'queenDied'
+  | 'redScoutSpawn'
+  | 'redScoutEnterNest'
+  | 'redScoutStealFood'
+  | 'redScoutRetreat'
+  | 'redScoutDied';
 
 export interface Vec2 {
   x: number;
@@ -93,12 +105,16 @@ export interface Ant extends Vec2 {
   carriedFoodKind: FoodKind | null;
   nursingTarget: CareTarget | null;
   hunger: number;
+  starvingSeconds: number;
+  starvationLimitSeconds: number;
+  starvingEventEmitted: boolean;
   energy: number;
   heading: number;
   speed: number;
   carryingSeconds: number;
   targetCellIndex: number | null;
   lastAction: AntActionReason;
+  deadReason: DeathReason | null;
 }
 
 export interface Food extends Vec2 {
@@ -121,8 +137,12 @@ export interface StorageSite extends Vec2 {
 }
 
 export interface Queen extends Vec2 {
+  alive: boolean;
   activity: QueenActivity;
   hunger: number;
+  starvingSeconds: number;
+  starvationLimitSeconds: number;
+  starvingEventEmitted: boolean;
   layCooldown: number;
   larvaeLaid: number;
   heading: number;
@@ -139,17 +159,44 @@ export interface Larva extends Vec2 {
   lastAction: AntActionReason;
 }
 
+export interface Corpse extends Vec2 {
+  id: number;
+  kind: CorpseKind;
+  reason: DeathReason;
+  age: number;
+  ttl: number;
+  heading: number;
+}
+
+export interface RedScout extends Vec2 {
+  id: number;
+  state: RedScoutState;
+  age: number;
+  heading: number;
+  speed: number;
+  carryingFood: boolean;
+  targetCellIndex: number | null;
+  exitSide: -1 | 1;
+  retreatEventEmitted: boolean;
+  retreatSeconds: number;
+  stuckSeconds: number;
+  lastAction: AntActionReason;
+}
+
 export interface ColonyEvent extends Vec2 {
   id: number;
   time: number;
   type: AntActionReason;
   antId?: number;
+  redScoutId?: number;
   larvaId?: number;
   foodId?: number;
   storedFoodId?: number;
   storageSiteId?: number | null;
   cellIndex?: number | null;
   amount?: number;
+  reason?: DeathReason;
+  corpseId?: number;
 }
 
 interface StorageDestination extends Vec2 {
@@ -195,9 +242,16 @@ export interface AntModelConfig {
   antHungerRatePerSecond: number;
   antHungryThreshold: number;
   antFoodValue: number;
+  antStarvingHunger: number;
+  antStarvationResetHunger: number;
+  antStarvationMinSeconds: number;
+  antStarvationMaxSeconds: number;
   queenHungerRatePerSecond: number;
   queenEatThreshold: number;
   queenFoodValue: number;
+  queenStarvingHunger: number;
+  queenStarvationResetHunger: number;
+  queenStarvationSeconds: number;
   queenLayIntervalSeconds: number;
   queenLayHungerMax: number;
   maxLarvae: number;
@@ -209,6 +263,12 @@ export interface AntModelConfig {
   larvaGrowthRequired: number;
   larvaStarvationSeconds: number;
   maxAnts: number;
+  corpseTtlSeconds: number;
+  redScoutMinSpawnSeconds: number;
+  redScoutCooldownSeconds: number;
+  redScoutAttractionThreshold: number;
+  redScoutMaxCount: number;
+  redScoutSpeed: number;
 }
 
 export interface AntPatchSnapshot {
@@ -239,7 +299,20 @@ export interface AntPatchSnapshot {
     cellHomePheromone: number;
     carryingSeconds: number;
     targetCellIndex: number | null;
+    starvingSeconds: number;
+    starvationLimitSeconds: number;
   }>;
+  corpses: Array<{
+    id: number;
+    kind: CorpseKind;
+    reason: DeathReason;
+    x: number;
+    y: number;
+    age: number;
+    ttl: number;
+    heading: number;
+  }>;
+  workerDeathsByReason: Record<DeathReason, number>;
   taskAllocation: TaskAllocation;
   taskCounts: Record<AntTask, number>;
   activityCounts: Record<AntActivity, number>;
@@ -266,7 +339,10 @@ export interface AntPatchSnapshot {
     x: number;
     y: number;
     activity: QueenActivity;
+    alive: boolean;
     hunger: number;
+    starvingSeconds: number;
+    starvationLimitSeconds: number;
     layCooldown: number;
     larvaeLaid: number;
     heading: number;
@@ -283,6 +359,19 @@ export interface AntPatchSnapshot {
     starvationSeconds: number;
     lastAction: AntActionReason;
   }>;
+  redScouts: Array<{
+    id: number;
+    x: number;
+    y: number;
+    state: RedScoutState;
+    age: number;
+    carryingFood: boolean;
+    targetCellIndex: number | null;
+    retreatSeconds: number;
+    heading: number;
+    lastAction: AntActionReason;
+  }>;
+  redScoutStateCounts: Record<RedScoutState, number>;
   recentEvents: ColonyEvent[];
 }
 
@@ -328,9 +417,16 @@ export const DEFAULT_ANT_MODEL_CONFIG: AntModelConfig = {
   antHungerRatePerSecond: 0.0045,
   antHungryThreshold: 0.72,
   antFoodValue: 0.62,
+  antStarvingHunger: 0.995,
+  antStarvationResetHunger: 0.94,
+  antStarvationMinSeconds: 70,
+  antStarvationMaxSeconds: 110,
   queenHungerRatePerSecond: 0.0018,
   queenEatThreshold: 0.58,
   queenFoodValue: 0.65,
+  queenStarvingHunger: 0.995,
+  queenStarvationResetHunger: 0.94,
+  queenStarvationSeconds: 220,
   queenLayIntervalSeconds: 24,
   queenLayHungerMax: 0.52,
   maxLarvae: 18,
@@ -342,6 +438,12 @@ export const DEFAULT_ANT_MODEL_CONFIG: AntModelConfig = {
   larvaGrowthRequired: 1,
   larvaStarvationSeconds: 34,
   maxAnts: 24,
+  corpseTtlSeconds: 95,
+  redScoutMinSpawnSeconds: 260,
+  redScoutCooldownSeconds: 150,
+  redScoutAttractionThreshold: 22,
+  redScoutMaxCount: 2,
+  redScoutSpeed: 7.2,
 };
 
 export class AntModel {
@@ -350,11 +452,17 @@ export class AntModel {
   readonly food: Food[] = [];
   readonly storedFoodPellets: StoredFoodPellet[] = [];
   readonly storageSites: StorageSite[] = [];
+  readonly corpses: Corpse[] = [];
+  readonly redScouts: RedScout[] = [];
   readonly queen: Queen = {
     x: QUEEN_CELL.x,
     y: QUEEN_CELL.y,
+    alive: true,
     activity: 'nurseIdle',
     hunger: 0.28,
+    starvingSeconds: 0,
+    starvationLimitSeconds: DEFAULT_ANT_MODEL_CONFIG.queenStarvationSeconds,
+    starvingEventEmitted: false,
     layCooldown: 12,
     larvaeLaid: 0,
     heading: Math.PI,
@@ -379,15 +487,26 @@ export class AntModel {
   private nextEventId = 1;
   private nextLarvaId = 1;
   private nextAntId = 0;
+  private nextCorpseId = 1;
+  private nextRedScoutId = 1;
   private seed: number;
   private taskRebalanceTimer = 0;
+  private redScoutCooldown = 0;
   private recentEvents: ColonyEvent[] = [];
   private broodSiteCellIndex: number | null = null;
   private broodSiteRefreshAt = 0;
+  private workerDeathsByReason: Record<DeathReason, number> = {
+    starvation: 0,
+    queenStarvation: 0,
+    larvaStarvation: 0,
+    redScout: 0,
+  };
 
   constructor(config: Partial<AntModelConfig> = {}) {
     this.config = { ...DEFAULT_ANT_MODEL_CONFIG, ...config };
     this.seed = this.config.seed;
+    this.queen.starvationLimitSeconds = this.config.queenStarvationSeconds * (0.92 + this.stableUnit(431) * 0.2);
+    this.redScoutCooldown = this.config.redScoutMinSpawnSeconds;
     this.seedCells();
     this.seedFood();
     this.seedAnts();
@@ -406,12 +525,25 @@ export class AntModel {
     this.decayPheromones(delta);
     this.reinforceNestPheromone();
 
-    for (const ant of this.ants) {
+    for (let index = 0; index < this.ants.length; index += 1) {
+      const ant = this.ants[index];
+
+      if (!ant) {
+        continue;
+      }
+
       this.updateAnt(ant, delta);
+
+      if (this.updateWorkerStarvation(ant, delta, index)) {
+        index -= 1;
+      }
     }
 
     this.updateQueen(delta);
+    this.updateQueenStarvation(delta);
     this.updateLarvae(delta);
+    this.updateCorpses(delta);
+    this.updateRedScouts(delta);
 
     if (this.food.length < this.config.initialFoodCount && this.random() < delta * this.config.foodSpawnRate) {
       this.food.push(this.createFood());
@@ -454,8 +586,21 @@ export class AntModel {
           cellHomePheromone: Number((cell?.pheromoneHome ?? 0).toFixed(3)),
           carryingSeconds: Number(ant.carryingSeconds.toFixed(2)),
           targetCellIndex: ant.targetCellIndex,
+          starvingSeconds: Number(ant.starvingSeconds.toFixed(2)),
+          starvationLimitSeconds: Number(ant.starvationLimitSeconds.toFixed(2)),
         };
       }),
+      corpses: this.corpses.map((corpse) => ({
+        id: corpse.id,
+        kind: corpse.kind,
+        reason: corpse.reason,
+        x: Number(corpse.x.toFixed(2)),
+        y: Number(corpse.y.toFixed(2)),
+        age: Number(corpse.age.toFixed(2)),
+        ttl: Number(corpse.ttl.toFixed(2)),
+        heading: Number(corpse.heading.toFixed(3)),
+      })),
+      workerDeathsByReason: { ...this.workerDeathsByReason },
       taskAllocation: { ...this.taskAllocation },
       taskCounts,
       activityCounts,
@@ -489,7 +634,10 @@ export class AntModel {
         x: Number(this.queen.x.toFixed(2)),
         y: Number(this.queen.y.toFixed(2)),
         activity: this.queen.activity,
+        alive: this.queen.alive,
         hunger: Number(this.queen.hunger.toFixed(3)),
+        starvingSeconds: Number(this.queen.starvingSeconds.toFixed(2)),
+        starvationLimitSeconds: Number(this.queen.starvationLimitSeconds.toFixed(2)),
         layCooldown: Number(this.queen.layCooldown.toFixed(2)),
         larvaeLaid: this.queen.larvaeLaid,
         heading: Number(this.queen.heading.toFixed(3)),
@@ -506,6 +654,19 @@ export class AntModel {
         starvationSeconds: Number(larva.starvationSeconds.toFixed(2)),
         lastAction: larva.lastAction,
       })),
+      redScouts: this.redScouts.map((scout) => ({
+        id: scout.id,
+        x: Number(scout.x.toFixed(2)),
+        y: Number(scout.y.toFixed(2)),
+        state: scout.state,
+        age: Number(scout.age.toFixed(2)),
+        carryingFood: scout.carryingFood,
+        targetCellIndex: scout.targetCellIndex,
+        retreatSeconds: Number(scout.retreatSeconds.toFixed(2)),
+        heading: Number(scout.heading.toFixed(3)),
+        lastAction: scout.lastAction,
+      })),
+      redScoutStateCounts: this.redScoutStateCounts(),
       recentEvents: this.recentEvents.map((event) => ({
         ...event,
         time: Number(event.time.toFixed(3)),
@@ -600,8 +761,10 @@ export class AntModel {
 
   private seedAnts(): void {
     for (let id = 0; id < this.config.antCount; id += 1) {
+      const antId = this.nextAntId++;
+
       this.ants.push({
-        id: this.nextAntId++,
+        id: antId,
         origin: 'seed',
         age: 0,
         hatchedFromLarvaId: null,
@@ -615,14 +778,370 @@ export class AntModel {
         carriedFoodKind: null,
         nursingTarget: null,
         hunger: this.randomBetween(0.18, 0.56),
+        starvingSeconds: 0,
+        starvationLimitSeconds: this.workerStarvationLimit(antId),
+        starvingEventEmitted: false,
         energy: this.randomBetween(0.65, 1),
         heading: this.randomBetween(0, Math.PI * 2),
         speed: this.randomBetween(6.5, 11.5),
         carryingSeconds: 0,
         targetCellIndex: null,
         lastAction: 'spawn',
+        deadReason: null,
       });
     }
+  }
+
+  private updateWorkerStarvation(ant: Ant, delta: number, antIndex: number): boolean {
+    if (ant.hunger >= this.config.antStarvingHunger) {
+      ant.starvingSeconds += delta;
+
+      if (!ant.starvingEventEmitted) {
+        ant.starvingEventEmitted = true;
+        ant.lastAction = 'workerStarving';
+        this.emitEvent('workerStarving', ant, {
+          antId: ant.id,
+          reason: 'starvation',
+        });
+      }
+
+      if (ant.starvingSeconds >= ant.starvationLimitSeconds) {
+        this.killWorker(antIndex, ant, 'starvation');
+        return true;
+      }
+
+      return false;
+    }
+
+    if (ant.hunger < this.config.antStarvationResetHunger) {
+      ant.starvingSeconds = Math.max(0, ant.starvingSeconds - delta * 2);
+
+      if (ant.starvingSeconds <= 0.02) {
+        ant.starvingSeconds = 0;
+        ant.starvingEventEmitted = false;
+      }
+    }
+
+    return false;
+  }
+
+  private killWorker(antIndex: number, ant: Ant, reason: DeathReason): void {
+    ant.deadReason = reason;
+    const corpse = this.addCorpse('worker', ant, reason, ant.heading, this.config.corpseTtlSeconds);
+    this.workerDeathsByReason[reason] = (this.workerDeathsByReason[reason] ?? 0) + 1;
+    this.emitEvent('workerDied', ant, {
+      antId: ant.id,
+      reason,
+      corpseId: corpse.id,
+    });
+    this.ants.splice(antIndex, 1);
+    this.rebalanceTasks();
+  }
+
+  private updateQueenStarvation(delta: number): void {
+    if (!this.queen.alive) {
+      return;
+    }
+
+    if (this.queen.hunger >= this.config.queenStarvingHunger) {
+      this.queen.starvingSeconds += delta;
+
+      if (!this.queen.starvingEventEmitted) {
+        this.queen.starvingEventEmitted = true;
+        this.queen.lastAction = 'queenStarving';
+        this.emitEvent('queenStarving', this.queen, {
+          reason: 'queenStarvation',
+        });
+      }
+
+      if (this.queen.starvingSeconds >= this.queen.starvationLimitSeconds) {
+        this.queen.alive = false;
+        this.queen.activity = 'nurseIdle';
+        this.queen.targetCellIndex = null;
+        this.queen.lastAction = 'queenDied';
+        const corpse = this.addCorpse('queen', this.queen, 'queenStarvation', this.queen.heading, this.config.corpseTtlSeconds * 1.8);
+        this.emitEvent('queenDied', this.queen, {
+          reason: 'queenStarvation',
+          corpseId: corpse.id,
+        });
+      }
+
+      return;
+    }
+
+    if (this.queen.hunger < this.config.queenStarvationResetHunger) {
+      this.queen.starvingSeconds = Math.max(0, this.queen.starvingSeconds - delta);
+
+      if (this.queen.starvingSeconds <= 0.02) {
+        this.queen.starvingSeconds = 0;
+        this.queen.starvingEventEmitted = false;
+      }
+    }
+  }
+
+  private addCorpse(kind: CorpseKind, point: Vec2, reason: DeathReason, heading = 0, ttl = this.config.corpseTtlSeconds): Corpse {
+    const corpse = {
+      id: this.nextCorpseId++,
+      kind,
+      reason,
+      x: point.x,
+      y: point.y,
+      age: 0,
+      ttl,
+      heading,
+    };
+    this.corpses.push(corpse);
+    return corpse;
+  }
+
+  private updateCorpses(delta: number): void {
+    for (let index = this.corpses.length - 1; index >= 0; index -= 1) {
+      const corpse = this.corpses[index];
+
+      if (!corpse) {
+        continue;
+      }
+
+      corpse.age += delta;
+
+      if (corpse.age >= corpse.ttl) {
+        this.corpses.splice(index, 1);
+      }
+    }
+  }
+
+  private updateRedScouts(delta: number): void {
+    this.redScoutCooldown = Math.max(0, this.redScoutCooldown - delta);
+
+    for (let index = this.redScouts.length - 1; index >= 0; index -= 1) {
+      const scout = this.redScouts[index];
+
+      if (!scout) {
+        continue;
+      }
+
+      this.updateRedScout(scout, delta);
+
+      if (this.shouldRemoveRedScout(scout)) {
+        this.redScouts.splice(index, 1);
+      }
+    }
+
+    this.maybeSpawnRedScout();
+  }
+
+  private updateRedScout(scout: RedScout, delta: number): void {
+    if (scout.state === 'dead') {
+      return;
+    }
+
+    const previous = { x: scout.x, y: scout.y };
+    scout.age += delta;
+
+    if (scout.age > 310) {
+      this.killRedScout(scout, 'redScout');
+      return;
+    }
+
+    if (scout.state === 'scout' && scout.age > 105) {
+      this.setRedScoutRetreat(scout);
+    } else if ((scout.state === 'enterNest' || scout.state === 'stealFood') && scout.age > 190) {
+      this.setRedScoutRetreat(scout);
+    }
+
+    if (scout.state === 'retreat') {
+      this.updateRedScoutRetreat(scout, delta);
+    } else if (scout.state === 'enterNest' || scout.state === 'stealFood') {
+      this.updateRedScoutNestRun(scout);
+    } else {
+      this.updateRedScoutSurfaceSearch(scout, delta);
+    }
+
+    this.moveRedScout(scout, delta, previous);
+  }
+
+  private updateRedScoutSurfaceSearch(scout: RedScout, delta: number): void {
+    const scentedCell = this.bestScentCell(scout);
+    scout.lastAction = 'redScoutSpawn';
+
+    if (this.distance(scout, NEST_ENTRANCE) < 2.8) {
+      scout.state = 'enterNest';
+      scout.targetCellIndex = this.nestExitDestination()?.cellIndex ?? null;
+      scout.lastAction = 'redScoutEnterNest';
+      this.emitEvent('redScoutEnterNest', scout, { redScoutId: scout.id, cellIndex: scout.targetCellIndex });
+      this.steerToward(scout, { x: NEST_ENTRANCE.x, y: SURFACE_ROWS }, 0.52);
+      return;
+    }
+
+    if (scentedCell && scentedCell.pheromoneFood > 0.08 && this.random() < 0.82) {
+      this.steerToward(scout, scentedCell, 0.18);
+    } else {
+      const colonyBias = this.redScoutAttractionScore() >= this.config.redScoutAttractionThreshold ? 0.24 : 0.06;
+      this.steerToward(scout, NEST_ENTRANCE, colonyBias);
+      scout.heading += this.randomBetween(-0.22, 0.22) * delta * 5;
+    }
+  }
+
+  private updateRedScoutNestRun(scout: RedScout): void {
+    const insideTunnel = this.isOpenTunnel(scout.x, scout.y);
+
+    if (!insideTunnel) {
+      scout.state = 'enterNest';
+      scout.lastAction = 'redScoutEnterNest';
+      this.steerToward(scout, this.distance(scout, NEST_ENTRANCE) > 1.8 ? NEST_ENTRANCE : { x: NEST_ENTRANCE.x, y: SURFACE_ROWS }, 0.42);
+      return;
+    }
+
+    const storedFood = this.nearestStoredFoodPellet(scout);
+
+    if (!storedFood) {
+      this.setRedScoutRetreat(scout);
+      return;
+    }
+
+    const destination = this.storageDestinationForPellet(storedFood);
+    const step = destination ? this.nextTunnelStepToward(scout, destination) : null;
+    scout.state = 'stealFood';
+    scout.lastAction = 'redScoutEnterNest';
+    scout.targetCellIndex = destination?.cellIndex ?? null;
+    this.steerToward(scout, step ?? storedFood, 0.32);
+
+    if (this.canAccessStoredFood(scout, storedFood, destination, 1.55)) {
+      const stolenFoodId = storedFood.id;
+      const storageSiteId = storedFood.siteId;
+      this.consumeStoredFoodPellet(storedFood);
+      scout.carryingFood = true;
+      scout.lastAction = 'redScoutStealFood';
+      this.emitEvent('redScoutStealFood', scout, {
+        redScoutId: scout.id,
+        storedFoodId: stolenFoodId,
+        storageSiteId,
+      });
+      this.setRedScoutRetreat(scout);
+    }
+  }
+
+  private updateRedScoutRetreat(scout: RedScout, delta: number): void {
+    scout.retreatSeconds += delta;
+    const insideTunnel = this.isOpenTunnel(scout.x, scout.y);
+    const exitDestination = this.nestExitDestination();
+
+    if (insideTunnel && exitDestination) {
+      const step = this.nextTunnelStepToward(scout, exitDestination);
+      scout.targetCellIndex = exitDestination.cellIndex;
+      this.steerToward(scout, step ?? exitDestination, 0.38);
+      return;
+    }
+
+    scout.targetCellIndex = null;
+    this.steerToward(scout, this.redScoutExitPoint(scout), scout.carryingFood ? 0.28 : 0.2);
+  }
+
+  private setRedScoutRetreat(scout: RedScout): void {
+    scout.state = 'retreat';
+    scout.targetCellIndex = null;
+    scout.retreatSeconds = Math.max(0, scout.retreatSeconds);
+
+    if (!scout.retreatEventEmitted) {
+      scout.retreatEventEmitted = true;
+      scout.lastAction = 'redScoutRetreat';
+      this.emitEvent('redScoutRetreat', scout, { redScoutId: scout.id });
+    }
+  }
+
+  private maybeSpawnRedScout(): void {
+    if (this.redScoutCooldown > 0 || this.redScouts.length >= this.config.redScoutMaxCount) {
+      return;
+    }
+
+    if (this.redScoutAttractionScore() < this.config.redScoutAttractionThreshold) {
+      return;
+    }
+
+    const exitSide: -1 | 1 = this.random() < 0.5 ? -1 : 1;
+    const scout: RedScout = {
+      id: this.nextRedScoutId++,
+      state: 'scout',
+      age: 0,
+      x: exitSide < 0 ? 4 : GRID_WIDTH - 5,
+      y: this.randomBetween(8, SURFACE_ROWS - 8),
+      heading: exitSide < 0 ? this.randomBetween(-0.25, 0.25) : Math.PI + this.randomBetween(-0.25, 0.25),
+      speed: this.config.redScoutSpeed * this.randomBetween(0.86, 1.12),
+      carryingFood: false,
+      targetCellIndex: null,
+      exitSide,
+      retreatEventEmitted: false,
+      retreatSeconds: 0,
+      stuckSeconds: 0,
+      lastAction: 'redScoutSpawn',
+    };
+    this.redScouts.push(scout);
+    this.redScoutCooldown = this.config.redScoutCooldownSeconds * this.randomBetween(0.75, 1.35);
+    this.emitEvent('redScoutSpawn', scout, { redScoutId: scout.id });
+  }
+
+  private redScoutAttractionScore(): number {
+    return this.storedFoodPellets.length + this.larvae.length * 1.8 + Math.max(0, this.ants.length - 10) * 0.45;
+  }
+
+  private redScoutExitPoint(scout: RedScout): Vec2 {
+    return {
+      x: scout.exitSide < 0 ? 2 : GRID_WIDTH - 3,
+      y: this.clamp(scout.y, 6, SURFACE_ROWS - 5),
+    };
+  }
+
+  private shouldRemoveRedScout(scout: RedScout): boolean {
+    if (scout.state === 'dead') {
+      return true;
+    }
+
+    if (scout.state !== 'retreat') {
+      return false;
+    }
+
+    return scout.x <= 3.2 || scout.x >= GRID_WIDTH - 3.2 || scout.retreatSeconds > 80 || scout.age > 300;
+  }
+
+  private killRedScout(scout: RedScout, reason: DeathReason): void {
+    scout.state = 'dead';
+    scout.lastAction = 'redScoutDied';
+    const corpse = this.addCorpse('redScout', scout, reason, scout.heading, this.config.corpseTtlSeconds);
+    this.emitEvent('redScoutDied', scout, {
+      redScoutId: scout.id,
+      reason,
+      corpseId: corpse.id,
+    });
+  }
+
+  private moveRedScout(scout: RedScout, delta: number, previous: Vec2): void {
+    const speed = scout.speed * (scout.carryingFood ? 0.84 : 1);
+    scout.x += Math.cos(scout.heading) * speed * delta;
+    scout.y += Math.sin(scout.heading) * speed * delta;
+
+    if (scout.y >= SURFACE_ROWS && !this.isOpenTunnel(scout.x, scout.y)) {
+      scout.x = previous.x;
+      scout.y = previous.y;
+      scout.stuckSeconds += delta;
+      scout.heading += Math.PI * this.randomBetween(0.62, 1.38);
+
+      if (scout.stuckSeconds > 9) {
+        this.setRedScoutRetreat(scout);
+      }
+    } else {
+      scout.stuckSeconds = Math.max(0, scout.stuckSeconds - delta * 2);
+    }
+
+    if (scout.y < 3 || scout.y > GRID_HEIGHT - 4) {
+      scout.heading *= -1;
+    }
+
+    if (scout.x < 2 || scout.x > GRID_WIDTH - 3) {
+      scout.heading = Math.PI - scout.heading;
+    }
+
+    scout.x = this.clamp(scout.x, 2, GRID_WIDTH - 3);
+    scout.y = this.clamp(scout.y, 3, GRID_HEIGHT - 4);
   }
 
   private updateAnt(ant: Ant, delta: number): void {
@@ -749,7 +1268,7 @@ export class AntModel {
     const atNestMouth = this.distance(ant, NEST_ENTRANCE) < (carrierDesperate ? 10.5 : carrierStale ? 5.6 : 2.8);
     const insideTunnel = this.isOpenTunnel(ant.x, ant.y);
 
-    if (ant.hunger >= 0.92 && ant.carryingSeconds > 35) {
+    if ((ant.hunger >= 0.92 && ant.carryingSeconds > 35) || ant.carryingSeconds > 44.5) {
       ant.carryingFood = false;
       ant.carriedFoodKind = null;
       ant.state = 'seekFood';
@@ -757,7 +1276,7 @@ export class AntModel {
       ant.carryingSeconds = 0;
       ant.targetCellIndex = null;
       ant.lastAction = 'eatCarriedFood';
-      this.feedAnt(ant, this.config.antFoodValue * 0.78);
+      this.feedAnt(ant, this.config.antFoodValue * (ant.hunger >= this.config.antHungryThreshold ? 0.78 : 0.2));
       this.emitEvent('eatCarriedFood', ant, { antId: ant.id });
       return;
     }
@@ -1078,6 +1597,10 @@ export class AntModel {
   }
 
   private updateQueen(delta: number): void {
+    if (!this.queen.alive) {
+      return;
+    }
+
     const wasFed = this.queen.lastAction === 'queenEatStoredFood';
     this.queen.hunger = this.clamp(this.queen.hunger + delta * this.config.queenHungerRatePerSecond, 0, 1);
     this.queen.layCooldown = Math.max(0, this.queen.layCooldown - delta);
@@ -1237,7 +1760,8 @@ export class AntModel {
 
       if (larva.starvationSeconds >= this.config.larvaStarvationSeconds) {
         larva.lastAction = 'larvaStarved';
-        this.emitEvent('larvaStarved', larva, { larvaId: larva.id });
+        const corpse = this.addCorpse('larva', larva, 'larvaStarvation', 0, this.config.corpseTtlSeconds * 0.65);
+        this.emitEvent('larvaStarved', larva, { larvaId: larva.id, reason: 'larvaStarvation', corpseId: corpse.id });
         this.larvae.splice(index, 1);
         continue;
       }
@@ -1280,8 +1804,9 @@ export class AntModel {
   }
 
   private hatchLarva(larva: Larva): void {
+    const antId = this.nextAntId++;
     const ant = {
-      id: this.nextAntId++,
+      id: antId,
       origin: 'hatched',
       age: 0,
       hatchedFromLarvaId: larva.id,
@@ -1295,12 +1820,16 @@ export class AntModel {
       carriedFoodKind: null,
       nursingTarget: null,
       hunger: this.randomBetween(0.34, 0.58),
+      starvingSeconds: 0,
+      starvationLimitSeconds: this.workerStarvationLimit(antId),
+      starvingEventEmitted: false,
       energy: this.randomBetween(0.52, 0.72),
       heading: this.randomBetween(0, Math.PI * 2),
       speed: this.randomBetween(5.8, 8.4),
       carryingSeconds: 0,
       targetCellIndex: null,
       lastAction: 'hatchLarva',
+      deadReason: null,
     } satisfies Ant;
     this.ants.push(ant);
     this.rebalanceTasks();
@@ -1312,7 +1841,7 @@ export class AntModel {
     let bestTarget: CareTarget | null = null;
     let bestScore = 0.42;
 
-    if (this.queen.hunger >= this.config.queenEatThreshold) {
+    if (this.queen.alive && this.queen.hunger >= this.config.queenEatThreshold) {
       bestTarget = { type: 'queen' };
       bestScore =
         this.queen.hunger >= 0.86
@@ -1341,6 +1870,10 @@ export class AntModel {
     }
 
     if (target.type === 'queen') {
+      if (!this.queen.alive) {
+        return null;
+      }
+
       return target;
     }
 
@@ -1357,7 +1890,13 @@ export class AntModel {
 
   private feedCareTarget(target: CareTarget): 'queen' | 'larva' {
     if (target.type === 'queen') {
+      if (!this.queen.alive) {
+        return 'queen';
+      }
+
       this.queen.hunger = this.clamp(this.queen.hunger - this.config.queenFoodValue, 0, 1);
+      this.queen.starvingSeconds = 0;
+      this.queen.starvingEventEmitted = false;
       this.queen.lastAction = 'queenEatStoredFood';
       this.emitEvent('queenEatStoredFood', this.queen);
       return 'queen';
@@ -1554,9 +2093,9 @@ export class AntModel {
     };
   }
 
-  private steerToward(ant: Ant, target: Vec2, strength: number): void {
-    const desired = Math.atan2(target.y - ant.y, target.x - ant.x);
-    let difference = desired - ant.heading;
+  private steerToward(agent: Vec2 & { heading: number }, target: Vec2, strength: number): void {
+    const desired = Math.atan2(target.y - agent.y, target.x - agent.x);
+    let difference = desired - agent.heading;
 
     while (difference > Math.PI) {
       difference -= Math.PI * 2;
@@ -1566,7 +2105,7 @@ export class AntModel {
       difference += Math.PI * 2;
     }
 
-    ant.heading += difference * strength;
+    agent.heading += difference * strength;
   }
 
   private isNearBoundary(point: Vec2): boolean {
@@ -1700,7 +2239,7 @@ export class AntModel {
   }
 
   private nursingDemandExists(): boolean {
-    return this.larvae.length > 0 || this.queen.hunger >= this.config.queenEatThreshold - 0.08;
+    return this.larvae.length > 0 || (this.queen.alive && this.queen.hunger >= this.config.queenEatThreshold - 0.08);
   }
 
   private minimumNurseCount(totalAnts: number): number {
@@ -1709,7 +2248,7 @@ export class AntModel {
     }
 
     const larvaPressure = Math.ceil(this.larvae.length / 4);
-    const queenPressure = this.queen.hunger >= this.config.queenEatThreshold - 0.04 ? 1 : 0;
+    const queenPressure = this.queen.alive && this.queen.hunger >= this.config.queenEatThreshold - 0.04 ? 1 : 0;
     return Math.min(totalAnts, Math.max(1, larvaPressure, queenPressure));
   }
 
@@ -1736,6 +2275,22 @@ export class AntModel {
         feedQueen: 0,
         feedLarva: 0,
         nurseIdle: 0,
+      },
+    );
+  }
+
+  private redScoutStateCounts(): Record<RedScoutState, number> {
+    return this.redScoutStateOrder().reduce(
+      (counts, state) => {
+        counts[state] = this.redScouts.filter((scout) => scout.state === state).length;
+        return counts;
+      },
+      {
+        scout: 0,
+        enterNest: 0,
+        stealFood: 0,
+        retreat: 0,
+        dead: 0,
       },
     );
   }
@@ -1933,6 +2488,10 @@ export class AntModel {
     return ((value ^ (value >>> 16)) >>> 0) / 4294967296;
   }
 
+  private workerStarvationLimit(antId: number): number {
+    return this.config.antStarvationMinSeconds + this.stableUnit(9000 + antId * 37) * (this.config.antStarvationMaxSeconds - this.config.antStarvationMinSeconds);
+  }
+
   private ellipseDistance(point: Vec2, room: DigRoom): number {
     const dx = (point.x - room.x) / room.radiusX;
     const dy = (point.y - room.y) / room.radiusY;
@@ -2051,6 +2610,10 @@ export class AntModel {
     ];
   }
 
+  private redScoutStateOrder(): RedScoutState[] {
+    return ['scout', 'enterNest', 'stealFood', 'retreat', 'dead'];
+  }
+
   private createFood(): Food {
     const kinds: FoodKind[] = ['crumb', 'seed', 'leaf'];
     const kind = kinds[Math.floor(this.random() * kinds.length)] ?? 'crumb';
@@ -2075,6 +2638,11 @@ export class AntModel {
   private feedAnt(ant: Ant, value: number): void {
     ant.hunger = this.clamp(ant.hunger - value, 0, 1);
     ant.energy = this.clamp(ant.energy + value * 0.35, 0.2, 1);
+
+    if (ant.hunger < this.config.antStarvationResetHunger) {
+      ant.starvingSeconds = 0;
+      ant.starvingEventEmitted = false;
+    }
   }
 
   private nearestStoredFoodPellet(point: Vec2, maxDistance = Number.POSITIVE_INFINITY): StoredFoodPellet | null {
@@ -2826,12 +3394,12 @@ export class AntModel {
     return nearest;
   }
 
-  private bestScentCell(ant: Ant): Cell | null {
+  private bestScentCell(point: Vec2): Cell | null {
     let best: Cell | null = null;
     let bestScore = 0.03;
-    const centerX = Math.round(ant.x);
-    const centerY = Math.round(ant.y);
-    const currentDistanceHome = this.distance(ant, NEST_ENTRANCE);
+    const centerX = Math.round(point.x);
+    const centerY = Math.round(point.y);
+    const currentDistanceHome = this.distance(point, NEST_ENTRANCE);
 
     for (let y = centerY - this.config.pheromoneSenseRadius; y <= centerY + this.config.pheromoneSenseRadius; y += 1) {
       for (let x = centerX - this.config.pheromoneSenseRadius; x <= centerX + this.config.pheromoneSenseRadius; x += 1) {
@@ -2841,7 +3409,7 @@ export class AntModel {
           continue;
         }
 
-        const distanceFromAnt = this.distance(ant, cell);
+        const distanceFromAnt = this.distance(point, cell);
         const outboundProgress = Math.max(0, this.distance(cell, NEST_ENTRANCE) - currentDistanceHome);
         const score =
           cell.pheromoneFood +
