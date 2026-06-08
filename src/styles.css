@@ -20,6 +20,8 @@ body {
 }
 
 body {
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #151812;
 }
 
@@ -33,10 +35,11 @@ a {
 
 .site-shell {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(10.5rem, 24svh);
+  grid-template-rows: minmax(28rem, 1fr) auto;
   gap: 1rem;
   width: 100%;
-  height: 100svh;
+  min-height: 100svh;
+  height: auto;
   padding: 1rem;
 }
 
@@ -82,29 +85,30 @@ a {
   grid-template-columns:
     minmax(24rem, 0.95fr)
     minmax(31rem, 1fr)
-    minmax(15rem, 0.52fr)
-    minmax(9rem, 0.34fr);
-  grid-template-areas: "identity facts note allocation";
+    minmax(15rem, 0.52fr);
+  grid-template-areas: "identity facts note";
   justify-content: stretch;
   align-items: start;
   gap: clamp(0.9rem, 1.35vw, 1.45rem);
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: clamp(1.15rem, 2vw, 1.55rem) clamp(1.35rem, 2.2vw, 1.8rem);
 }
 
 .allocation-panel {
-  grid-area: allocation;
+  position: absolute;
+  right: clamp(0.65rem, 1.2vw, 1rem);
+  bottom: clamp(0.65rem, 1.2vw, 1rem);
+  z-index: 4;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-self: stretch;
-  align-items: start;
-  justify-items: center;
-  align-content: start;
-  gap: 0.35rem;
+  width: min(12.2rem, calc(100% - 1.3rem));
   min-width: 0;
-  padding: 0.55rem 0.35rem 0;
-  border-top: 1px solid rgba(238, 220, 167, 0.16);
+  padding: 0.58rem 0.62rem 0.62rem;
+  border: 1px solid rgba(238, 220, 167, 0.18);
+  background: rgba(17, 20, 15, 0.74);
+  box-shadow: 0 0.42rem 1.5rem rgba(0, 0, 0, 0.22);
+  pointer-events: auto;
 }
 
 .allocation-control {
@@ -262,23 +266,14 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0.22rem;
-  width: min(100%, 16rem);
+  width: min(100%, 10.5rem);
   min-width: 0;
   padding-top: 0.34rem;
   border-top: 1px solid rgba(238, 220, 167, 0.13);
 }
 
-.sim-hunger-chart {
-  position: absolute;
-  right: clamp(0.55rem, 1.2vw, 1rem);
-  bottom: clamp(0.55rem, 1.2vw, 1rem);
-  z-index: 2;
-  width: min(13.5rem, calc(100% - 1.1rem));
-  padding: 0.45rem 0.55rem 0.55rem;
-  border: 1px solid rgba(238, 220, 167, 0.15);
-  background: rgba(17, 20, 15, 0.7);
-  box-shadow: 0 0.35rem 1.4rem rgba(0, 0, 0, 0.18);
-  pointer-events: none;
+.allocation-hunger-chart {
+  justify-self: stretch;
 }
 
 .hunger-chart-heading {
@@ -335,9 +330,33 @@ a {
 .identity {
   grid-area: identity;
   display: grid;
-  gap: 0.48rem;
+  grid-template-columns: minmax(0, 1fr) clamp(12rem, 20vw, 16rem);
+  gap: clamp(0.75rem, 1.4vw, 1.2rem);
+  align-items: center;
   align-content: center;
-  max-width: 42rem;
+  max-width: none;
+}
+
+.identity-copy {
+  display: grid;
+  gap: 0.48rem;
+  min-width: 0;
+}
+
+.main-profile-still {
+  justify-self: end;
+  width: 100%;
+  margin: 0;
+}
+
+.main-profile-still img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid rgba(211, 184, 120, 0.38);
+  background: rgba(247, 241, 223, 0.04);
+  image-rendering: auto;
 }
 
 .eyebrow {
@@ -477,10 +496,11 @@ h1 {
   }
 
   .profile-panel {
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.46fr) minmax(9rem, 0.3fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "identity note allocation"
-      "facts facts facts";
+      "identity"
+      "note"
+      "facts";
     align-content: center;
     align-items: start;
     gap: 1rem 1.2rem;
@@ -525,11 +545,11 @@ h1 {
   }
 
   .profile-panel {
-    grid-template-columns: minmax(17rem, 1fr) minmax(8rem, 0.36fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "identity allocation"
-      "note note"
-      "facts facts";
+      "identity"
+      "note"
+      "facts";
     justify-content: stretch;
     align-items: start;
     gap: 0.85rem 1rem;
@@ -544,8 +564,7 @@ h1 {
   }
 
   .allocation-panel {
-    grid-template-columns: 1fr;
-    min-width: 9.5rem;
+    width: min(11rem, calc(100% - 1.2rem));
   }
 
   .simant-note {
@@ -554,8 +573,8 @@ h1 {
   }
 
   h1 {
-    max-width: 12ch;
-    font-size: clamp(2rem, 9vw, 3rem);
+    max-width: none;
+    font-size: clamp(2rem, 8vw, 3rem);
   }
 }
 
@@ -569,10 +588,10 @@ h1 {
   }
 
   .profile-panel {
-    grid-template-columns: minmax(0, 1fr) minmax(5.8rem, 0.3fr);
+    grid-template-columns: 1fr;
     grid-template-areas:
-      "identity allocation"
-      "note note";
+      "identity"
+      "note";
     align-items: start;
     gap: 0.65rem;
     overflow: visible;
@@ -581,16 +600,71 @@ h1 {
 
   .identity {
     grid-area: identity;
-    gap: 0.38rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "title portrait"
+      "summary portrait"
+      "links links";
+    column-gap: clamp(0.65rem, 3vw, 1rem);
+    row-gap: 0.5rem;
+    align-items: start;
+  }
+
+  .identity-copy {
+    display: contents;
+  }
+
+  .identity h1 {
+    grid-area: title;
+    max-width: 100%;
+    font-size: clamp(1.85rem, 9.4vw, 2.6rem);
+    overflow-wrap: normal;
+  }
+
+  .identity .summary {
+    grid-area: summary;
+    max-width: none;
+    font-size: clamp(0.69rem, 2.25vw, 0.79rem);
+    line-height: 1.26;
+  }
+
+  .identity .links {
+    grid-area: links;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.34rem;
+    width: 100%;
+  }
+
+  .identity .links a {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.1rem;
+    padding: 0.45rem 0.5rem;
+    font-size: clamp(0.74rem, 2.85vw, 0.84rem);
+    white-space: nowrap;
+  }
+
+  .main-profile-still {
+    grid-area: portrait;
+    align-self: stretch;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main-profile-still img {
+    height: 100%;
+    min-height: 10.4rem;
+    aspect-ratio: auto;
+    object-position: center;
   }
 
   .allocation-panel {
-    grid-area: allocation;
-    min-width: 0;
-    align-self: center;
-    align-content: center;
+    right: 0.55rem;
+    bottom: 0.55rem;
+    width: min(9.2rem, calc(100% - 1.1rem));
     gap: 0.24rem;
-    padding: 0.35rem 0 0;
+    padding: 0.46rem 0.5rem 0.52rem;
   }
 
   .profile-facts {
@@ -651,9 +725,8 @@ h1 {
     height: 1.35rem;
   }
 
-  .sim-hunger-chart {
-    width: min(8.8rem, calc(100% - 1rem));
-    padding: 0.36rem 0.42rem 0.44rem;
+  .allocation-hunger-chart {
+    width: 100%;
   }
 
   .eyebrow {
@@ -667,13 +740,14 @@ h1 {
   }
 
   .summary {
-    max-width: 24rem;
+    max-width: 100%;
     font-size: 0.79rem;
     line-height: 1.3;
+    overflow-wrap: break-word;
   }
 
   .links {
-    grid-template-columns: repeat(4, max-content);
+    grid-template-columns: repeat(2, max-content);
     gap: 0.36rem;
   }
 
@@ -697,13 +771,42 @@ h1 {
   }
 
   .links {
-    grid-template-columns: repeat(4, max-content);
+    grid-template-columns: repeat(2, max-content);
   }
 
   .profile-panel {
-    grid-template-columns: minmax(0, 1fr) minmax(5.35rem, 0.28fr);
+    grid-template-columns: 1fr;
     gap: 0.5rem;
     padding: 0.82rem;
+  }
+
+  .identity {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 0.55rem;
+    row-gap: 0.46rem;
+  }
+
+  .identity h1 {
+    font-size: clamp(1.8rem, 9.2vw, 2.45rem);
+  }
+
+  .identity .links {
+    gap: 0.3rem;
+  }
+
+  .identity .links a {
+    min-height: 2.04rem;
+    padding: 0.42rem 0.42rem;
+    font-size: clamp(0.72rem, 3.2vw, 0.8rem);
+  }
+
+  .main-profile-still {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .main-profile-still img {
+    min-height: 10.1rem;
   }
 
   .allocation-triangle {
