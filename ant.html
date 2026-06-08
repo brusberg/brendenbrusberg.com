@@ -18,39 +18,6 @@
           <canvas id="patch-canvas" tabindex="0" aria-label="Animated ant colony patch overview"></canvas>
           <div id="loading" class="status-panel">Loading colony...</div>
           <div id="error-message" class="status-panel" hidden></div>
-          <div class="hunger-chart sim-hunger-chart" aria-label="Worker hunger chart">
-            <div class="hunger-chart-heading">
-              <span>Hunger</span>
-              <strong id="hunger-max">0%</strong>
-            </div>
-            <div id="hunger-bars" class="hunger-bars" aria-hidden="true"></div>
-          </div>
-        </section>
-
-        <aside class="profile-panel" aria-label="Brenden Brusberg resume links">
-          <section class="identity" aria-labelledby="site-title">
-            <h1 id="site-title">Brenden Brusberg</h1>
-            <p class="summary">
-              I work on designing platforms to better understand and evaluate complex systems in organizations,
-              leveraging multidisciplinary skills and teams to nurture real value.
-            </p>
-            <nav class="links" aria-label="Primary links">
-              <a href="/assets/brenden-brusberg-resume.pdf" target="_blank" rel="noreferrer">Resume</a>
-              <a href="https://github.com/brusberg" target="_blank" rel="noreferrer">GitHub</a>
-              <a href="https://www.linkedin.com/in/brendends/" target="_blank" rel="noreferrer">LinkedIn</a>
-              <a href="mailto:brenbrus@gmail.com">Email</a>
-            </nav>
-          </section>
-
-          <section class="simant-panel" aria-label="SimAnt inspiration and worker hunger">
-            <p class="simant-note">
-              One of the first computer games I played was
-              <a href="https://en.wikipedia.org/wiki/SimAnt" target="_blank" rel="noopener noreferrer">SimAnt</a>. Even
-              before I could read I would sneak onto the family computer where my much older brother had working DOS
-              games like Sim City and Sim Ant. This simulation is a recreation of what started my journey into computers : )
-            </p>
-          </section>
-
           <section class="allocation-panel" aria-label="Colony task allocation">
             <div class="allocation-control">
               <div class="allocation-heading">
@@ -83,8 +50,47 @@
                   <strong id="brood-count">0</strong>
                 </div>
               </div>
+              <div class="hunger-chart allocation-hunger-chart" aria-label="Worker hunger chart">
+                <div class="hunger-chart-heading">
+                  <span>Hunger</span>
+                  <strong id="hunger-max">0%</strong>
+                </div>
+                <div id="hunger-bars" class="hunger-bars" aria-hidden="true"></div>
+              </div>
             </div>
           </section>
+        </section>
+
+        <aside class="profile-panel" aria-label="Brenden Brusberg resume links">
+          <section class="identity" aria-labelledby="site-title">
+            <div class="identity-copy">
+              <h1 id="site-title">Brenden Brusberg</h1>
+              <p class="summary">
+                I work on designing platforms to better understand and evaluate complex systems in organizations,
+                leveraging multidisciplinary skills and teams to nurture real value.
+              </p>
+              <nav class="links" aria-label="Primary links">
+                <a href="/assets/brenden-brusberg-resume.pdf" target="_blank" rel="noreferrer">Resume</a>
+                <a href="https://github.com/brusberg" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://www.linkedin.com/in/brendends/" target="_blank" rel="noreferrer">LinkedIn</a>
+                <a href="mailto:brenbrus@gmail.com">Email</a>
+              </nav>
+            </div>
+            <figure class="main-profile-still">
+              <img src="/art/laplacian.png" alt="Laplacian profile still of Brenden Brusberg" />
+            </figure>
+          </section>
+
+          <section class="simant-panel" aria-label="SimAnt inspiration and worker hunger">
+            <p class="simant-note">
+              One of the first computer games I played was
+              <a href="https://en.wikipedia.org/wiki/SimAnt" target="_blank" rel="noopener noreferrer">SimAnt</a>. Even
+              before I could read I would sneak onto the family computer where my much older brother had working DOS
+              games like Sim City and Sim Ant. This simulation is a recreation of what started my journey into computers&nbsp;:)
+            </p>
+          </section>
+
+
 
           <section class="profile-facts" aria-label="Resume summary">
             <div>

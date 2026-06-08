@@ -101,7 +101,8 @@
 
       .app {
         display: grid;
-        grid-template-rows: minmax(18rem, 58svh) auto auto;
+        grid-template-rows: minmax(18rem, 58svh) auto max-content;
+        align-content: start;
         gap: clamp(0.5rem, 1vw, 0.8rem);
         width: 100vw;
         min-height: 100svh;
@@ -113,11 +114,13 @@
 
       .app.is-ants-panel {
         display: grid;
-        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(34rem, calc(100svh - 5.6rem)) max-content;
+        align-content: start;
         gap: clamp(0.5rem, 1vw, 0.8rem);
-        height: 100svh;
+        min-height: 100svh;
+        height: auto;
         padding: clamp(0.45rem, 1vw, 0.9rem);
-        overflow: hidden;
+        overflow: visible;
       }
 
       .stage-wrap,
@@ -150,6 +153,18 @@
         height: 100%;
         image-rendering: pixelated;
         pointer-events: none;
+        z-index: 1;
+      }
+
+      #stagegl {
+        z-index: 0;
+      }
+
+      .app.is-art-panel #stagegl {
+        image-rendering: auto;
+      }
+
+      #stage2d {
         z-index: 1;
       }
 
@@ -339,12 +354,14 @@
         margin-top: 0;
       }
 
+      .summary a,
       .info-story a {
         color: #d6bd68;
         font-weight: 760;
         text-decoration: none;
       }
 
+      .summary a:hover,
       .info-story a:hover {
         color: #ffec98;
       }
@@ -375,6 +392,7 @@
         text-transform: uppercase;
       }
 
+
       .stat-list {
         display: grid;
         gap: 0.42rem;
@@ -401,11 +419,24 @@
       }
 
       .app.is-art-panel .info-story {
+        border-top: 0;
+        padding-top: 0;
         columns: 1;
       }
 
+      .app.is-art-panel .info-story p:first-child .story-subhead {
+        margin-top: 0;
+      }
+
       .app.is-stats-panel .info-story {
+        border-top: 0;
+        padding-top: 0;
         columns: 2 20rem;
+      }
+
+      .app.is-mandelbrot-panel .summary {
+        font-size: clamp(0.9rem, 1.15vw, 1.04rem);
+        line-height: 1.35;
       }
 
       @media (min-width: 1500px) {
@@ -610,6 +641,7 @@
 
       .panel-footer {
         display: grid;
+        align-content: start;
         gap: 0.42rem;
         min-height: 3.65rem;
         padding: clamp(0.45rem, 0.9vw, 0.72rem);
@@ -624,7 +656,7 @@
       }
 
       .panel-footer .panel-map {
-        height: 100%;
+        height: auto;
       }
 
       .panel-footer .panel-map button {
@@ -640,13 +672,13 @@
         .app {
           min-height: 100svh;
           height: auto;
-          grid-template-rows: minmax(34rem, 64svh) auto auto;
+          grid-template-rows: minmax(34rem, 64svh) auto max-content;
         }
 
         .app.is-ants-panel {
           min-height: 100svh;
           height: auto;
-          grid-template-rows: minmax(34rem, 82svh) auto;
+          grid-template-rows: minmax(34rem, 82svh) max-content;
         }
 
         .info-window {
@@ -663,7 +695,7 @@
 
       @media (max-width: 620px) {
         .app {
-          grid-template-rows: minmax(28rem, 58svh) auto;
+          grid-template-rows: minmax(28rem, 58svh) auto max-content;
           padding: 0.35rem;
         }
 
@@ -724,7 +756,7 @@
         .app {
           min-height: 100svh;
           height: auto;
-          grid-template-rows: minmax(28rem, 68svh) minmax(18.5rem, auto) auto;
+          grid-template-rows: minmax(28rem, 68svh) minmax(18.5rem, auto) max-content;
         }
 
         .info-window {
@@ -772,12 +804,12 @@
             would sneak onto the family computer where my much older brother had working DOS games
             like SimCity and SimAnt.
           </p>
-          <p>This simulation is a recreation of what started my journey into computers. :)</p>
+          <p>This simulation is a recreation of what started my journey into computers.&nbsp;:)</p>
         </article>
       </section>
 
       <footer class="panel-footer">
-        <p class="site-disclaimer">All opinions are my own and do not represent my employer. :)</p>
+        <p class="site-disclaimer">All opinions are my own and do not represent my employer.&nbsp;:)</p>
         <nav class="panel-map" aria-label="Panel map" id="panel-map"></nav>
       </footer>
     </main>
@@ -793,8 +825,11 @@
       </section>
     </div>
 
+    <script src="/panels/main.js"></script>
+    <script src="/panels/stats.js"></script>
+    <script src="/panels/history.js"></script>
+    <script src="/panels/projects.js"></script>
     <script>
-      console.log('[panel-startup] script-start');
       const stageWrap = document.querySelector('.stage-wrap');
       const canvas = document.querySelector('#stage2d');
       const glCanvas = document.querySelector('#stagegl');
@@ -847,117 +882,17 @@
           <strong>Open poem: Freighter-00G8</strong>
         </button>`;
 
+      function panelFactory(id) {
+        const factory = window.portfolioPanelFactories?.[id];
+        if (typeof factory !== 'function') throw new Error(`Missing panel page: ${id}`);
+        return factory({ poemButtonHtml });
+      }
+
       const panelData = {
-        ants: {
-          coord: { x: 0, y: 0 },
-          eyebrow: '',
-          title: 'Brenden Brusberg',
-          summary:
-            'I work on designing platforms to better understand and evaluate complex systems in organizations, leveraging multidisciplinary skills and teams to nurture real value.',
-          storyHtml: [
-            'One of the first computer games I played was <a href="https://en.wikipedia.org/wiki/SimAnt">SimAnt</a>. Even before I could read I would sneak onto the family computer where my much older brother had working DOS games like SimCity and SimAnt.',
-            'This simulation is a recreation of what started my journey into computers : )'
-          ],
-          sectionLabel: 'Signals',
-          chips: ['Data systems', 'Agentic AI', 'Knowledge graphs', 'Simulation UI'],
-          linksLabel: 'Links',
-          links: [
-            ['Resume', '#resume'],
-            ['GitHub', 'https://github.com/brusberg'],
-            ['LinkedIn', 'https://www.linkedin.com/in/brendends/'],
-            ['Email', 'mailto:brenbrus@gmail.com']
-          ],
-          actions: [
-            ['Resume', '#resume'],
-            ['GitHub', 'https://github.com/brusberg'],
-            ['LinkedIn', 'https://www.linkedin.com/in/brendends/'],
-            ['Email', 'mailto:brenbrus@gmail.com']
-          ]
-        },
-        stats: {
-          coord: { x: 0, y: -1 },
-          eyebrow: '',
-          title: 'Stats',
-          summary:
-            'This is a simulation inspired by OpenTTD, a fun game about trains.',
-          storyHtml: `
-            <div class="stat-list">
-              <div class="stat-line"><span>Current age</span><strong><span class="live-age" data-live-age></span></strong></div>
-              <div class="stat-line"><span>Days Worked at Current Job:</span><strong><span class="live-work-days" data-live-work-days></span></strong></div>
-              <div class="stat-line"><span>Caffeine tolerance</span><strong>6 shots of espresso</strong></div>
-              <div class="stat-line"><span>Computers broken</span><strong>2</strong></div>
-              <div class="stat-line"><span>Movie I have cried the most to</span><strong>Ratatouille</strong></div>
-              <div class="stat-line"><span>Countries visited</span><strong>America, Mexico, Japan, Czechia, South Korea, Germany, UK, Spain</strong></div>
-            </div>
-            <p>I enjoy reading books and poetry. I minored in American Poetry, and I still recommend <em>Song of Myself</em> by Walt Whitman and <em>Spring and All</em> by William Carlos Williams to people. <a href="https://www.goodreads.com/user/show/158297784-brenden-b">Check out my Goodreads.</a></p>
-            <p>Music listening history lives on <a href="https://www.last.fm/user/brenbrus">Last.fm</a>. I love hiking, and I used to rock climb. I also like gouache, watercolors, MUJI A6 spiral notebooks, and Pigma Micron pens.</p>
-          `,
-          sectionLabel: 'Tiny Signals',
-          chips: ['Live age', 'Coffee', 'Books', 'Travel', 'Notebooks'],
-          linksLabel: 'Links',
-          links: [
-            ['Song of Myself', 'https://www.poetryfoundation.org/poems/45477/song-of-myself-1892-version'],
-            ['Goodreads', 'https://www.goodreads.com/user/show/158297784-brenden-b'],
-            ['Last.fm', 'https://www.last.fm/user/brenbrus']
-          ],
-          actions: []
-        },
-        mandelbrot: {
-          coord: { x: 1, y: 0 },
-          eyebrow: '',
-          title: 'History',
-          summary:
-            'Mandelbrot and Julia\nThe Mandelbrot and Julia panel is a recreation of an old Mandelbrot and Julia calculator app, the first full programming project I made on my own in high school.\n\nThe Mandelbrot set treats each pixel as a complex number c. Starting with z = 0, the computer repeats z = z^2 + c. Points that never escape draw the dark body; points that escape become color and texture.\n\nCase one: if repeated values stay bounded, the point belongs to the set. Case two: if the values race away, the point escapes and gets colored by how quickly it left.\n\nA Julia set uses the same equation, but keeps c fixed. Tap the Mandelbrot map to choose c, and the second world shows the shape created by that one parameter.',
-          storyHtml: [
-            'I was born and raised in Sparta, New Jersey, in Sussex County. My brother and sister were 14 and 10 years older than me, so I grew up with their hand-me-down tech, old computer games, and N64 cartridges.',
-            'I have to thank a lot of teachers in high school who shaped how I see the world: <a href="https://www.linkedin.com/in/margaret-incantalupo-37a47a24/">Mrs. I</a>, who mentored me through high school, gave me room to learn on my own, and first introduced me to programming; Mr. Masker, who taught me that sometimes analog is the best way to learn; Mr. Rienstein, who taught me how practice, space, and peers nurture skill and craft; <a href="https://www.linkedin.com/in/kate-leblanc-475a9929/">Miss Leblanc</a>, who showed me how reading extends into your life and voice and also how to have a personality; and Mrs. Lovett, who showed me that work can feel like falling down the rabbit hole.',
-            'I am glad I graduated from college before LLMs. I mainly studied computer science and wanted to be a software engineer. At 18, I joined McKinsey & Company as an SWE intern. A data scientist heard I was not doing much my first week and stole me. That was <a href="https://www.linkedin.com/in/dale-jacques/">Dale Jacques</a>, who quickly became my manager and mentor.',
-            'I came back the next summer and never really left. I worked part-time as a permanent member of the Firm through school, three or four days a week during the semester. That work let me learn alongside excellent software engineers, designers, and statisticians, with the flexibility to explore. In school I started my master’s early and added a math minor, looking for stronger foundations for what I was already doing at work.',
-            'What followed was that Dale and I became a kind of specialty shop, often taking on hard projects without templates or playbooks. We centered a lot of the work around reading the latest research papers for NLP, ML, and competitions.',
-            'That meant rebuilding research papers from scratch, learning AWS because no one at the time could deploy our models on-prem, learning frontend TypeScript for custom data visuals, training diffusion models from scratch, fine-tuning language models before 2021, and really doing whatever no one else could do yet.',
-            'Around this time, I needed to fill an elective and selected American Poetry with Professor Rubenfield at Stevens Institute of Technology. I absolutely fell in love with it and minored in it. I ended up with a whole independent-study semester on my favorite poem, <a href="https://www.poetryfoundation.org/poems/45477/song-of-myself-1892-version">Song of Myself</a> by Walt Whitman. I also fell in love with William Carlos Williams, <em>Spring and All</em>, and Emily Dickinson. Poetry also built something I never expected to find at Stevens: spirituality, often reconnecting to nature and my childhood journey in the woods of North Jersey from Cub Scout to Eagle Scout.',
-            'Lately I have been focused on how my time is spent nurturing rather than extracting, in the spirit of Wendell Berry. A lot of my most fulfilling work has been TAing, volunteering as a tutor, and teaching at work. I think there is so much more we all have to offer the world, and I would love to offer my time to work with anyone who agrees.',
-          ],
-          sectionLabel: 'Threads',
-          chips: ['Teachers', 'Research papers', 'American poetry', 'Nurturing work', 'Strange systems'],
-          linksLabel: 'Links',
-          links: [
-            ['Mrs. I', 'https://www.linkedin.com/in/margaret-incantalupo-37a47a24/'],
-            ['Miss Leblanc', 'https://www.linkedin.com/in/kate-leblanc-475a9929/'],
-            ['Dale Jacques', 'https://www.linkedin.com/in/dale-jacques/'],
-            ['Song of Myself', 'https://www.poetryfoundation.org/poems/45477/song-of-myself-1892-version'],
-            ['Old repo', 'https://github.com/brusberg/Mandelbrot-and-Julian-Set-Calculator'],
-            ['Mandelbrot set', 'https://en.wikipedia.org/wiki/Mandelbrot_set'],
-            ['Julia set', 'https://en.wikipedia.org/wiki/Julia_set']
-          ],
-          actions: []
-        },
-        art: {
-          coord: { x: 0, y: 1 },
-          eyebrow: '',
-          title: 'Projects & Writing',
-          summary:
-            'Projects, sketches, paintings, writing, and the work that is mostly an excuse to learn something.',
-          storyHtml: `
-            <p>Side project: <a href="https://dungeons-kitten-table.vercel.app/">Dungeons and Kittens Online Tabletop</a>.</p>
-            <p>Rust Steaming Coffee: <a href="https://github.com/brusberg/coffee">brusberg/coffee</a>, written by hand to learn.</p>
-            <p><span class="story-subhead">Art</span>The artwork lives in the top scene now. Click or tap a framed piece in the canvas to open it larger.</p>
-            <p><span class="story-subhead">Writing</span>Writing is coming soon, likely through Substack. For now, one older poem lives here as a popout instead of taking over the whole page.</p>
-            ${poemButtonHtml}
-            <p><span class="story-subhead">Friends whose work I love</span><a href="https://www.patreon.com/Dreamsicle122">Chudi</a> makes imaginative tabletop and story worlds; <a href="https://jeewoonlee.com">Jeewoon Lee</a> works with careful visual systems and design; <a href="https://thevineandfigtree.org/poetry/">Peter White</a> writes poetry and reflection I return to; <a href="https://mldangelo.com/">Michael D Angelo</a> builds thoughtful software and writing; and <a href="https://nburgdorfer.github.io/">Nate Burgdorfer</a> shares technical work with real curiosity.</p>
-          `,
-          sectionLabel: 'Friends',
-          chips: ['Image collage', 'Sketches', 'Trips', 'Future writing', 'Physics frames'],
-          linksLabel: 'Links',
-          links: [
-            ['Chudi', 'https://www.patreon.com/Dreamsicle122'],
-            ['Jeewoon Lee', 'https://jeewoonlee.com'],
-            ['Peter White', 'https://thevineandfigtree.org/poetry/'],
-            ['Michael D Angelo', 'https://mldangelo.com/'],
-            ['Nate Burgdorfer', 'https://nburgdorfer.github.io/']
-          ],
-          actions: []
-        }
+        ants: panelFactory('ants'),
+        stats: panelFactory('stats'),
+        mandelbrot: panelFactory('mandelbrot'),
+        art: panelFactory('art')
       };
 
       const panelAliases = { openttd: 'stats' };
@@ -1016,9 +951,14 @@
       }
 
       class AntScene extends Scene {
+        constructor() {
+          super();
+          this.lastReload = 0;
+        }
+
         mount() {
           stageFrame.classList.add('is-active');
-          if (stageFrame.src !== originalAntsUrl) stageFrame.src = originalAntsUrl;
+          if (this.shouldReloadFrame()) this.reloadFrame();
           readout.textContent = 'Original ant simulation from the portfolio dev server';
         }
 
@@ -1027,7 +967,25 @@
         }
 
         tick() {
+          if (this.shouldReloadFrame() && performance.now() - this.lastReload > 2500) this.reloadFrame();
           readout.textContent = 'Original ant simulation from the portfolio dev server';
+        }
+
+        shouldReloadFrame() {
+          if (!stageFrame.src || !stageFrame.src.endsWith(originalAntsUrl)) return true;
+          try {
+            const doc = stageFrame.contentDocument;
+            if (!doc) return false;
+            const body = doc.body;
+            return Boolean(body && body.childElementCount === 0 && doc.readyState === 'complete');
+          } catch {
+            return false;
+          }
+        }
+
+        reloadFrame() {
+          this.lastReload = performance.now();
+          stageFrame.src = originalAntsUrl;
         }
       }
 
@@ -1352,7 +1310,10 @@
               target: targetKey,
               waitBlockKey,
               waitSeconds: Number(train.waitAtSameBlock.toFixed(1)),
-              reason
+              reason,
+              blocker: train.lastBlocker || null,
+              pathLength: train.path?.length || 0,
+              reserved: train.reserved?.length || 0
             });
           }
 
@@ -1395,8 +1356,18 @@
 
           const goalTile = world.targetPlatformForTrain(train, target);
           if (!goalTile) {
+            const freePlatform = world.freePlatformForTrain(train, target);
             world.releaseApproachPlatform(train);
-            this.holdAtSignal(train, dt, target, 'no_platform_free');
+            if (freePlatform) {
+              train.lastBlocker = {
+                type: 'no_route_to_free_platform',
+                station: target.id,
+                platform: world.tileKey(freePlatform)
+              };
+              this.holdAtSignal(train, dt, target, 'no_route_to_platform', freePlatform);
+            } else {
+              this.holdAtSignal(train, dt, target, 'no_platform_free');
+            }
             return;
           }
 
@@ -1431,7 +1402,8 @@
 	            return;
 	          }
 
-	          const closeEnoughForApproachLock = train.path.length <= Math.max(10, train.cars + 7);
+	          const approachLockLookahead = Math.max(7, Math.min(10, Math.ceil(train.cars * 0.75) + 4));
+	          const closeEnoughForApproachLock = train.path.length <= approachLockLookahead;
 	          if (closeEnoughForApproachLock) {
 	            if (!world.reserveApproachPlatform(train, goalTile)) {
 	              this.holdAtSignal(train, dt, target, 'platform_approach_locked', goalTile);
@@ -1451,7 +1423,8 @@
               train.replanCooldown = 0.75;
               this.record(train, train.state, train.state, 'route_replanned', {
                 target: target.id,
-                pathLength: train.path.length
+                pathLength: train.path.length,
+                blocker: train.lastBlocker || null
               });
             }
             this.holdAtSignal(train, dt, target, 'blocked', goalTile);
@@ -1473,7 +1446,9 @@
           const segmentDir = world.dirBetween(train.from, train.to);
           if (segmentDir) train.heading = segmentDir;
           const viewportBoost = size?.w < 700 ? 1.18 : 1;
-          train.progress += train.speed * (train.cargo > 0 ? 0.82 : 1) * viewportBoost * dt * 60;
+          const nextSegmentDir = train.path[2] ? world.dirBetween(train.to, train.path[2]) : segmentDir;
+          const curveFactor = world.turnSteps(segmentDir, nextSegmentDir) > 0 ? 0.82 : 1;
+          train.progress += train.speed * (train.cargo > 0 ? 0.82 : 1) * viewportBoost * curveFactor * dt * 60;
           if (train.progress < 1) return;
 
           train.tile = { ...train.to };
@@ -1669,6 +1644,10 @@
             [25, 17],
             [28, 14]
           ]);
+          // Ore trains returning from the factory need a clean quarry bypass
+          // around the coal plant platform, otherwise a stopped plant train can
+          // make the ore loop look blocked by one-way signals.
+          this.addOneWayLine([[26, 16], [28, 14], [29, 14], [30, 15], [32, 15]]);
           this.addOneWayLine([[48, 23], [49, 23], [50, 23], [51, 23], [52, 23], [53, 24], [53, 25], [52, 26], [51, 27], [50, 28], [49, 28], [48, 28]]);
           this.addOneWayLine([[44, 32], [43, 32], [42, 32], [41, 32], [40, 32], [39, 32], [38, 32], [37, 32], [36, 32], [35, 32], [34, 32]]);
 
@@ -1866,11 +1845,27 @@
               name: 'Quarry',
               kind: 'industry',
               tile: { x: 51, y: 23 },
-              platforms: [{ x: 51, y: 23 }],
+              platforms: [
+                { x: 51, y: 23 },
+                { x: 50, y: 28 }
+              ],
               platformRun: [
                 { x: 50, y: 23 },
                 { x: 51, y: 23 },
                 { x: 52, y: 23 }
+              ],
+              platformRuns: [
+                [
+                  { x: 50, y: 23 },
+                  { x: 51, y: 23 },
+                  { x: 52, y: 23 }
+                ],
+                [
+                  { x: 52, y: 26 },
+                  { x: 51, y: 27 },
+                  { x: 50, y: 28 },
+                  { x: 49, y: 28 }
+                ]
               ],
               displayDir: 'E',
               produces: 'ore',
@@ -1883,11 +1878,26 @@
               name: 'Factory',
               kind: 'industry',
               tile: { x: 42, y: 32 },
-              platforms: [{ x: 42, y: 32 }],
+              platforms: [
+                { x: 42, y: 32 },
+                { x: 42, y: 33 }
+              ],
               platformRun: [
                 { x: 43, y: 32 },
                 { x: 42, y: 32 },
                 { x: 41, y: 32 }
+              ],
+              platformRuns: [
+                [
+                  { x: 43, y: 32 },
+                  { x: 42, y: 32 },
+                  { x: 41, y: 32 }
+                ],
+                [
+                  { x: 43, y: 33 },
+                  { x: 42, y: 33 },
+                  { x: 41, y: 33 }
+                ]
               ],
               displayDir: 'W',
               produces: null,
@@ -2380,7 +2390,7 @@
             .sort((a, b) => a.point.y - b.point.y)
             .forEach((item) => this.drawTrain(g, view, item.train));
           readout.textContent = '';
-          if (!localQaMode && !localCaptureRequested && (!this.lastDebugWrite || t - this.lastDebugWrite > 1500)) {
+          if (localDevToolsEnabled && !localQaMode && !localCaptureRequested && (!this.lastDebugWrite || t - this.lastDebugWrite > 1500)) {
             this.lastDebugWrite = t;
             document.documentElement.dataset.openttdDebug = JSON.stringify({
               live: true,
@@ -2392,9 +2402,17 @@
                 id: train.id,
                 state: train.state,
                 order: train.orders[train.orderIndex],
-                cargo: train.cargo,
-                wait: Math.round(train.wait),
-                reserved: train.reserved?.length || 0
+                tile: train.tile,
+                to: train.to || null,
+                cargo: Number(train.cargo.toFixed(1)),
+                cars: train.cars,
+                wait: Number(train.wait.toFixed(1)),
+                pathLength: train.path?.length || 0,
+                trailLength: train.trail?.length || 0,
+                trailDistance: Number(this.trailDistance(train.trail || []).toFixed(2)),
+                reserved: train.reserved?.length || 0,
+                lastWaitReason: train.lastWaitReason || null,
+                lastBlocker: train.lastBlocker || null
               })),
               waiting: this.trains.filter((train) => train.state === 'waiting_at_signal').length
             });
@@ -2432,8 +2450,11 @@
               tile: train.tile,
               cargoType: train.cargoType,
               cargo: Number(train.cargo.toFixed(1)),
+              cars: train.cars,
               wait: Number(train.wait.toFixed(2)),
               pathLength: train.path.length,
+              trailLength: train.trail?.length || 0,
+              trailDistance: Number(this.trailDistance(train.trail || []).toFixed(2)),
               reserved: train.reserved.length,
               lastWaitReason: train.lastWaitReason || null
             })),
@@ -2491,6 +2512,7 @@
 	          if (platform) this.platformLocks.set(this.tileKey(platform), train.id);
 	          train.stationId = stationId;
 	          train.stationTile = platform ? { ...platform } : null;
+	          train.departureStationId = null;
 	          train.goalTile = null;
 	          train.approachPlatform = null;
 	          train.approachRun = [];
@@ -2537,6 +2559,39 @@
           train.state = train.path.length > 1 ? 'pathfinding' : 'stuck';
         }
 
+        activeApproachOwnerForPlatform(key) {
+          const owner = this.approachLocks.get(key);
+          if (!owner) return null;
+          const train = this.trains.find((item) => item.id === owner);
+          const pathLength = train?.path?.length || Infinity;
+          const shortApproach = pathLength <= Math.max(8, (train?.cars || 0) + 6);
+          const ownsApproachTile =
+            train &&
+            train.approachPlatform &&
+            (this.tileKey(train.approachPlatform) === key ||
+              train.approachRun?.some((tile) => this.tileKey(tile) === key));
+          const active =
+            ownsApproachTile &&
+            shortApproach &&
+            train.state !== 'loading' &&
+            train.state !== 'unloading';
+          if (!active) {
+            this.approachLocks.delete(key);
+            return null;
+          }
+          return owner;
+        }
+
+        freePlatformForTrain(train, station) {
+          const platforms = station.platforms || [station.tile];
+          return platforms.find((platform) => {
+            const key = this.tileKey(platform);
+            const owner = this.platformLocks.get(key);
+            const approachOwner = this.activeApproachOwnerForPlatform(key);
+            return (!owner || owner === train.id) && (!approachOwner || approachOwner === train.id);
+          }) || null;
+        }
+
         targetPlatformForTrain(train, station) {
           const platforms = station.platforms || [station.tile];
           const avoidedKey = train.avoidPlatformCooldown > 0 ? train.avoidPlatformKey : null;
@@ -2546,7 +2601,7 @@
           const isAvailable = (platform) => {
             const key = this.tileKey(platform);
             const owner = this.platformLocks.get(key);
-            const approachOwner = this.approachLocks.get(key);
+            const approachOwner = this.activeApproachOwnerForPlatform(key);
             return (!owner || owner === train.id) && (!approachOwner || approachOwner === train.id);
           };
           const scorePlatform = (platform) => {
@@ -2631,7 +2686,7 @@
             if (owner && owner !== trainId) {
               return { type: 'platform-run-tile', tile: tileKey, owner };
             }
-            const approachOwner = this.approachLocks.get(tileKey);
+            const approachOwner = this.activeApproachOwnerForPlatform(tileKey);
             if (approachOwner && approachOwner !== trainId) {
               return { type: 'platform-run-approach', tile: tileKey, owner: approachOwner };
             }
@@ -2658,15 +2713,7 @@
         cleanupStalePlatformLocks() {
           const trainsById = new Map(this.trains.map((train) => [train.id, train]));
           for (const [key, owner] of this.approachLocks) {
-            const train = trainsById.get(owner);
-	            const stillApproaching =
-	              train &&
-	              train.approachPlatform &&
-	              (this.tileKey(train.approachPlatform) === key ||
-	                train.approachRun?.some((tile) => this.tileKey(tile) === key)) &&
-	              train.state !== 'loading' &&
-	              train.state !== 'unloading';
-            if (!stillApproaching) this.approachLocks.delete(key);
+            if (this.activeApproachOwnerForPlatform(key) !== owner) this.approachLocks.delete(key);
           }
           for (const [key, owner] of this.platformLocks) {
             const train = trainsById.get(owner);
@@ -2692,8 +2739,10 @@
         beginStationDeparture(train) {
           if (!train.stationTile) {
             train.leavingPlatform = null;
+            train.departureStationId = null;
             return null;
           }
+          train.departureStationId = train.stationId || null;
           train.leavingPlatform = { ...train.stationTile };
           return { ...train.stationTile };
         }
@@ -2817,7 +2866,14 @@
             const edge = this.edgeKey(train.path[i], train.path[i + 1]);
             const blocker = this.reservationOwnerForEdge(edge, train.id);
             if (blocker) {
-              train.lastBlocker = { type: 'route', edge, blocker };
+              train.lastBlocker = {
+                type: 'route',
+                edge,
+                blocker,
+                blockerDistance: i,
+                nextTile: this.tileKey(train.path[i + 1]),
+                signalAhead: this.hasSignalAt(train.path[i + 1])
+              };
               this.reserveProtectedEdges(train.id, edges);
               train.reserved = edges;
               return false;
@@ -3584,7 +3640,10 @@
                 progress: Number(train.progress.toFixed(3)),
                 cargoType: train.cargoType,
                 cargo: Number(train.cargo.toFixed(1)),
+                cars: train.cars,
                 wait: Number(train.wait.toFixed(2)),
+                trailLength: train.trail?.length || 0,
+                trailDistance: Number(this.trailDistance(train.trail || []).toFixed(2)),
                 lastWaitReason: train.lastWaitReason || null,
                 lastWaitTarget: train.lastWaitTarget || null,
                 lastBlocker: train.lastBlocker || null,
@@ -3601,7 +3660,7 @@
               platforms: (station.platforms || [station.tile]).map((platform) => ({
                 tile: platform,
                 owner: this.platformLocks.get(this.tileKey(platform)) || null,
-                approach: this.approachLocks.get(this.tileKey(platform)) || null
+                approach: this.activeApproachOwnerForPlatform(this.tileKey(platform)) || null
               }))
             })),
             reservations: this.reservations.size,
@@ -3663,7 +3722,7 @@
             station: station.id,
             tile: platform,
             owner: this.platformLocks.get(this.tileKey(platform)) || null,
-            approach: this.approachLocks.get(this.tileKey(platform)) || null
+            approach: this.activeApproachOwnerForPlatform(this.tileKey(platform)) || null
           })));
           const edges = this.railEdges();
           const seenEdges = new Set(edges.map((item) => item.edge));
@@ -3772,11 +3831,12 @@
         }
 
         findPathForTrain(train, goal, options = {}) {
-          const originStation = this.stationAt(train.tile);
+          const originStation = this.stationAt(train.tile) || this.stationRunAt(train.tile);
+          const originStationId = originStation?.id || train.stationId || train.departureStationId || null;
           for (const startDir of this.startDirCandidatesForTrain(train)) {
             const path = this.findPath(train.tile, goal, train.id, {
               ...options,
-              originStationId: originStation?.id || train.stationId || null,
+              originStationId,
               startDir
             });
             if (path.length > 1 || this.sameTile(train.tile, goal)) {
@@ -3869,7 +3929,8 @@
           if (station.id === options.originStationId) return true;
           return station.id === options.targetStationId && (
             key === options.goalKey ||
-            (station.platforms || []).some((platform) => this.sameTile(platform, tile))
+            (station.platforms || []).some((platform) => this.sameTile(platform, tile)) ||
+            this.stationPlatformRunTiles(station).some((runTile) => this.sameTile(runTile, tile))
           );
         }
 
@@ -6652,21 +6713,84 @@
           const point = this.trainTilePoint(train);
           if (!train.trail.length) {
             train.trail.unshift({ ...point });
+            this.ensureTrainTrailCoverage(train);
             return;
           }
           const head = train.trail[0];
           const gap = Math.hypot(point.x - head.x, point.y - head.y);
-          if (gap > 0.75) {
+          if (gap > 2.2) {
             train.trail = [{ ...point }];
             this.seedTrainTrail(train);
+            this.ensureTrainTrailCoverage(train);
             return;
           }
           if (gap > 0.0015) {
-            train.trail.unshift({ ...point });
+            this.prependTrainTrailPoint(train, point, head, gap);
           } else {
             train.trail[0] = { ...point };
           }
-          if (train.trail.length > 160) train.trail.length = 160;
+          this.ensureTrainTrailCoverage(train);
+          this.trimTrainTrail(train);
+        }
+
+        prependTrainTrailPoint(train, point, head, gap) {
+          const maxStep = 0.16;
+          const steps = Math.max(1, Math.min(24, Math.ceil(gap / maxStep)));
+          const layer = point.layer || head.layer || 'ground';
+          const inserts = [];
+          for (let i = 0; i < steps; i++) {
+            const k = i / steps;
+            inserts.push({
+              x: point.x + (head.x - point.x) * k,
+              y: point.y + (head.y - point.y) * k,
+              layer
+            });
+          }
+          train.trail.unshift(...inserts);
+        }
+
+        trailDistance(trail) {
+          let distance = 0;
+          for (let i = 0; i < trail.length - 1; i++) {
+            distance += Math.hypot(trail[i].x - trail[i + 1].x, trail[i].y - trail[i + 1].y);
+          }
+          return distance;
+        }
+
+        trainTrailNeededDistance(train) {
+          return this.trainCarSpacing(train) * (train.cars + 1) + 1.35;
+        }
+
+        ensureTrainTrailCoverage(train) {
+          const needed = this.trainTrailNeededDistance(train);
+          let distance = this.trailDistance(train.trail);
+          let guard = 0;
+          while (train.trail.length && distance < needed && guard < 32) {
+            const tail = train.trail[train.trail.length - 1];
+            const avoid = train.trail[train.trail.length - 2] || null;
+            const predecessor = this.predecessorTile(tail, avoid);
+            if (!predecessor) break;
+            train.trail.push({ ...predecessor });
+            distance += Math.hypot(tail.x - predecessor.x, tail.y - predecessor.y);
+            guard++;
+          }
+        }
+
+        trimTrainTrail(train) {
+          const needed = this.trainTrailNeededDistance(train);
+          let distance = 0;
+          let keep = train.trail.length;
+          for (let i = 0; i < train.trail.length - 1; i++) {
+            distance += Math.hypot(
+              train.trail[i].x - train.trail[i + 1].x,
+              train.trail[i].y - train.trail[i + 1].y
+            );
+            if (distance >= needed) {
+              keep = i + 2;
+              break;
+            }
+          }
+          train.trail.length = Math.min(keep, 960);
         }
 
         sampleTrainTrail(train, offset) {
@@ -7028,7 +7152,13 @@
         }
 
         trainCarSpacing(train) {
-          return train.cargoType === 'mail' ? 0.84 : 0.92;
+          const spacing = {
+            coal: 0.72,
+            ore: 0.72,
+            lumber: 0.74,
+            mail: 0.66
+          };
+          return spacing[train.cargoType] || 0.72;
         }
 
         drawTrain(g, view, train) {
@@ -7124,42 +7254,120 @@
       }
 
 	      class ArtScene extends Scene {
-	        constructor() {
-	          super();
-	          this.items = artImages.map((item) => {
-	            const image = new Image();
-	            const entry = { item, image, loaded: false, failed: false };
-	            image.decoding = 'async';
-	            image.onload = () => {
-	              entry.loaded = true;
-	            };
-	            image.onerror = () => {
-	              entry.failed = true;
-	            };
-		            const cacheKey = searchParams.get('v');
-		            image.src = cacheKey ? `${item.thumb}?v=${encodeURIComponent(cacheKey)}` : item.thumb;
-	            if (image.complete && image.naturalWidth) entry.loaded = true;
-	            return entry;
-	          });
-	          this.hitboxes = [];
-	          this.down = null;
-	        }
+        constructor() {
+          super();
+          this.items = artImages.map((item) => {
+            const image = new Image();
+            const entry = { item, image, loaded: false, failed: false };
+            image.decoding = 'async';
+            image.onload = () => {
+              entry.loaded = true;
+            };
+            image.onerror = () => {
+              entry.failed = true;
+            };
+            const cacheKey = searchParams.get('v');
+            image.src = cacheKey ? `${item.thumb}?v=${encodeURIComponent(cacheKey)}` : item.thumb;
+            if (image.complete && image.naturalWidth) entry.loaded = true;
+            return entry;
+          });
+          this.hitboxes = [];
+          this.down = null;
+          this.mouse = { px: 0, py: 0, x: 0.5, y: 0.5, t: -Infinity };
+          this.bodies = [];
+          this.gl = null;
+          this.glFailed = false;
+          this.program = null;
+          this.vao = null;
+          this.buffer = null;
+          this.uniforms = null;
+        }
 
-	        tick(dt, size, t) {
-	          const g = ctx;
-	          const w = size.w;
-	          const h = size.h;
-		          g.fillStyle = '#060d08';
-		          g.fillRect(0, 0, w, h);
+        mount() {
+          this.setupGl();
+        }
 
-		          const cards = this.layoutCards(size);
-	          this.hitboxes = cards;
-	          cards.forEach((card, index) => this.drawArtCard(g, card, index, t));
+        unmount() {
+          this.down = null;
+        }
 
-          g.fillStyle = 'rgba(214,189,104,0.88)';
-          g.font = `bold ${Math.max(13, Math.min(22, w * 0.016))}px monospace`;
-          g.fillText('ART + WRITING / CLICK A PIECE', cards[0]?.x || 24, Math.max(28, (cards[0]?.y || 44) - 18));
-          readout.textContent = 'Art canvas gallery / click or tap a framed piece';
+        setupGl() {
+          if (this.gl || this.glFailed) return;
+          try {
+            const gl = glCanvas.getContext('webgl2');
+            if (!gl) throw new Error('WebGL2 unavailable');
+            this.gl = gl;
+            this.program = makeArtStarfieldProgram(gl);
+            this.vao = gl.createVertexArray();
+            this.buffer = gl.createBuffer();
+            gl.bindVertexArray(this.vao);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+            const loc = gl.getAttribLocation(this.program, 'a_position');
+            gl.enableVertexAttribArray(loc);
+            gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+            this.uniforms = {
+              resolution: gl.getUniformLocation(this.program, 'u_resolution'),
+              time: gl.getUniformLocation(this.program, 'u_time'),
+              mouse: gl.getUniformLocation(this.program, 'u_mouse')
+            };
+          } catch (error) {
+            this.glFailed = true;
+            console.warn('[art-scene] WebGL starfield fallback', error);
+          }
+        }
+
+        tick(dt, size, t) {
+          const g = ctx;
+          const drewWebGlBackground = this.drawBackground(size, t);
+          g.clearRect(0, 0, size.w, size.h);
+          if (!drewWebGlBackground) this.drawFallbackBackground(g, size, t);
+
+          const layout = this.layoutCards(size);
+          this.syncBodies(layout);
+          this.stepBodies(dt, size, t);
+          this.hitboxes = this.bodies.map((body) => ({
+            ...body.card,
+            x: body.x,
+            y: body.y,
+            w: body.card.w,
+            h: body.card.h
+          }));
+          this.hitboxes.forEach((card, index) => this.drawArtCard(g, card, index, t));
+
+          g.fillStyle = 'rgba(248,241,222,0.9)';
+          g.font = `bold ${Math.max(13, Math.min(22, size.w * 0.016))}px monospace`;
+          g.fillText('ART + WRITING / CLICK A PIECE', this.hitboxes[0]?.x || 24, Math.max(28, (this.hitboxes[0]?.y || 44) - 18));
+          readout.textContent = this.glFailed
+            ? 'Art canvas gallery / fallback starfield / click or tap a framed piece'
+            : 'Art canvas gallery / WebGL starfield / mouse-reactive frames';
+        }
+
+        drawBackground(size, t) {
+          this.setupGl();
+          if (!this.gl || this.glFailed) return false;
+          const gl = this.gl;
+          gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+          gl.useProgram(this.program);
+          gl.bindVertexArray(this.vao);
+          gl.uniform2f(this.uniforms.resolution, glCanvas.width, glCanvas.height);
+          gl.uniform1f(this.uniforms.time, t * 0.001);
+          gl.uniform2f(this.uniforms.mouse, this.mouse.x, 1 - this.mouse.y);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          return true;
+        }
+
+        drawFallbackBackground(g, size, t) {
+          g.fillStyle = '#030812';
+          g.fillRect(0, 0, size.w, size.h);
+          const cell = Math.max(2, Math.floor(size.w / 320));
+          for (let i = 0; i < 220; i++) {
+            const x = (this.hash(i, 2) * size.w + t * 0.003 * (1 + this.hash(i, 17) * 5)) % size.w;
+            const y = (this.hash(i, 7) * size.h + Math.sin(t * 0.0002 + i) * 12) % size.h;
+            const glow = 0.28 + this.hash(i, 13) * 0.72;
+            g.fillStyle = `rgba(235,244,255,${glow})`;
+            g.fillRect(Math.round(x / cell) * cell, Math.round(y / cell) * cell, cell, cell);
+          }
         }
 
         layoutCards(size) {
@@ -7167,20 +7375,23 @@
           const margin = clamp(size.w * 0.045, 18, 62);
           const cols = size.w > 1350 ? 5 : size.w > 940 ? 4 : size.w > 620 ? 3 : 2;
           const gap = clamp(size.w * 0.018, 10, 28);
-          const cardW = Math.max(112, (size.w - margin * 2 - gap * (cols - 1)) / cols);
-          const imageH = cardW * 0.68;
-          const labelH = clamp(size.h * 0.045, 24, 36);
-          const cardH = imageH + labelH;
           const rows = Math.ceil(count / cols);
+          const labelH = clamp(size.h * 0.045, 24, 36);
+          const widthDrivenW = Math.max(112, (size.w - margin * 2 - gap * (cols - 1)) / cols);
+          const availableH = Math.max(180, size.h - margin - 42 - gap * (rows - 1));
+          const heightDrivenW = Math.max(112, (availableH / rows - labelH) / 0.68);
+          const cardW = Math.min(widthDrivenW, heightDrivenW);
+          const imageH = cardW * 0.68;
+          const cardH = imageH + labelH;
           const totalH = rows * cardH + (rows - 1) * gap;
-          const startY = Math.max(margin + 18, (size.h - totalH) * 0.52);
+          const startY = Math.max(42, Math.min(margin + 26, (size.h - totalH) * 0.52));
           return this.items.map((entry, index) => {
             const col = index % cols;
             const row = Math.floor(index / cols);
             return {
               ...entry,
-              x: margin + col * (cardW + gap),
-              y: startY + row * (cardH + gap),
+              targetX: margin + col * (cardW + gap),
+              targetY: startY + row * (cardH + gap),
               w: cardW,
               h: cardH,
               imageH,
@@ -7189,32 +7400,90 @@
           });
         }
 
+        syncBodies(cards) {
+          this.bodies = cards.map((card, index) => {
+            const body = this.bodies[index] || {
+              x: card.targetX,
+              y: card.targetY,
+              vx: 0,
+              vy: 0,
+              seed: this.hash(index, 31)
+            };
+            body.card = card;
+            body.w = card.w;
+            body.h = card.h;
+            if (!Number.isFinite(body.x)) body.x = card.targetX;
+            if (!Number.isFinite(body.y)) body.y = card.targetY;
+            return body;
+          });
+        }
+
+        stepBodies(dt, size, t) {
+          const k = Math.min(1.4, dt * 60);
+          const mouseFresh = t - this.mouse.t < 1700;
+          for (let i = 0; i < this.bodies.length; i++) {
+            const body = this.bodies[i];
+            const card = body.card;
+            const cx = body.x + card.w * 0.5;
+            const cy = body.y + card.h * 0.45;
+            const tx = card.targetX;
+            const ty = card.targetY;
+            body.vx += (tx - body.x) * 0.045 * k;
+            body.vy += (ty - body.y) * 0.045 * k;
+            body.vx += Math.sin(t * 0.0007 + body.seed * 9.1) * 0.035 * k;
+            body.vy += Math.cos(t * 0.0006 + body.seed * 7.7) * 0.03 * k;
+
+            if (mouseFresh) {
+              const dx = cx - this.mouse.px;
+              const dy = cy - this.mouse.py;
+              const dist = Math.max(1, Math.hypot(dx, dy));
+              const radius = clamp(size.w * 0.16, 90, 210);
+              if (dist < radius) {
+                const force = (1 - dist / radius) ** 2;
+                body.vx += (dx / dist) * force * 8.5 * k;
+                body.vy += (dy / dist) * force * 8.5 * k;
+                body.vx += (-dy / dist) * force * 1.8 * k;
+                body.vy += (dx / dist) * force * 1.8 * k;
+              }
+            }
+
+            body.vx *= 0.84;
+            body.vy *= 0.84;
+            body.x += body.vx * k;
+            body.y += body.vy * k;
+            body.x = clamp(body.x, 8, Math.max(8, size.w - card.w - 8));
+            body.y = clamp(body.y, 38, Math.max(38, size.h - card.h - 8));
+          }
+        }
+
         drawArtCard(g, card, index, t) {
-          const bob = Math.sin(t * 0.00045 + index * 1.7) * 2;
           const x = Math.round(card.x);
-          const y = Math.round(card.y + bob);
+          const y = Math.round(card.y);
           const w = Math.round(card.w);
           const imageH = Math.round(card.imageH);
           const h = Math.round(card.h);
+          const glow = 0.16 + Math.sin(t * 0.001 + index * 1.9) * 0.05;
           g.save();
-          g.fillStyle = 'rgba(3,7,5,0.82)';
-          g.fillRect(x + 5, y + 6, w, h);
-          g.fillStyle = '#10170f';
+          g.fillStyle = 'rgba(0,0,0,0.46)';
+          g.fillRect(x + 6, y + 7, w, h);
+          g.fillStyle = 'rgba(8,14,26,0.86)';
           g.fillRect(x, y, w, h);
-          g.strokeStyle = 'rgba(205,187,120,0.34)';
+          g.strokeStyle = `rgba(235,244,255,${0.22 + glow})`;
           g.strokeRect(x, y, w, h);
-          g.fillStyle = '#020403';
+          g.strokeStyle = 'rgba(214,189,104,0.32)';
+          g.strokeRect(x + 3, y + 3, w - 6, h - 6);
+          g.fillStyle = '#030612';
           g.fillRect(x + 8, y + 8, w - 16, imageH - 12);
-	          if (card.loaded && card.image.naturalWidth) {
-	            this.drawCover(g, card.image, x + 8, y + 8, w - 16, imageH - 12);
-	          } else {
-	            g.fillStyle = card.failed ? '#231510' : `hsl(${36 + index * 18}, 26%, 22%)`;
-	            g.fillRect(x + 8, y + 8, w - 16, imageH - 12);
-	            g.fillStyle = 'rgba(248,241,222,0.52)';
-	            g.font = '12px monospace';
-	            g.fillText(card.failed ? 'missing image' : 'loading', x + 16, y + 30);
-	          }
-          g.fillStyle = '#d6bd68';
+          if (card.loaded && card.image.naturalWidth) {
+            this.drawCover(g, card.image, x + 8, y + 8, w - 16, imageH - 12);
+          } else {
+            g.fillStyle = card.failed ? '#241214' : `hsl(${220 + index * 12}, 34%, 18%)`;
+            g.fillRect(x + 8, y + 8, w - 16, imageH - 12);
+            g.fillStyle = 'rgba(248,241,222,0.62)';
+            g.font = '12px monospace';
+            g.fillText(card.failed ? 'missing image' : 'loading', x + 16, y + 30);
+          }
+          g.fillStyle = '#f2dc90';
           g.font = `bold ${Math.max(10, Math.min(15, w * 0.07))}px monospace`;
           g.fillText(card.item.title.toUpperCase(), x + 10, y + imageH + Math.max(18, card.labelH * 0.62));
           g.restore();
@@ -7239,9 +7508,15 @@
 
         pointerDown(event, info) {
           this.down = { x: info.px, y: info.py };
+          this.updateMouse(info);
+        }
+
+        pointerMove(event, info) {
+          this.updateMouse(info);
         }
 
         pointerUp(event, info) {
+          this.updateMouse(info);
           const moved = this.down ? Math.hypot(info.px - this.down.x, info.py - this.down.y) : 0;
           this.down = null;
           if (moved > 10) return;
@@ -7254,11 +7529,25 @@
           if (card) openPopout(card.item.id);
         }
 
+        updateMouse(info) {
+          this.mouse = {
+            px: info.px,
+            py: info.py,
+            x: clamp(info.x, 0, 1),
+            y: clamp(info.y, 0, 1),
+            t: performance.now()
+          };
+        }
+
+        hash(a, b) {
+          const value = Math.sin(a * 127.1 + b * 311.7) * 43758.5453123;
+          return value - Math.floor(value);
+        }
+
         cancelPointer() {
           this.down = null;
         }
       }
-
       const sceneFactories = {
         ants: () => new AntScene(),
         stats: () => new OpenTTDScene(),
@@ -7270,13 +7559,11 @@
         id = normalizePanelId(id);
         if (!sceneFactories[id]) id = 'ants';
         if (!scenes[id]) {
-          console.log(`[panel-startup] construct-${id}`);
           scenes[id] = sceneFactories[id]();
         }
         return scenes[id];
       }
       ensureScene('ants');
-      console.log('[panel-startup] scenes-ready');
       window.__portfolioScenes = scenes;
       window.__portfolioEnsureScene = ensureScene;
 
@@ -7308,7 +7595,7 @@
         const pixelWidth = Math.max(1, Math.floor(rect.width * dpr));
         const pixelHeight = Math.max(1, Math.floor(rect.height * dpr));
         const needs2dCanvas = activeId !== 'ants' && activeId !== 'mandelbrot';
-        const needsGlCanvas = activeId === 'mandelbrot';
+        const needsGlCanvas = activeId === 'mandelbrot' || activeId === 'art';
         setBackingStore(canvas, needs2dCanvas ? pixelWidth : 1, needs2dCanvas ? pixelHeight : 1);
         setBackingStore(glCanvas, needsGlCanvas ? pixelWidth : 1, needsGlCanvas ? pixelHeight : 1);
         size = { w: rect.width, h: rect.height, dpr };
@@ -7341,7 +7628,7 @@
         document.querySelector('.app').classList.toggle('is-mandelbrot-panel', id === 'mandelbrot');
         document.querySelector('.app').classList.toggle('is-art-panel', id === 'art');
         canvas.style.visibility = id === 'mandelbrot' || id === 'ants' ? 'hidden' : 'visible';
-        glCanvas.style.visibility = id === 'mandelbrot' ? 'visible' : 'hidden';
+        glCanvas.style.visibility = id === 'mandelbrot' || id === 'art' ? 'visible' : 'hidden';
         stageFrame.classList.toggle('is-active', id === 'ants');
         readout.style.display = id === 'ants' || id === 'stats' ? 'none' : '';
         if (shouldRewriteAlias && location.hash.slice(1) !== id) {
@@ -7359,7 +7646,11 @@
         elements.eyebrow.textContent = data.eyebrow || '';
         elements.eyebrow.style.display = data.eyebrow ? '' : 'none';
         elements.title.textContent = data.title;
-        elements.summary.textContent = data.summary;
+        if (data.summaryHtml) {
+          elements.summary.innerHTML = data.summaryHtml;
+        } else {
+          elements.summary.textContent = data.summary;
+        }
         elements.story.innerHTML = renderStory(data);
         elements.actions.style.display = data.actions?.length ? '' : 'none';
         elements.actions.innerHTML = (data.actions || [])
@@ -7515,7 +7806,7 @@
           stageWrap.releasePointerCapture(event.pointerId);
         }
         stageWrap.classList.remove('is-dragging');
-        if (activeId !== 'stats' && activeId !== 'mandelbrot' && pointer.moved && Math.hypot(dx, dy) > 44) {
+        if (activeId === 'ants' && pointer.moved && Math.hypot(dx, dy) > 44) {
           if (Math.abs(dx) > Math.abs(dy)) goDirection(dx < 0 ? 'right' : 'left');
           else goDirection(dy < 0 ? 'down' : 'up');
         } else {
@@ -7643,6 +7934,63 @@
         return route[route.length - 1];
       }
 
+      function makeArtStarfieldProgram(gl) {
+        const vs = `#version 300 es
+in vec2 a_position;
+void main(){gl_Position=vec4(a_position,0.0,1.0);}
+`;
+        const fs = `#version 300 es
+precision highp float;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform vec2 u_mouse;
+out vec4 out_color;
+float hash(vec2 p){p=fract(p*vec2(127.1,311.7));p+=dot(p,p+34.7);return fract(p.x*p.y);}
+mat2 rot(float a){float s=sin(a),c=cos(a);return mat2(c,-s,s,c);}
+float starLayer(vec2 uv,float scale,float threshold,float drift,float seed){
+  vec2 moved=uv+vec2(u_time*drift, -u_time*drift*.21)+vec2(seed*.137,seed*.071);
+  vec2 spun=rot(.18+seed*.73)*(moved-.5)+.5;
+  vec2 grid=floor(spun*scale);
+  vec2 cell=fract(spun*scale)-.5;
+  float h=hash(grid+seed*19.7);
+  float radius=.08+h*.09;
+  float core=smoothstep(radius,0.,length(cell));
+  float twinkle=.62+.38*sin(u_time*(1.4+h*3.1)+h*14.1+seed);
+  return step(threshold,h)*core*twinkle;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution;
+  vec2 softPixel=uv;
+  float aspect=u_resolution.x/u_resolution.y;
+  vec2 p=(softPixel-.5)*vec2(aspect,1.);
+  vec2 m=(u_mouse-.5)*vec2(aspect,1.);
+  float d=length(p-m);
+  vec2 pull=normalize(p-m+vec2(.0001))*(1.-smoothstep(.0,.42,d))*.022;
+  vec2 warped=softPixel+pull;
+  float s1=starLayer(warped,42.,.966,.0035,1.0);
+  float s2=starLayer(warped,79.,.979,.007,2.7);
+  float s3=starLayer(warped,131.,.987,.012,4.4);
+  float dust=hash(floor((warped+vec2(.19,.31))*u_resolution/4.))*.018;
+  float lane=smoothstep(.46,.0,abs((warped.y-.5)+sin(warped.x*4.3+u_time*.09)*.05));
+  float mouseGlow=1.-smoothstep(.0,.36,d);
+  vec3 base=mix(vec3(.009,.018,.040),vec3(.014,.043,.061),warped.y);
+  vec3 nebula=vec3(.045,.075,.145)*lane+vec3(.040,.036,.090)*mouseGlow;
+  vec3 stars=vec3(.78,.88,1.)*s1+vec3(1.,.88,.55)*s2+vec3(.58,.96,.88)*s3;
+  out_color=vec4(base+nebula+stars+dust,1.);
+}
+`;
+        const program = gl.createProgram();
+        const v = shader(gl, gl.VERTEX_SHADER, vs);
+        const f = shader(gl, gl.FRAGMENT_SHADER, fs);
+        gl.attachShader(program, v);
+        gl.attachShader(program, f);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+        gl.deleteShader(v);
+        gl.deleteShader(f);
+        return program;
+      }
+
       function makeFractalProgram(gl) {
         const vs = `#version 300 es
 in vec2 a_position;
@@ -7712,7 +8060,7 @@ void main(){vec2 uv=gl_FragCoord.xy/u_resolution;bool julia=uv.x>.5;vec2 local=j
       function activeCaptureCanvas(which = 'active') {
         if (which === '2d') return canvas;
         if (which === 'webgl') return glCanvas;
-        if (activeId === 'mandelbrot' && glCanvas.width && glCanvas.height) return glCanvas;
+        if ((activeId === 'mandelbrot' || activeId === 'art') && glCanvas.width && glCanvas.height) return glCanvas;
         return canvas;
       }
 
