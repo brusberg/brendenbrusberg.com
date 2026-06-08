@@ -482,6 +482,10 @@ export class AntPatchSimulation {
       return;
     }
 
+    if (event.pointerType === 'touch') {
+      return;
+    }
+
     this.activePointerId = event.pointerId;
     this.lastPointerX = event.clientX;
     this.lastPointerY = event.clientY;

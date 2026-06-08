@@ -114,7 +114,7 @@
 
       .app.is-ants-panel {
         display: grid;
-        grid-template-rows: minmax(34rem, var(--ants-frame-height, calc(100svh - 5.6rem))) max-content;
+        grid-template-rows: minmax(30rem, calc(100svh - 5.6rem)) max-content;
         align-content: start;
         gap: clamp(0.5rem, 1vw, 0.8rem);
         min-height: 100svh;
@@ -145,8 +145,7 @@
         height: 100%;
       }
 
-      .app.is-ants-panel .info-window,
-      .app.is-ants-panel .panel-footer {
+      .app.is-ants-panel .info-window {
         display: none;
       }
 
@@ -705,7 +704,7 @@
         .app.is-ants-panel {
           min-height: 100svh;
           height: auto;
-          grid-template-rows: minmax(34rem, var(--ants-frame-height, 82svh)) max-content;
+          grid-template-rows: minmax(20rem, 54svh) max-content;
         }
 
         .app.is-art-panel {
@@ -7764,30 +7763,6 @@
         document.body.scrollTop = 0;
       }
 
-      function setAntFrameHeight(height) {
-        const numericHeight = Number(height);
-        if (!Number.isFinite(numericHeight) || numericHeight < 1) return;
-        const boundedHeight = Math.min(Math.max(Math.ceil(numericHeight), 544), 2800);
-        document.documentElement.style.setProperty('--ants-frame-height', boundedHeight + 'px');
-        queueResize();
-      }
-
-      function requestAntFrameSize() {
-        if (!stageFrame.contentWindow || !stageFrame.classList.contains('is-active')) return;
-        stageFrame.contentWindow.postMessage({ type: 'request-ant-content-size' }, location.origin);
-      }
-
-      function handleAntFrameMessage(event) {
-        if (event.origin !== location.origin) return;
-        if (event.data?.type !== 'ant-content-size') return;
-        setAntFrameHeight(event.data.height);
-      }
-
-      function handleViewportResize() {
-        queueResize();
-        requestAntFrameSize();
-      }
-
       function setPanel(id, push = true) {
         const requestedHash = String(id || 'ants').replace(/^#/, '');
         id = normalizePanelId(requestedHash);
@@ -7804,7 +7779,6 @@
         canvas.style.visibility = id === 'mandelbrot' || id === 'ants' ? 'hidden' : 'visible';
         glCanvas.style.visibility = id === 'mandelbrot' || id === 'art' ? 'visible' : 'hidden';
         stageFrame.classList.toggle('is-active', id === 'ants');
-        if (id === 'ants') requestAntFrameSize();
         readout.style.display = id === 'ants' || id === 'stats' || id === 'art' ? 'none' : '';
         if (shouldRewriteAlias && location.hash.slice(1) !== id) {
           history.replaceState(null, '', `#${id}`);
@@ -7944,10 +7918,8 @@
       });
 
       on(window, 'hashchange', () => goPanel(location.hash.slice(1)));
-      on(window, 'resize', handleViewportResize);
-      if (window.visualViewport) on(window.visualViewport, 'resize', handleViewportResize);
-      on(window, 'message', handleAntFrameMessage);
-      on(stageFrame, 'load', requestAntFrameSize);
+      on(window, 'resize', queueResize);
+      if (window.visualViewport) on(window.visualViewport, 'resize', queueResize);
       on(window, 'keydown', (event) => {
         if (event.key === 'Escape' && !elements.popout.hidden) {
           closePopout();
