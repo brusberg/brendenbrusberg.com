@@ -10,6 +10,16 @@
     <meta name="theme-color" content="#191d19" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Brenden Brusberg</title>
+    <script>
+      (() => {
+        if (window.top === window.self) {
+          const target = new URL('/', window.location.origin);
+          target.search = window.location.search;
+          target.hash = 'ants';
+          window.location.replace(target.href);
+        }
+      })();
+    </script>
   </head>
   <body>
     <main class="page-shell">
@@ -29,6 +39,9 @@
                 <line x1="50" y1="6" x2="8" y2="78"></line>
                 <line x1="8" y1="78" x2="92" y2="78"></line>
                 <line x1="92" y1="78" x2="50" y2="6"></line>
+                <text class="allocation-label" x="21" y="57" transform="rotate(-60 21 57)" aria-hidden="true">FORAGE</text>
+                <text class="allocation-label" x="50" y="75" aria-hidden="true">DIG</text>
+                <text class="allocation-label" x="79" y="57" transform="rotate(60 79 57)" aria-hidden="true">NURSE</text>
                 <circle id="allocation-thumb" class="allocation-thumb" cx="44" cy="52" r="5"></circle>
               </svg>
               <div class="allocation-values" aria-live="polite">
@@ -123,7 +136,6 @@
           <strong>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</strong>
         </div>
       </section>
-
     </main>
 
     <script type="module" src="/src/main.ts"></script>

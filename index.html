@@ -114,11 +114,11 @@
 
       .app.is-ants-panel {
         display: grid;
-        grid-template-rows: minmax(30rem, calc(100svh - 5.6rem)) max-content;
+        grid-template-rows: minmax(30rem, 1fr) max-content;
         align-content: start;
         gap: clamp(0.5rem, 1vw, 0.8rem);
         min-height: 100svh;
-        height: auto;
+        height: 100svh;
         padding: clamp(0.45rem, 1vw, 0.9rem);
         overflow: visible;
       }
@@ -703,8 +703,8 @@
 
         .app.is-ants-panel {
           min-height: 100svh;
-          height: auto;
-          grid-template-rows: minmax(20rem, 54svh) max-content;
+          height: 100svh;
+          grid-template-rows: minmax(20rem, 1fr) max-content;
         }
 
         .app.is-art-panel {
