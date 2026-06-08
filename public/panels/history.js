@@ -27,7 +27,7 @@
       ['Dale Jacques', 'https://www.linkedin.com/in/dale-jacques/'],
       ['Song of Myself', 'https://www.poetryfoundation.org/poems/45477/song-of-myself-1892-version'],
       ['Spring and All (Excerpt)', 'https://www.poetryfoundation.org/poems/148465/spring-and-all-xxv-somebody-dies-every-four-minutes'],
-      ['Projects and Writting', '#art'],
+      ['Projects and Writing', '#art'],
       ['Old repo', 'https://github.com/brusberg/Mandelbrot-and-Julian-Set-Calculator'],
       ['Mandelbrot set', 'https://en.wikipedia.org/wiki/Mandelbrot_set'],
       ['Julia set', 'https://en.wikipedia.org/wiki/Julia_set']
