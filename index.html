@@ -855,7 +855,9 @@
       const localCaptureRequested = localDevToolsEnabled && !localQaMode && searchParams.has('capture');
       const dprCap = localCaptureRequested ? 1 : 1.5;
       const openttdDprCap = 1;
-      const heavyPanelFrameMs = 50;
+      const mandelbrotDprCap = 1;
+      const statsFrameMs = 50;
+      const mandelbrotFrameMs = 32;
       const originalAntsUrl = 'ant.html';
       const workDaysBase = { date: new Date(2026, 5, 5), days: 1700 };
       const artImages = [
@@ -1843,7 +1845,7 @@
             },
             {
               id: 'town',
-              name: 'Brusberg Central',
+              name: 'Central Terminal',
               kind: 'town',
               tile: { x: 18, y: 14 },
               platforms: [
@@ -4027,7 +4029,7 @@
 
         view(size) {
           const minZoom = size.w < 700 ? 0.58 : 0.64;
-          const maxZoom = size.w < 700 ? 2.6 : 2.35;
+          const maxZoom = size.w < 700 ? 3.15 : 2.35;
           if (!Number.isFinite(this.cameraZoom)) this.cameraZoom = this.defaultCameraZoom(size);
           this.cameraZoom = clamp(this.cameraZoom, minZoom, maxZoom);
           let view = this.rawView(size, this.cameraZoom, this.cameraPanX, this.cameraPanY);
@@ -4036,7 +4038,7 @@
         }
 
         defaultCameraZoom(size) {
-          if (size.w < 700) return 1.22;
+          if (size.w < 700) return 1.36;
           if (size.w > 1500) return 2.18;
           return 2.02;
         }
@@ -4112,7 +4114,7 @@
           const before = this.view(size);
           const target = this.screenToTile(before, px, py);
           const minZoom = size.w < 700 ? 0.58 : 0.64;
-          const maxZoom = size.w < 700 ? 2.6 : 2.35;
+          const maxZoom = size.w < 700 ? 3.15 : 2.35;
           const nextZoom = clamp(this.cameraZoom * factor, minZoom, maxZoom);
           if (Math.abs(nextZoom - this.cameraZoom) < 0.001) return;
           this.cameraZoom = nextZoom;
@@ -7688,7 +7690,10 @@
       let size = { w: 1, h: 1, dpr: 1 };
       let pointer = null;
       const activePointers = new Map();
+      const supportsTouchEvents = 'TouchEvent' in window;
       let pinchActive = false;
+      let touchPointer = null;
+      let touchPinching = false;
       let rafId = 0;
       let resizeRafId = 0;
       let running = true;
@@ -7708,7 +7713,11 @@
 
       function resize() {
         const rect = stageWrap.getBoundingClientRect();
-        const activeDprCap = activeId === 'stats' ? openttdDprCap : dprCap;
+        const activeDprCap = activeId === 'stats'
+          ? openttdDprCap
+          : activeId === 'mandelbrot' && rect.width < 700
+            ? mandelbrotDprCap
+            : dprCap;
         const dpr = Math.min(activeDprCap, window.devicePixelRatio || 1);
         const pixelWidth = Math.max(1, Math.floor(rect.width * dpr));
         const pixelHeight = Math.max(1, Math.floor(rect.height * dpr));
@@ -7901,7 +7910,130 @@
         if (event.key === 'ArrowUp') goDirection('up');
       });
 
+      function touchPoint(touch) {
+        return pointInfo(touch.clientX, touch.clientY);
+      }
+
+      function touchPinchInfo(touches) {
+        const points = Array.from(touches).slice(0, 2).map(touchPoint);
+        if (points.length < 2) return null;
+        const [a, b] = points;
+        const px = (a.px + b.px) * 0.5;
+        const py = (a.py + b.py) * 0.5;
+        return {
+          x: clamp(px / Math.max(1, a.w), 0, 1),
+          y: clamp(py / Math.max(1, a.h), 0, 1),
+          px,
+          py,
+          w: a.w,
+          h: a.h,
+          distance: Math.hypot(a.px - b.px, a.py - b.py),
+          points: [a, b]
+        };
+      }
+
+      function beginTouchPointer(event, touch) {
+        const info = touchPoint(touch);
+        touchPointer = {
+          id: touch.identifier,
+          sx: touch.clientX,
+          sy: touch.clientY,
+          moved: false
+        };
+        stageWrap.classList.add('is-dragging');
+        activeScene.pointerDown(event, info);
+      }
+
+      function clearTouchGesture(event) {
+        if (touchPinching) activeScene.pinchEnd(event, null);
+        else if (touchPointer) activeScene.cancelPointer();
+        touchPinching = false;
+        touchPointer = null;
+        stageWrap.classList.remove('is-dragging');
+      }
+
+      on(stageWrap, 'touchstart', (event) => {
+        if (!supportsTouchEvents) return;
+        if (event.touches.length >= 2) {
+          event.preventDefault();
+          activePointers.clear();
+          activeScene.cancelPointer();
+          touchPointer = null;
+          touchPinching = true;
+          stageWrap.classList.add('is-dragging');
+          activeScene.pinchStart(event, touchPinchInfo(event.touches));
+          return;
+        }
+        if (event.touches.length === 1 && !touchPinching) {
+          event.preventDefault();
+          activePointers.clear();
+          activeScene.cancelPointer();
+          beginTouchPointer(event, event.touches[0]);
+        }
+      }, { passive: false });
+
+      on(stageWrap, 'touchmove', (event) => {
+        if (!supportsTouchEvents) return;
+        if (event.touches.length >= 2) {
+          event.preventDefault();
+          if (!touchPinching) {
+            activeScene.cancelPointer();
+            touchPointer = null;
+            touchPinching = true;
+            stageWrap.classList.add('is-dragging');
+            activeScene.pinchStart(event, touchPinchInfo(event.touches));
+          } else {
+            activeScene.pinchMove(event, touchPinchInfo(event.touches));
+          }
+          return;
+        }
+        if (!touchPointer || touchPinching || event.touches.length !== 1) return;
+        const touch = Array.from(event.touches).find((candidate) => candidate.identifier === touchPointer.id) || event.touches[0];
+        event.preventDefault();
+        const dx = touch.clientX - touchPointer.sx;
+        const dy = touch.clientY - touchPointer.sy;
+        if (Math.hypot(dx, dy) > 9) touchPointer.moved = true;
+        activeScene.pointerMove(event, touchPoint(touch));
+      }, { passive: false });
+
+      on(stageWrap, 'touchend', (event) => {
+        if (!supportsTouchEvents) return;
+        if (touchPinching) {
+          event.preventDefault();
+          activeScene.pinchEnd(event, event.touches.length >= 2 ? touchPinchInfo(event.touches) : null);
+          touchPinching = false;
+          touchPointer = null;
+          if (event.touches.length === 1) beginTouchPointer(event, event.touches[0]);
+          else stageWrap.classList.remove('is-dragging');
+          return;
+        }
+        if (!touchPointer) {
+          if (!event.touches.length) stageWrap.classList.remove('is-dragging');
+          return;
+        }
+        const touch = Array.from(event.changedTouches).find((candidate) => candidate.identifier === touchPointer.id);
+        if (!touch) return;
+        event.preventDefault();
+        const dx = touch.clientX - touchPointer.sx;
+        const dy = touch.clientY - touchPointer.sy;
+        if (activeId === 'ants' && touchPointer.moved && Math.hypot(dx, dy) > 44) {
+          if (Math.abs(dx) > Math.abs(dy)) goDirection(dx < 0 ? 'right' : 'left');
+          else goDirection(dy < 0 ? 'down' : 'up');
+        } else {
+          activeScene.pointerUp(event, touchPoint(touch));
+        }
+        touchPointer = null;
+        if (!event.touches.length) stageWrap.classList.remove('is-dragging');
+      }, { passive: false });
+
+      on(stageWrap, 'touchcancel', (event) => {
+        if (!supportsTouchEvents) return;
+        event.preventDefault();
+        clearTouchGesture(event);
+      }, { passive: false });
+
       on(stageWrap, 'pointerdown', (event) => {
+        if (supportsTouchEvents && event.pointerType === 'touch') return;
         stageWrap.setPointerCapture(event.pointerId);
         activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
         stageWrap.classList.add('is-dragging');
@@ -7917,6 +8049,7 @@
       });
 
       on(stageWrap, 'pointermove', (event) => {
+        if (supportsTouchEvents && event.pointerType === 'touch') return;
         if (!activePointers.has(event.pointerId)) return;
         activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
         if (activePointers.size >= 2) {
@@ -7938,6 +8071,7 @@
       });
 
       on(stageWrap, 'pointerup', (event) => {
+        if (supportsTouchEvents && event.pointerType === 'touch') return;
         const wasPinching = pinchActive || activePointers.size > 1;
         const pinchEndInfo = wasPinching ? pinchInfo() : null;
         if (stageWrap.hasPointerCapture(event.pointerId)) {
@@ -7970,6 +8104,7 @@
       });
 
       function clearPointer(event) {
+        if (supportsTouchEvents && event.pointerType === 'touch') return;
         const wasPinching = pinchActive || activePointers.size > 1;
         if (event.pointerId == null) activePointers.clear();
         else activePointers.delete(event.pointerId);
@@ -8045,11 +8180,12 @@
 
       function frame(t) {
         if (!running) return;
-        if ((activeId === 'stats' || activeId === 'mandelbrot') && lastHeavyPanelTick && t - lastHeavyPanelTick < heavyPanelFrameMs) {
+        const activeFrameMs = activeId === 'mandelbrot' ? mandelbrotFrameMs : activeId === 'stats' ? statsFrameMs : 0;
+        if (activeFrameMs && lastHeavyPanelTick && t - lastHeavyPanelTick < activeFrameMs) {
           rafId = requestAnimationFrame(frame);
           return;
         }
-        if (activeId === 'stats' || activeId === 'mandelbrot') lastHeavyPanelTick = t;
+        if (activeFrameMs) lastHeavyPanelTick = t;
         if (ctx) ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
         activeScene.tick(1 / 60, size, t);
         rafId = requestAnimationFrame(frame);
@@ -8191,7 +8327,7 @@ uniform float u_mandelScale;
 uniform vec2 u_juliaCenter;
 uniform float u_juliaScale;
 out vec4 out_color;
-const int MAX_ITER=190;
+const int MAX_ITER=150;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 vec3 pal(float t,float inSet){vec3 deep=vec3(.025,.075,.115);vec3 blue=vec3(.12,.36,.58);vec3 cyan=vec3(.48,.78,.84);vec3 cream=vec3(.98,.88,.55);vec3 c=mix(deep,blue,smoothstep(.04,.38,t));c=mix(c,cyan,smoothstep(.3,.72,t));c=mix(c,cream,smoothstep(.72,.96,t));return mix(c,vec3(.006,.007,.006),inSet);}
 float esc(vec2 point,vec2 jc,bool julia,out float inside){vec2 z=julia?point:vec2(0);vec2 c=julia?jc:point;float it=0.;float r=0.;for(int i=0;i<MAX_ITER;i++){z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+c;r=dot(z,z);if(r>4.){it=float(i);break;}}inside=r>4.?0.:1.;if(inside>.5)return 0.;return it/float(MAX_ITER);}
