@@ -33,51 +33,6 @@ a {
   min-height: 100svh;
 }
 
-.ant-page-footer {
-  display: grid;
-  gap: 0.95rem;
-  width: 100%;
-  padding: 0 1rem 1rem;
-  background: #151812;
-}
-
-.ant-page-footer p {
-  margin: 0;
-  padding: 0.85rem 0 0;
-  color: rgba(247, 241, 223, 0.55);
-  font-size: clamp(0.74rem, 0.9vw, 0.86rem);
-  line-height: 1.2;
-  text-align: center;
-}
-
-.ant-page-map {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.ant-page-map a {
-  display: grid;
-  place-items: center;
-  min-height: 2.85rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid rgba(238, 220, 167, 0.24);
-  color: #fff9e9;
-  background: #11140f;
-  font-size: clamp(0.72rem, 1vw, 0.84rem);
-  font-weight: 850;
-  line-height: 1.05;
-  text-align: center;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.ant-page-map a[aria-current='page'] {
-  color: #08100b;
-  background: #d9c56c;
-  border-color: #d9c56c;
-}
-
 .site-shell {
   display: grid;
   grid-template-rows: minmax(28rem, 1fr) auto;
@@ -624,6 +579,10 @@ h1 {
 }
 
 @media (max-width: 700px) {
+  #patch-canvas {
+    touch-action: pan-y;
+  }
+
   .site-shell {
     grid-template-rows: minmax(0, 1fr) auto;
     gap: 0.7rem;
