@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect width="64" height="64" fill="#08100b"/>
-  <path fill="#fff8e8" d="M18 12h18c8 0 13 4 13 11 0 4-2 7-6 9 5 2 8 5 8 10 0 8-6 12-15 12H18V12Zm12 9v8h6c4 0 6-1 6-4s-2-4-6-4h-6Zm0 17v9h7c4 0 6-2 6-5s-2-4-7-4h-6Z"/>
-  <path fill="#d6bd68" d="M13 50h39v4H13z"/>
+  <path stroke="#101b13" stroke-width="1" d="M8 16h48M8 24h48M8 32h48M8 40h48M8 48h48M16 8v48M24 8v48M32 8v48M40 8v48M48 8v48"/>
+  <rect x="4" y="4" width="56" height="56" fill="#07100b" fill-opacity="0.62" stroke="#34402b" stroke-width="2"/>
+  <text x="34" y="43" fill="#15160f" font-family="Inter, Arial, Helvetica, sans-serif" font-size="42" font-weight="900" text-anchor="middle" letter-spacing="0">B</text>
+  <text x="31" y="40" fill="#fff8e8" font-family="Inter, Arial, Helvetica, sans-serif" font-size="42" font-weight="900" text-anchor="middle" letter-spacing="0">B</text>
+  <rect x="16" y="48" width="19" height="3" fill="#d6bd68"/>
+  <rect x="37" y="48" width="11" height="3" fill="#84906d"/>
+  <rect x="16" y="53" width="32" height="1.5" fill="#34402b"/>
 </svg>
