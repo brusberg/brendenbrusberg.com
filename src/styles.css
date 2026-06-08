@@ -169,11 +169,15 @@ a {
 }
 
 .allocation-label {
-  fill: rgba(211, 184, 120, 0.86);
-  font-size: 6px;
-  font-weight: 760;
+  fill: rgba(211, 184, 120, 0.92);
+  dominant-baseline: middle;
+  font-size: 11px;
+  font-weight: 850;
   letter-spacing: 0;
+  paint-order: stroke fill;
   pointer-events: none;
+  stroke: rgba(17, 20, 15, 0.78);
+  stroke-width: 2px;
   text-anchor: middle;
 }
 
