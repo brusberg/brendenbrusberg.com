@@ -123,6 +123,10 @@
         overflow: visible;
       }
 
+      .app.is-art-panel {
+        grid-template-rows: minmax(32rem, 68svh) auto max-content;
+      }
+
       .stage-wrap,
       .info-window,
       .panel-footer {
@@ -223,7 +227,8 @@
         touch-action: none;
       }
 
-      .app.is-mandelbrot-panel .stage-wrap {
+      .app.is-mandelbrot-panel .stage-wrap,
+      .app.is-art-panel .stage-wrap {
         touch-action: none;
       }
 
@@ -681,6 +686,10 @@
           grid-template-rows: minmax(34rem, 82svh) max-content;
         }
 
+        .app.is-art-panel {
+          grid-template-rows: minmax(42rem, 78svh) auto max-content;
+        }
+
         .info-window {
           grid-template-columns: 1fr;
           height: auto;
@@ -697,6 +706,10 @@
         .app {
           grid-template-rows: minmax(28rem, 58svh) auto max-content;
           padding: 0.35rem;
+        }
+
+        .app.is-art-panel {
+          grid-template-rows: minmax(40rem, 76svh) auto max-content;
         }
 
         .scene-readout {
@@ -934,6 +947,9 @@
         pointerDown() {}
         pointerMove() {}
         pointerUp() {}
+        pinchStart() {}
+        pinchMove() {}
+        pinchEnd() {}
         cancelPointer() {}
         wheel() {}
         keyboard() { return false; }
@@ -1180,8 +1196,49 @@
           event.preventDefault();
         }
 
+        pinchStart(event, info) {
+          const pane = this.paneFromInfo(info);
+          if (!pane || !info?.distance) return;
+          event.preventDefault();
+          this.drag = null;
+          this.pinch = {
+            julia: pane.julia,
+            x: info.px,
+            y: info.py,
+            distance: Math.max(1, info.distance),
+            center: { ...pane.camera.center },
+            scale: pane.camera.scale
+          };
+        }
+
+        pinchMove(event, info) {
+          if (!this.pinch || !info?.distance) return;
+          const pane = this.paneFromInfo(info);
+          if (!pane || pane.julia !== this.pinch.julia) return;
+          event.preventDefault();
+          const camera = pane.camera;
+          camera.center = { ...this.pinch.center };
+          camera.scale = this.pinch.scale;
+          this.zoomAt(info, info.distance / this.pinch.distance);
+          const dx = info.px - this.pinch.x;
+          const dy = info.py - this.pinch.y;
+          const paneW = Math.max(1, size.w * 0.5);
+          const paneH = Math.max(1, size.h);
+          const aspect = this.paneAspect();
+          camera.center = {
+            x: camera.center.x - (dx / paneW) * aspect * camera.scale,
+            y: camera.center.y + (dy / paneH) * camera.scale
+          };
+        }
+
+        pinchEnd(event) {
+          this.pinch = null;
+          event?.preventDefault?.();
+        }
+
         cancelPointer() {
           this.drag = null;
+          this.pinch = null;
         }
 
         wheel(event, info) {
@@ -4096,8 +4153,40 @@
           this.cameraDrag = null;
         }
 
+        pinchStart(event, info) {
+          if (!info?.distance) return;
+          event.preventDefault();
+          this.cameraDrag = null;
+          this.cameraPinch = {
+            x: info.px,
+            y: info.py,
+            distance: Math.max(1, info.distance),
+            zoom: this.cameraZoom,
+            panX: this.cameraPanX,
+            panY: this.cameraPanY
+          };
+        }
+
+        pinchMove(event, info) {
+          if (!this.cameraPinch || !info?.distance) return;
+          event.preventDefault();
+          this.cameraZoom = this.cameraPinch.zoom;
+          this.cameraPanX = this.cameraPinch.panX;
+          this.cameraPanY = this.cameraPinch.panY;
+          this.zoomCameraAt(size, this.cameraPinch.x, this.cameraPinch.y, info.distance / this.cameraPinch.distance);
+          this.cameraPanX += info.px - this.cameraPinch.x;
+          this.cameraPanY += info.py - this.cameraPinch.y;
+          this.view(size);
+        }
+
+        pinchEnd(event) {
+          this.cameraPinch = null;
+          event?.preventDefault?.();
+        }
+
         cancelPointer() {
           this.cameraDrag = null;
+          this.cameraPinch = null;
         }
 
         wheel(event, info) {
@@ -7273,6 +7362,8 @@
           });
           this.hitboxes = [];
           this.down = null;
+          this.pan = { x: 0, y: 0 };
+          this.world = { w: 1, h: 1 };
           this.mouse = { px: 0, py: 0, x: 0.5, y: 0.5, t: -Infinity };
           this.bodies = [];
           this.gl = null;
@@ -7326,10 +7417,11 @@
           const layout = this.layoutCards(size);
           this.syncBodies(layout);
           this.stepBodies(dt, size, t);
+          this.clampPan(size);
           this.hitboxes = this.bodies.map((body) => ({
             ...body.card,
-            x: body.x,
-            y: body.y,
+            x: body.x + this.pan.x,
+            y: body.y + this.pan.y,
             w: body.card.w,
             h: body.card.h
           }));
@@ -7373,24 +7465,28 @@
         layoutCards(size) {
           const count = this.items.length;
           const margin = clamp(size.w * 0.045, 18, 62);
-          const cols = size.w > 1350 ? 5 : size.w > 940 ? 4 : size.w > 620 ? 3 : 2;
+          const cols = size.w > 1280 ? 5 : size.w > 860 ? 4 : size.w > 500 ? 3 : 2;
           const gap = clamp(size.w * 0.018, 10, 28);
           const rows = Math.ceil(count / cols);
           const labelH = clamp(size.h * 0.045, 24, 36);
-          const widthDrivenW = Math.max(112, (size.w - margin * 2 - gap * (cols - 1)) / cols);
-          const availableH = Math.max(180, size.h - margin - 42 - gap * (rows - 1));
-          const heightDrivenW = Math.max(112, (availableH / rows - labelH) / 0.68);
-          const cardW = Math.min(widthDrivenW, heightDrivenW);
+          const widthDrivenW = (size.w - margin * 2 - gap * (cols - 1)) / cols;
+          const cardW = clamp(widthDrivenW, 120, size.w < 620 ? 210 : 320);
           const imageH = cardW * 0.68;
           const cardH = imageH + labelH;
-          const totalH = rows * cardH + (rows - 1) * gap;
-          const startY = Math.max(42, Math.min(margin + 26, (size.h - totalH) * 0.52));
+          const usedW = cols * cardW + gap * (cols - 1);
+          const startX = Math.max(margin, (size.w - usedW) * 0.5);
+          const startY = margin + 48;
+          const totalH = startY + rows * cardH + (rows - 1) * gap + margin;
+          this.world = {
+            w: Math.max(size.w, startX + usedW + margin),
+            h: Math.max(size.h, totalH)
+          };
           return this.items.map((entry, index) => {
             const col = index % cols;
             const row = Math.floor(index / cols);
             return {
               ...entry,
-              targetX: margin + col * (cardW + gap),
+              targetX: startX + col * (cardW + gap),
               targetY: startY + row * (cardH + gap),
               w: cardW,
               h: cardH,
@@ -7398,6 +7494,13 @@
               labelH
             };
           });
+        }
+
+        clampPan(size) {
+          const minX = Math.min(0, size.w - this.world.w);
+          const minY = Math.min(0, size.h - this.world.h);
+          this.pan.x = clamp(this.pan.x, minX, 0);
+          this.pan.y = clamp(this.pan.y, minY, 0);
         }
 
         syncBodies(cards) {
@@ -7424,8 +7527,8 @@
           for (let i = 0; i < this.bodies.length; i++) {
             const body = this.bodies[i];
             const card = body.card;
-            const cx = body.x + card.w * 0.5;
-            const cy = body.y + card.h * 0.45;
+            const cx = body.x + this.pan.x + card.w * 0.5;
+            const cy = body.y + this.pan.y + card.h * 0.45;
             const tx = card.targetX;
             const ty = card.targetY;
             body.vx += (tx - body.x) * 0.045 * k;
@@ -7451,8 +7554,8 @@
             body.vy *= 0.84;
             body.x += body.vx * k;
             body.y += body.vy * k;
-            body.x = clamp(body.x, 8, Math.max(8, size.w - card.w - 8));
-            body.y = clamp(body.y, 38, Math.max(38, size.h - card.h - 8));
+            body.x = clamp(body.x, 8, Math.max(8, this.world.w - card.w - 8));
+            body.y = clamp(body.y, 38, Math.max(38, this.world.h - card.h - 8));
           }
         }
 
@@ -7507,19 +7610,32 @@
         }
 
         pointerDown(event, info) {
-          this.down = { x: info.px, y: info.py };
+          if (!info) return;
+          event.preventDefault();
+          this.down = { x: info.px, y: info.py, panX: this.pan.x, panY: this.pan.y, moved: false };
           this.updateMouse(info);
         }
 
         pointerMove(event, info) {
+          if (!info) return;
           this.updateMouse(info);
+          if (!this.down) return;
+          event.preventDefault();
+          const dx = info.px - this.down.x;
+          const dy = info.py - this.down.y;
+          if (Math.hypot(dx, dy) > 4) this.down.moved = true;
+          this.pan.x = this.down.panX + dx;
+          this.pan.y = this.down.panY + dy;
+          this.clampPan(size);
         }
 
         pointerUp(event, info) {
+          if (!info) return;
           this.updateMouse(info);
           const moved = this.down ? Math.hypot(info.px - this.down.x, info.py - this.down.y) : 0;
+          const wasDrag = this.down?.moved;
           this.down = null;
-          if (moved > 10) return;
+          if (moved > 10 || wasDrag) return;
           const card = this.hitboxes.find((box) => (
             info.px >= box.x &&
             info.px <= box.x + box.w &&
@@ -7571,6 +7687,8 @@
       let activeScene = ensureScene('ants');
       let size = { w: 1, h: 1, dpr: 1 };
       let pointer = null;
+      const activePointers = new Map();
+      let pinchActive = false;
       let rafId = 0;
       let resizeRafId = 0;
       let running = true;
@@ -7785,12 +7903,33 @@
 
       on(stageWrap, 'pointerdown', (event) => {
         stageWrap.setPointerCapture(event.pointerId);
+        activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
         stageWrap.classList.add('is-dragging');
-        pointer = { id: event.pointerId, sx: event.clientX, sy: event.clientY, moved: false };
-        activeScene.pointerDown(event, pointerInfo(event));
+        if (activePointers.size === 1) {
+          pointer = { id: event.pointerId, sx: event.clientX, sy: event.clientY, moved: false };
+          activeScene.pointerDown(event, pointerInfo(event));
+        } else if (activePointers.size === 2) {
+          activeScene.cancelPointer();
+          pointer = null;
+          pinchActive = true;
+          activeScene.pinchStart(event, pinchInfo());
+        }
       });
 
       on(stageWrap, 'pointermove', (event) => {
+        if (!activePointers.has(event.pointerId)) return;
+        activePointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY });
+        if (activePointers.size >= 2) {
+          if (!pinchActive) {
+            activeScene.cancelPointer();
+            pointer = null;
+            pinchActive = true;
+            activeScene.pinchStart(event, pinchInfo());
+          } else {
+            activeScene.pinchMove(event, pinchInfo());
+          }
+          return;
+        }
         if (!pointer || pointer.id !== event.pointerId) return;
         const dx = event.clientX - pointer.sx;
         const dy = event.clientY - pointer.sy;
@@ -7799,13 +7938,28 @@
       });
 
       on(stageWrap, 'pointerup', (event) => {
-        if (!pointer || pointer.id !== event.pointerId) return;
-        const dx = event.clientX - pointer.sx;
-        const dy = event.clientY - pointer.sy;
+        const wasPinching = pinchActive || activePointers.size > 1;
+        const pinchEndInfo = wasPinching ? pinchInfo() : null;
         if (stageWrap.hasPointerCapture(event.pointerId)) {
           stageWrap.releasePointerCapture(event.pointerId);
         }
-        stageWrap.classList.remove('is-dragging');
+        if (wasPinching) {
+          activePointers.delete(event.pointerId);
+          activeScene.pinchEnd(event, pinchEndInfo);
+          pinchActive = false;
+          pointer = null;
+          if (!activePointers.size) stageWrap.classList.remove('is-dragging');
+          return;
+        }
+        if (!pointer || pointer.id !== event.pointerId) {
+          activePointers.delete(event.pointerId);
+          if (!activePointers.size) stageWrap.classList.remove('is-dragging');
+          return;
+        }
+        const dx = event.clientX - pointer.sx;
+        const dy = event.clientY - pointer.sy;
+        activePointers.delete(event.pointerId);
+        if (!activePointers.size) stageWrap.classList.remove('is-dragging');
         if (activeId === 'ants' && pointer.moved && Math.hypot(dx, dy) > 44) {
           if (Math.abs(dx) > Math.abs(dy)) goDirection(dx < 0 ? 'right' : 'left');
           else goDirection(dy < 0 ? 'down' : 'up');
@@ -7816,11 +7970,18 @@
       });
 
       function clearPointer(event) {
+        const wasPinching = pinchActive || activePointers.size > 1;
+        if (event.pointerId == null) activePointers.clear();
+        else activePointers.delete(event.pointerId);
+        if (wasPinching) {
+          activeScene.pinchEnd(event, null);
+          pinchActive = false;
+        }
         if (pointer && (event.pointerId == null || event.pointerId === pointer.id)) {
           activeScene.cancelPointer();
           pointer = null;
-          stageWrap.classList.remove('is-dragging');
         }
+        if (!activePointers.size) stageWrap.classList.remove('is-dragging');
       }
 
       on(stageWrap, 'pointercancel', clearPointer);
@@ -7845,10 +8006,10 @@
       on(window, 'pagehide', disposeApp);
       window.__panelPrototypeDispose = disposeApp;
 
-      function pointerInfo(event) {
+      function pointInfo(clientX, clientY) {
         const rect = stageWrap.getBoundingClientRect();
-        const px = event.clientX - rect.left;
-        const py = event.clientY - rect.top;
+        const px = clientX - rect.left;
+        const py = clientY - rect.top;
         return {
           x: clamp(px / rect.width, 0, 1),
           y: clamp(py / rect.height, 0, 1),
@@ -7856,6 +8017,29 @@
           py,
           w: rect.width,
           h: rect.height
+        };
+      }
+
+      function pointerInfo(event) {
+        return pointInfo(event.clientX, event.clientY);
+      }
+
+      function pinchInfo() {
+        const points = Array.from(activePointers.values()).slice(0, 2);
+        if (points.length < 2) return null;
+        const a = pointInfo(points[0].clientX, points[0].clientY);
+        const b = pointInfo(points[1].clientX, points[1].clientY);
+        const px = (a.px + b.px) * 0.5;
+        const py = (a.py + b.py) * 0.5;
+        return {
+          x: clamp(px / Math.max(1, a.w), 0, 1),
+          y: clamp(py / Math.max(1, a.h), 0, 1),
+          px,
+          py,
+          w: a.w,
+          h: a.h,
+          distance: Math.hypot(a.px - b.px, a.py - b.py),
+          points: [a, b]
         };
       }
 
