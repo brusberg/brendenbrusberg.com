@@ -7756,6 +7756,12 @@
         });
       }
 
+      function resetPanelScroll() {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+
       function setPanel(id, push = true) {
         const requestedHash = String(id || 'ants').replace(/^#/, '');
         id = normalizePanelId(requestedHash);
@@ -7782,6 +7788,7 @@
         resize();
         renderInfo(panelData[id]);
         updateNav();
+        resetPanelScroll();
       }
 
       function renderInfo(data) {
