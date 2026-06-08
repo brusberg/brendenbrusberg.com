@@ -126,6 +126,69 @@
 
     </main>
 
+      <footer class="ant-page-footer" aria-label="Portfolio navigation">
+        <p>All opinions are my own and do not represent my employer. :)</p>
+        <nav class="ant-page-map" aria-label="Explore panels">
+          <a href="/#ants" target="_parent" aria-current="page">Main Page</a>
+          <a href="/#stats" target="_parent">Stats</a>
+          <a href="/#mandelbrot" target="_parent">History</a>
+          <a href="/#art" target="_parent">Projects and Writting</a>
+        </nav>
+      </footer>
+
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      (() => {
+        const messageType = 'ant-content-size';
+        const requestType = 'request-ant-content-size';
+        let frame = 0;
+
+        function measureHeight() {
+          const root = document.documentElement;
+          const body = document.body;
+          return Math.ceil(Math.max(
+            root.scrollHeight,
+            root.offsetHeight,
+            body ? body.scrollHeight : 0,
+            body ? body.offsetHeight : 0
+          ));
+        }
+
+        function reportHeight() {
+          frame = 0;
+          const height = measureHeight();
+          const boundedHeight = Math.min(Math.max(height, 544), 2800);
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.document.documentElement.style.setProperty('--ants-frame-height', boundedHeight + 'px');
+            }
+          } catch {}
+          if (typeof window.parent?.postMessage === 'function') {
+            window.parent.postMessage({ type: messageType, height }, window.location.origin);
+          }
+        }
+
+        function queueReport() {
+          if (frame) cancelAnimationFrame(frame);
+          frame = requestAnimationFrame(reportHeight);
+        }
+
+        window.addEventListener('load', queueReport);
+        window.addEventListener('resize', queueReport);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', queueReport);
+        window.addEventListener('message', (event) => {
+          if (event.origin !== window.location.origin) return;
+          if (event.data?.type === requestType) queueReport();
+        });
+        if ('ResizeObserver' in window) {
+          const observer = new ResizeObserver(queueReport);
+          observer.observe(document.documentElement);
+          if (document.body) observer.observe(document.body);
+        }
+        setTimeout(queueReport, 0);
+        setTimeout(queueReport, 250);
+        setTimeout(queueReport, 1000);
+      })();
+    </script>
   </body>
 </html>
