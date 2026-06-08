@@ -29,7 +29,7 @@
         <p><a href="https://www.linkedin.com/in/elizabethpears/">Elizabeth Pears</a> taught me to be friendly at work; it will always pay off. <a href="https://www.linkedin.com/in/sarahtobey/">Sarah Tobey</a> taught me to know the answer to any question, and if not, be really good at finding the answer. <a href="https://www.linkedin.com/in/aitong-li/">Aitong Li</a> and <a href="https://www.linkedin.com/in/mikayla-munnery-70614682/">Mikayla Munnery</a> showed me teams at work are not your family, but sometimes the friends you meet at work do become your family outside of work. <a href="https://www.linkedin.com/in/stevenrspangler/">Steve Spangler</a> taught me that a well-timed joke at a meeting is sometimes more important than the entire meeting. <a href="https://www.linkedin.com/in/alice-damonte/">Alice Damonte</a> reminded me: do not forget who you are.</p>
       </div>
       <div class="story-section">
-        <p><span class="story-subhead">People that inspire me</span><a href="https://www.3blue1brown.com/">3Blue1Brown</a>: anyone can learn math, and it is beautiful. <a href="https://xkcd.com/">xkcd</a>: learning is fun. <a href="https://www.tomscott.com/">Tom Scott</a>: learning is everywhere.</p>
+        <p><span class="story-subhead">People that inspire me</span><a href="https://www.3blue1brown.com/">3Blue1Brown</a>: anyone can learn math, and it is beautiful. <a href="https://xkcd.com/">xkcd</a>: learning is fun. <a href="https://www.tomscott.com/">Tom Scott</a>: learning is everywhere. <a href="https://www.youtube.com/@twoswap">TwoSwap</a> showed me learning can be visualized. <a href="https://www.youtube.com/@Acerola_t">Acerola</a> showed me how to learn shaders. <a href="https://www.youtube.com/@AltonBrown">Alton Brown</a> taught me how to cook. <a href="https://www.youtube.com/@BennJordan">Benn Jordan</a> showed me learning is hands on. <a href="https://www.youtube.com/@CorridorCrew">Corridor Crew</a> showed me the best job is to be continuously learning. <a href="https://www.youtube.com/@DamiLeeArch">Dami Lee</a> teaches me about architecture. <a href="https://www.youtube.com/@ExplosionsAndFire">Explosions&amp;Fire</a> showed me research is trying to replicate it yourself. <a href="https://www.youtube.com/@MinutePhysics">MinutePhysics</a> showed me you do not need to be artistic to teach others. <a href="https://www.youtube.com/@Nerdwriter1">Nerdwriter</a> showed me you can learn by trying to articulate what you like and do not like. <a href="https://www.youtube.com/@WelchLabs">Welch Labs</a> shows where the real meets applied machine learning. <a href="https://www.youtube.com/@ArtemKirsanov">Artem Kirsanov</a> teaches me about learning in machine learning.</p>
       </div>
     `,
     sectionLabel: 'Friends',
@@ -48,7 +48,18 @@
       ['Petra Kummerova', 'https://www.linkedin.com/in/petra-kummerova-07612659/'],
       ['3Blue1Brown', 'https://www.3blue1brown.com/'],
       ['xkcd', 'https://xkcd.com/'],
-      ['Tom Scott', 'https://www.tomscott.com/']
+      ['Tom Scott', 'https://www.tomscott.com/'],
+      ['TwoSwap', 'https://www.youtube.com/@twoswap'],
+      ['Acerola', 'https://www.youtube.com/@Acerola_t'],
+      ['Alton Brown', 'https://www.youtube.com/@AltonBrown'],
+      ['Benn Jordan', 'https://www.youtube.com/@BennJordan'],
+      ['Corridor Crew', 'https://www.youtube.com/@CorridorCrew'],
+      ['Dami Lee', 'https://www.youtube.com/@DamiLeeArch'],
+      ['Explosions&Fire', 'https://www.youtube.com/@ExplosionsAndFire'],
+      ['MinutePhysics', 'https://www.youtube.com/@MinutePhysics'],
+      ['Nerdwriter', 'https://www.youtube.com/@Nerdwriter1'],
+      ['Welch Labs', 'https://www.youtube.com/@WelchLabs'],
+      ['Artem Kirsanov', 'https://www.youtube.com/@ArtemKirsanov']
     ],
     actions: []
   });

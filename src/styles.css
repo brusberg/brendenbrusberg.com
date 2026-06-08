@@ -102,9 +102,9 @@ a {
   z-index: 4;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  width: min(12.2rem, calc(100% - 1.3rem));
+  width: min(11.6rem, calc(100% - 1.3rem));
   min-width: 0;
-  padding: 0.58rem 0.62rem 0.62rem;
+  padding: 0.55rem 0.59rem 0.59rem;
   border: 1px solid rgba(238, 220, 167, 0.18);
   background: rgba(17, 20, 15, 0.74);
   box-shadow: 0 0.42rem 1.5rem rgba(0, 0, 0, 0.22);
@@ -117,7 +117,7 @@ a {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 0.32rem;
+  gap: 0.3rem;
   min-width: 0;
 }
 
@@ -131,7 +131,7 @@ a {
 .allocation-heading span,
 .allocation-values span {
   color: #d3b878;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 790;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -139,12 +139,12 @@ a {
 
 .allocation-heading strong {
   color: rgba(255, 249, 233, 0.92);
-  font-size: 0.98rem;
+  font-size: 0.93rem;
   line-height: 1.1;
 }
 
 .allocation-triangle {
-  width: min(100%, 5.4rem);
+  width: min(100%, 5.1rem);
   aspect-ratio: 100 / 86;
   overflow: visible;
   touch-action: none;
@@ -168,6 +168,15 @@ a {
   stroke-width: 1.6;
 }
 
+.allocation-label {
+  fill: rgba(211, 184, 120, 0.86);
+  font-size: 6px;
+  font-weight: 760;
+  letter-spacing: 0;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
 .allocation-values {
   display: grid;
   grid-template-columns: 1fr;
@@ -183,7 +192,7 @@ a {
   justify-content: center;
   gap: 0.22rem;
   color: rgba(255, 249, 233, 0.82);
-  font-size: 0.64rem;
+  font-size: 0.61rem;
   line-height: 1;
   white-space: nowrap;
 }
@@ -233,7 +242,7 @@ a {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35rem;
-  width: min(100%, 9.2rem);
+  width: min(100%, 8.75rem);
   padding-top: 0.22rem;
   border-top: 1px solid rgba(238, 220, 167, 0.13);
 }
@@ -564,7 +573,7 @@ h1 {
   }
 
   .allocation-panel {
-    width: min(11rem, calc(100% - 1.2rem));
+    width: min(10.45rem, calc(100% - 1.2rem));
   }
 
   .simant-note {
@@ -666,9 +675,9 @@ h1 {
   .allocation-panel {
     right: 0.55rem;
     bottom: 0.55rem;
-    width: min(9.2rem, calc(100% - 1.1rem));
+    width: min(8.75rem, calc(100% - 1.1rem));
     gap: 0.24rem;
-    padding: 0.46rem 0.5rem 0.52rem;
+    padding: 0.44rem 0.48rem 0.49rem;
   }
 
   .profile-facts {
@@ -693,7 +702,7 @@ h1 {
   }
 
   .allocation-triangle {
-    width: min(100%, 4.45rem);
+    width: min(100%, 4.23rem);
   }
 
   .allocation-values {
@@ -814,7 +823,7 @@ h1 {
   }
 
   .allocation-triangle {
-    width: min(100%, 4rem);
+    width: min(100%, 3.8rem);
   }
 
   .allocation-values span {
