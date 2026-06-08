@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#08100b" />
     <meta
       name="description"
-      content="Brenden Brusberg designs applied AI, data systems, knowledge graph, and simulation interfaces for understanding complex systems."
+      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://brendenbrusberg.com/" />
@@ -16,7 +16,7 @@
     <meta property="og:title" content="Brenden Brusberg" />
     <meta
       property="og:description"
-      content="Applied AI systems, data platforms, simulation UI, and complex systems work by Brenden Brusberg."
+      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
     />
     <meta property="og:image" content="https://brendenbrusberg.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
@@ -28,7 +28,7 @@
     <meta name="twitter:title" content="Brenden Brusberg" />
     <meta
       name="twitter:description"
-      content="Applied AI systems, data platforms, simulation UI, and complex systems work by Brenden Brusberg."
+      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
     />
     <meta name="twitter:image" content="https://brendenbrusberg.com/og-image.png" />
     <meta name="twitter:image:alt" content="Brusberg wordmark on a dark portfolio preview" />
@@ -397,6 +397,27 @@
         text-transform: uppercase;
       }
 
+      .story-section {
+        break-inside: avoid;
+        border-top: 1px solid rgba(205, 187, 120, 0.18);
+        margin-top: 1rem;
+        padding-top: 0.84rem;
+      }
+
+      .story-section:first-child {
+        border-top: 0;
+        margin-top: 0;
+        padding-top: 0;
+      }
+
+      .story-section .story-subhead {
+        margin-top: 0;
+      }
+
+      .story-section p:last-child {
+        margin-bottom: 0;
+      }
+
 
       .stat-list {
         display: grid;
@@ -687,7 +708,7 @@
         }
 
         .app.is-art-panel {
-          grid-template-rows: minmax(42rem, 78svh) auto max-content;
+          grid-template-rows: minmax(28rem, 62svh) auto max-content;
         }
 
         .info-window {
@@ -709,7 +730,7 @@
         }
 
         .app.is-art-panel {
-          grid-template-rows: minmax(40rem, 76svh) auto max-content;
+          grid-template-rows: minmax(24rem, 56svh) auto max-content;
         }
 
         .scene-readout {
@@ -7428,13 +7449,7 @@
             h: body.card.h
           }));
           this.hitboxes.forEach((card, index) => this.drawArtCard(g, card, index, t));
-
-          g.fillStyle = 'rgba(248,241,222,0.9)';
-          g.font = `bold ${Math.max(13, Math.min(22, size.w * 0.016))}px monospace`;
-          g.fillText('ART + WRITING / CLICK A PIECE', this.hitboxes[0]?.x || 24, Math.max(28, (this.hitboxes[0]?.y || 44) - 18));
-          readout.textContent = this.glFailed
-            ? 'Art canvas gallery / fallback starfield / click or tap a framed piece'
-            : 'Art canvas gallery / WebGL starfield / mouse-reactive frames';
+          readout.textContent = '';
         }
 
         drawBackground(size, t) {
@@ -7757,7 +7772,7 @@
         canvas.style.visibility = id === 'mandelbrot' || id === 'ants' ? 'hidden' : 'visible';
         glCanvas.style.visibility = id === 'mandelbrot' || id === 'art' ? 'visible' : 'hidden';
         stageFrame.classList.toggle('is-active', id === 'ants');
-        readout.style.display = id === 'ants' || id === 'stats' ? 'none' : '';
+        readout.style.display = id === 'ants' || id === 'stats' || id === 'art' ? 'none' : '';
         if (shouldRewriteAlias && location.hash.slice(1) !== id) {
           history.replaceState(null, '', `#${id}`);
         } else if (push && location.hash.slice(1) !== id) {
