@@ -1,0 +1,33 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/game",
+      "destination": "https://game-app.brendenbrusberg.com/game"
+    },
+    {
+      "source": "/game/:path*",
+      "destination": "https://game-app.brendenbrusberg.com/game/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/game",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/game/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ]
+}

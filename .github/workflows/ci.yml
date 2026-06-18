@@ -27,6 +27,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Validate game rewrite config
+        run: |
+          node -e "const fs=require('fs'); const cfg=JSON.parse(fs.readFileSync('vercel.json','utf8')); const rewrites=cfg.rewrites||[]; const headers=cfg.headers||[]; const hasGame=rewrites.some((r)=>r.source==='/game'&&r.destination==='https://game-app.brendenbrusberg.com/game'); const hasGamePaths=rewrites.some((r)=>r.source==='/game/:path*'&&r.destination==='https://game-app.brendenbrusberg.com/game/:path*'); const hasNoIndex=headers.some((h)=>h.source==='/game'&&(h.headers||[]).some((v)=>v.key==='X-Robots-Tag'&&v.value==='noindex, nofollow')) && headers.some((h)=>h.source==='/game/:path*'&&(h.headers||[]).some((v)=>v.key==='X-Robots-Tag'&&v.value==='noindex, nofollow')); if (!hasGame || !hasGamePaths || !hasNoIndex) { throw new Error('Missing /game rewrite or noindex header'); }"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
