@@ -1,0 +1,205 @@
+:root {
+  color: #fff8e8;
+  background: #08100b;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  background: #08100b;
+}
+
+body {
+  min-height: 100svh;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+.error-shell {
+  display: grid;
+  min-height: 100svh;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background:
+    linear-gradient(90deg, rgba(205, 187, 120, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(205, 187, 120, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at 16% 18%, rgba(39, 69, 49, 0.48), transparent 26rem),
+    radial-gradient(circle at 84% 74%, rgba(205, 187, 120, 0.12), transparent 20rem),
+    #08100b;
+  background-size:
+    44px 44px,
+    44px 44px,
+    auto,
+    auto,
+    auto;
+  place-items: center;
+}
+
+.error-window {
+  position: relative;
+  width: min(100%, 920px);
+  border: 1px solid rgba(205, 187, 120, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 232, 0.03), transparent 18rem),
+    #07100b;
+  box-shadow:
+    0 2rem 5rem rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 248, 232, 0.04);
+  padding: clamp(1.25rem, 5vw, 3.75rem);
+}
+
+.error-window::before,
+.error-window::after {
+  position: absolute;
+  right: clamp(1rem, 3vw, 2rem);
+  width: 6rem;
+  height: 0.5rem;
+  border-top: 2px solid rgba(205, 187, 120, 0.5);
+  border-bottom: 2px solid rgba(205, 187, 120, 0.3);
+  content: "";
+}
+
+.error-window::before {
+  top: clamp(1rem, 3vw, 2rem);
+}
+
+.error-window::after {
+  bottom: clamp(0.8rem, 2vw, 1.25rem);
+  transform: translateY(0.9rem);
+}
+
+.eyebrow {
+  margin: 0 0 0.8rem;
+  color: #d9c56d;
+  font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1 {
+  max-width: 11ch;
+  margin: 0;
+  color: #fff8e8;
+  font-size: clamp(3.6rem, 10vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+.lede {
+  max-width: 55rem;
+  margin: clamp(1rem, 3vw, 1.6rem) 0 0;
+  color: rgba(255, 248, 232, 0.75);
+  font-size: clamp(1.15rem, 2.3vw, 1.7rem);
+  line-height: 1.3;
+}
+
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.55rem, 1.5vw, 0.85rem);
+  margin-top: clamp(1.6rem, 4vw, 3rem);
+}
+
+.route-card {
+  display: flex;
+  min-height: clamp(5rem, 11vw, 6.25rem);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(205, 187, 120, 0.36);
+  background: #10170f;
+  padding: clamp(0.85rem, 2vw, 1.1rem);
+  color: #fff8e8;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.route-card:hover,
+.route-card:focus-visible {
+  border-color: #d9c56d;
+  background: #d9c56d;
+  color: #08100b;
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.route-card span {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 900;
+  line-height: 1.12;
+  text-transform: uppercase;
+}
+
+.error-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: clamp(1.2rem, 3vw, 2rem) 0 0;
+}
+
+.error-meta div {
+  min-width: 0;
+  border-top: 1px solid rgba(205, 187, 120, 0.24);
+  padding-top: 0.75rem;
+}
+
+.error-meta dt {
+  color: #d9c56d;
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.error-meta dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  color: rgba(255, 248, 232, 0.7);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 540px) {
+  .error-shell {
+    align-items: stretch;
+    padding: 0.65rem;
+  }
+
+  .error-window {
+    min-height: calc(100svh - 1.3rem);
+    padding: 1rem;
+  }
+
+  .error-window::before,
+  .error-window::after {
+    display: none;
+  }
+
+  h1 {
+    max-width: 9ch;
+  }
+
+  .route-card {
+    min-height: 7rem;
+  }
+
+  .error-meta {
+    grid-template-columns: 1fr;
+  }
+}
