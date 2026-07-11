@@ -548,6 +548,25 @@ h1 {
   }
 }
 
+@media (min-width: 861px) {
+  .site-shell {
+    --sim-min: 24rem;
+    --sim-max: 52rem;
+    --info-budget: clamp(13rem, 34svh, 20rem);
+
+    grid-template-rows:
+      clamp(var(--sim-min), calc(100svh - var(--info-budget)), var(--sim-max))
+      auto;
+    align-content: start;
+  }
+}
+
+@media (min-width: 861px) and (max-height: 800px) {
+  .site-shell {
+    --info-budget: clamp(14rem, 36svh, 21rem);
+  }
+}
+
 @media (max-width: 860px) {
   .site-shell {
     grid-template-rows: minmax(25rem, 1fr) auto;
