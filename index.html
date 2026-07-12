@@ -123,6 +123,14 @@
         overflow: visible;
       }
 
+      @media (min-width: 2200px) {
+        .app.is-ants-panel {
+          height: auto;
+          width: 100%;
+          grid-template-rows: clamp(59rem, 87svh, 70rem) max-content;
+        }
+      }
+
       .app.is-art-panel {
         grid-template-rows: minmax(32rem, 68svh) auto max-content;
       }
