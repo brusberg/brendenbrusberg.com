@@ -479,6 +479,13 @@
         }
       }
 
+      .project-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.62rem;
+        margin-top: 0.55rem;
+      }
+
       .gallery-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
@@ -487,6 +494,7 @@
       }
 
       .gallery-card,
+      .project-block,
       .writing-popout-button {
         border: 1px solid rgba(205, 187, 120, 0.24);
         border-radius: 0;
@@ -512,30 +520,48 @@
         filter: saturate(0.88) contrast(1.04);
       }
 
-      .gallery-card span,
-      .writing-popout-button span {
+      .gallery-card span {
         color: #d6bd68;
         font-size: 0.72rem;
         font-weight: 820;
         text-transform: uppercase;
       }
 
+      .project-block,
+      .writing-popout-button {
+        display: grid;
+        gap: 0.3rem;
+        padding: 0.72rem 0.82rem;
+      }
+
+      .project-block {
+        text-decoration: none;
+      }
+
       .gallery-card:hover,
+      .project-block:hover,
       .writing-popout-button:hover {
         border-color: rgba(255, 236, 152, 0.58);
       }
 
-      .writing-popout-button {
-        display: grid;
-        gap: 0.3rem;
-        width: min(100%, 24rem);
-        margin-top: 0.55rem;
-        padding: 0.72rem 0.82rem;
-        cursor: pointer;
-      }
-
+      .project-block strong,
       .writing-popout-button strong {
         color: #fff8e8;
+      }
+
+      .project-block span,
+      .writing-popout-button span {
+        color: rgba(248, 241, 222, 0.68);
+        font-size: 0.9rem;
+        font-weight: 400;
+        line-height: 1.35;
+        text-transform: none;
+      }
+
+      .writing-popout-button {
+        width: min(100%, 24rem);
+        margin-top: 0.55rem;
+        cursor: pointer;
       }
 
       .popout {
@@ -777,6 +803,10 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .project-grid {
+          grid-template-columns: 1fr;
+        }
+
         .popout {
           padding: 0.55rem;
         }
@@ -922,8 +952,8 @@
       popoutItems.poem = { title: 'Freighter-00G8', body: poemHtml };
       const poemButtonHtml = `
         <button class="writing-popout-button" type="button" data-popout-id="poem">
-          <span>Writing</span>
-          <strong>Open poem: Freighter-00G8</strong>
+          <strong>Freighter-00G8</strong>
+          <span>Poem</span>
         </button>`;
 
       function panelFactory(id) {

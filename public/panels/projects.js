@@ -11,9 +11,25 @@
         <p><span class="story-subhead">Art</span>I mostly paint to make postcards as gifts. The artwork lives in the top scene now. Click or tap a framed piece in the canvas to open it larger.</p>
       </div>
       <div class="story-section">
-        <p><span class="story-subhead">Projects</span><a href="https://www.mckinsey.com/capabilities/mckinsey-design/how-we-help-clients/design-blog/the-emotion-archive-finding-global-empathy-in-a-challenging-time">Emotion Archive</a>: finding global empathy in a challenging time.</p>
-        <p><a href="https://dungeons-kitten-table.vercel.app/">Dungeons and Kittens Online Tabletop</a>.</p>
-        <p>Rust Steaming Coffee: <a href="https://github.com/brusberg/coffee">brusberg/coffee</a>, written by hand to learn.</p>
+        <span class="story-subhead">Projects</span>
+        <div class="project-grid">
+          <a class="project-block" href="https://poker-snake.com/">
+            <strong>Poker Snake</strong>
+            <span>Build poker hands by drawing connected paths through a 6x6 card board in a twelve-round roguelike campaign.</span>
+          </a>
+          <a class="project-block" href="https://dungeons-kitten-table.vercel.app/">
+            <strong>Dungeons and Kittens</strong>
+            <span>Online tabletop.</span>
+          </a>
+          <a class="project-block" href="https://github.com/brusberg/coffee">
+            <strong>Rust Steaming Coffee</strong>
+            <span>Written by hand to learn.</span>
+          </a>
+          <a class="project-block" href="https://www.mckinsey.com/capabilities/mckinsey-design/how-we-help-clients/design-blog/the-emotion-archive-finding-global-empathy-in-a-challenging-time">
+            <strong>Emotion Archive</strong>
+            <span>Finding global empathy in a challenging time.</span>
+          </a>
+        </div>
       </div>
       <div class="story-section">
         <p><span class="story-subhead">Writing</span>Writing is coming soon, likely through Substack. For now, one older poem lives here as a popout instead of taking over the whole page.</p>
