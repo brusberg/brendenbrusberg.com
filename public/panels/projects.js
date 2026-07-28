@@ -5,7 +5,7 @@
     eyebrow: '',
     title: 'Projects & Writing',
     summary:
-      'Art, writing, projects, friends, mentors, and the people whose work keeps me learning. Plus an interactive art gallery scene.',
+      'Art, writing, projects, friends, mentors, and the people whose work keeps me learning.',
     storyHtml: `
       <div class="story-section">
         <p><span class="story-subhead">Art</span>I mostly paint to make postcards as gifts. The artwork lives in the top scene now. Click or tap a framed piece in the canvas to open it larger.</p>

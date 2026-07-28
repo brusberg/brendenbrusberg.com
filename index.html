@@ -926,7 +926,8 @@
         { id: 'art-3', title: 'Artwork 04', src: 'art/PXL_20250111_173336552.jpg', thumb: 'art/thumbs/PXL_20250111_173336552.jpg' },
         { id: 'art-4', title: 'Artwork 05', src: 'art/PXL_20241229_220420140.jpg', thumb: 'art/thumbs/PXL_20241229_220420140.jpg' },
         { id: 'art-5', title: 'Artwork 06', src: 'art/PXL_20250626_133934484.jpg', thumb: 'art/thumbs/PXL_20250626_133934484.jpg' },
-        { id: 'art-6', title: 'Artwork 07', src: 'art/PXL_20250402_000236964.jpg', thumb: 'art/thumbs/PXL_20250402_000236964.jpg' }
+        { id: 'art-6', title: 'Artwork 07', src: 'art/PXL_20250402_000236964.jpg', thumb: 'art/thumbs/PXL_20250402_000236964.jpg' },
+        { id: 'art-7', title: 'Clover', src: 'art/clover.png', thumb: 'art/thumbs/clover.png' }
       ];
       const poemHtml = `
         <div class="poem-body">
@@ -7523,11 +7524,10 @@
           const cols = size.w > 1280 ? 5 : size.w > 860 ? 4 : size.w > 500 ? 3 : 2;
           const gap = clamp(size.w * 0.018, 10, 28);
           const rows = Math.ceil(count / cols);
-          const labelH = clamp(size.h * 0.045, 24, 36);
           const widthDrivenW = (size.w - margin * 2 - gap * (cols - 1)) / cols;
           const cardW = clamp(widthDrivenW, 120, size.w < 620 ? 210 : 320);
           const imageH = cardW * 0.68;
-          const cardH = imageH + labelH;
+          const cardH = imageH;
           const usedW = cols * cardW + gap * (cols - 1);
           const startX = Math.max(margin, (size.w - usedW) * 0.5);
           const startY = margin + 48;
@@ -7545,8 +7545,7 @@
               targetY: startY + row * (cardH + gap),
               w: cardW,
               h: cardH,
-              imageH,
-              labelH
+              imageH
             };
           });
         }
@@ -7641,9 +7640,6 @@
             g.font = '12px monospace';
             g.fillText(card.failed ? 'missing image' : 'loading', x + 16, y + 30);
           }
-          g.fillStyle = '#f2dc90';
-          g.font = `bold ${Math.max(10, Math.min(15, w * 0.07))}px monospace`;
-          g.fillText(card.item.title.toUpperCase(), x + 10, y + imageH + Math.max(18, card.labelH * 0.62));
           g.restore();
         }
 
