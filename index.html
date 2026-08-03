@@ -641,6 +641,59 @@
         object-fit: contain;
       }
 
+      .artwork-popout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.78fr);
+        gap: clamp(1rem, 2vw, 1.6rem);
+        align-items: start;
+        min-width: 0;
+      }
+
+      .artwork-media,
+      .artwork-details {
+        min-width: 0;
+      }
+
+      .artwork-media img {
+        max-height: 70svh;
+      }
+
+      .artwork-details {
+        display: grid;
+        align-content: start;
+        gap: 1rem;
+        color: rgba(248, 241, 222, 0.8);
+        overflow-wrap: anywhere;
+      }
+
+      .artwork-details p {
+        margin: 0;
+      }
+
+      .artwork-meta-group {
+        display: grid;
+        gap: 0.24rem;
+      }
+
+      .artwork-poem {
+        display: grid;
+        gap: 0.9rem;
+        color: rgba(255, 248, 232, 0.92);
+      }
+
+      .artwork-poem strong {
+        font-weight: 760;
+      }
+
+      .poem-indent {
+        display: inline-block;
+        padding-left: 1.5rem;
+      }
+
+      .poem-indent-2 {
+        padding-left: 3rem;
+      }
+
       .poem-body {
         max-width: 36rem;
         white-space: normal;
@@ -754,6 +807,14 @@
 
         .gallery-grid {
           grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+        }
+
+        .artwork-popout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .artwork-media img {
+          max-height: 58svh;
         }
       }
 
@@ -920,14 +981,137 @@
       const originalAntsUrl = `ant.html${location.search || ''}`;
       const workDaysBase = { date: new Date(2026, 5, 5), days: 1700 };
       const artImages = [
-        { id: 'art-0', title: 'Artwork 01', src: 'art/PXL_20241114_162800882.jpg', thumb: 'art/thumbs/PXL_20241114_162800882.jpg' },
-        { id: 'art-1', title: 'Artwork 02', src: 'art/PXL_20250402_000201415.jpg', thumb: 'art/thumbs/PXL_20250402_000201415.jpg' },
-        { id: 'art-2', title: 'Artwork 03', src: 'art/PXL_20241229_213603471.jpg', thumb: 'art/thumbs/PXL_20241229_213603471.jpg' },
-        { id: 'art-3', title: 'Artwork 04', src: 'art/PXL_20250111_173336552.jpg', thumb: 'art/thumbs/PXL_20250111_173336552.jpg' },
-        { id: 'art-4', title: 'Artwork 05', src: 'art/PXL_20241229_220420140.jpg', thumb: 'art/thumbs/PXL_20241229_220420140.jpg' },
-        { id: 'art-5', title: 'Artwork 06', src: 'art/PXL_20250626_133934484.jpg', thumb: 'art/thumbs/PXL_20250626_133934484.jpg' },
-        { id: 'art-6', title: 'Artwork 07', src: 'art/PXL_20250402_000236964.jpg', thumb: 'art/thumbs/PXL_20250402_000236964.jpg' },
-        { id: 'art-7', title: 'Clover', src: 'art/clover.png', thumb: 'art/thumbs/clover.png' }
+        {
+          id: 'art-0',
+          title: 'Alocasia longiloba',
+          titleHtml: '<em>Alocasia longiloba</em>',
+          src: 'art/PXL_20241114_162800882.jpg',
+          thumb: 'art/thumbs/PXL_20241114_162800882.jpg',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron pens and gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-1',
+          title: 'Kintsugi',
+          src: 'art/PXL_20250402_000201415.jpg',
+          thumb: 'art/thumbs/PXL_20250402_000201415.jpg',
+          detailsHtml: `
+            <div class="artwork-poem">
+              <p><strong>The knight&apos;s knees buckled as he dropped<br><span class="poem-indent">onto the cold stone,</span><br>suffocating in his own armor.</strong></p>
+              <p><strong>Slowly, his plate popped<br><span class="poem-indent">as he stood, against his broken bones,</span><br>undoubting his attraction to harm.</strong></p>
+              <p><strong>&quot;We must roll<br><span class="poem-indent">him up in bubble wrap.&quot;</span><br>And now, looking at his bones and their words,<br><span class="poem-indent poem-indent-2">he felt no ease</span><br><span class="poem-indent poem-indent-2">at his expense.</span></strong></p>
+              <p><strong>As if he was his own handicap,<br>he learned from those to withhold any mishap,<br>hating as though they could only see some bumbling sap<br>needing to dress head to soul in scrap.</strong></p>
+              <p><strong>Only when he rejected his armor&apos;s stranglehold<br>did he see his duty was to those who consoled,<br>that look past what mishaps mold,<br>knowing fractures can be fixed with gold,<br>not mail, shield, and strongholds.</strong></p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron pens and gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-2',
+          title: 'Oxalis Triangularis #1',
+          src: 'art/PXL_20241229_213603471.jpg',
+          thumb: 'art/thumbs/PXL_20241229_213603471.jpg',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>&quot;Purple Shamrock&quot; or &quot;False Clover&quot;</p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron 05 and 03 pens</p>
+              <p>Violet, rose, and cobalt blue gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-4',
+          title: 'Oxalis Triangularis #1 (Colored)',
+          src: 'art/PXL_20241229_220420140.jpg',
+          thumb: 'art/thumbs/PXL_20241229_220420140.jpg',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>&quot;Purple Shamrock&quot; or &quot;False Clover&quot;</p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron 05 and 03 pens</p>
+              <p>Violet, rose, and cobalt blue gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-3',
+          title: 'Oxalis Triangularis #7',
+          src: 'art/PXL_20250111_173336552.jpg',
+          thumb: 'art/thumbs/PXL_20250111_173336552.jpg',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>&quot;Purple Shamrock&quot; or &quot;False Clover&quot;</p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron 005 and 03 pens</p>
+              <p>Violet, rose, cobalt blue, yellow green, sky blue, acid blue, and ultramarine gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-5',
+          title: 'Goose Rocks Beach',
+          src: 'art/PXL_20250626_133934484.jpg',
+          thumb: 'art/thumbs/PXL_20250626_133934484.jpg',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>Gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-6',
+          title: 'Conflagration',
+          src: 'art/PXL_20250402_000236964.jpg',
+          thumb: 'art/thumbs/PXL_20250402_000236964.jpg',
+          detailsHtml: `
+            <div class="artwork-poem">
+              <p><strong>My brain turned off today,<br>stuck in the unable realization<br>that the rules I disobey<br>are the ones I make in desperation.</strong></p>
+              <p><strong>In hindsight, there was so much to be done<br>but I chose to ignore my infliction<br>of the sun.<br><span class="poem-indent">A semi-self-subconscious inoculation.</span></strong></p>
+              <p><strong>I remember the way my skin crawled<br>as every thought sought out an explanation.<br>Every second, an irrevocable countdown I cannot stall,<br>to get to the bottom of an endless spiral staircase to find salvation.</strong></p>
+              <p><strong>One deep breath can&apos;t stop two questions,<br>finding out the answer to irradiation<br><span class="poem-indent">was only a suggestion.</span><br>Every thought was an escalation to my justification.</strong></p>
+              <p><strong>How did I ever get this far,<br><span class="poem-indent">not getting any bit further from my own lamentation.</span><br>Missing every stop on my own trolley car,<br>propelled from the internal threat of oxidation.</strong></p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron pens and gouache</p>
+              <p>100% cotton, cold-pressed, 140 lb</p>
+            </div>`
+        },
+        {
+          id: 'art-7',
+          title: 'Oxalis Triangularis #9',
+          src: 'art/clover.png',
+          thumb: 'art/thumbs/clover.png',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron 0.25 mm pen and watercolor</p>
+              <p>Watercolor paper</p>
+            </div>`
+        },
+        {
+          id: 'art-8',
+          title: 'Davallia fejeensis',
+          titleHtml: '<em>Davallia fejeensis</em>',
+          src: 'art/davallia-fejeensis.png',
+          thumb: 'art/thumbs/davallia-fejeensis.png',
+          detailsHtml: `
+            <div class="artwork-meta-group">
+              <p>&quot;Rabbit&apos;s Foot Fern&quot;</p>
+              <p>Cannot survive below 55&deg;F (13&deg;C)</p>
+            </div>
+            <div class="artwork-meta-group">
+              <p>PIGMA Micron 0.25 mm pen and watercolor</p>
+              <p>Watercolor paper</p>
+            </div>`
+        }
       ];
       const poemHtml = `
         <div class="poem-body">
@@ -947,7 +1131,12 @@
         item.id,
         {
           title: item.title,
-          body: `<img src="${escapeAttr(item.src)}" alt="${escapeAttr(item.title)}">`
+          titleHtml: item.titleHtml,
+          body: `
+            <div class="artwork-popout">
+              <div class="artwork-media"><img src="${escapeAttr(item.src)}" alt="${escapeAttr(item.title)}"></div>
+              <div class="artwork-details">${item.detailsHtml}</div>
+            </div>`
         }
       ]));
       popoutItems.poem = { title: 'Freighter-00G8', body: poemHtml };
@@ -7907,7 +8096,11 @@
       function openPopout(id) {
         const item = popoutItems[id];
         if (!item) return;
-        elements.popoutTitle.textContent = item.title;
+        if (item.titleHtml) {
+          elements.popoutTitle.innerHTML = item.titleHtml;
+        } else {
+          elements.popoutTitle.textContent = item.title;
+        }
         elements.popoutBody.innerHTML = item.body;
         elements.popout.hidden = false;
         document.body.style.overflow = 'hidden';
