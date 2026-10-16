@@ -1,0 +1,106 @@
+\documentclass[11pt,letterpaper]{article}
+
+% Compile with XeLaTeX (or Tectonic). Bundled TrueType fonts keep the
+% typography consistent across desktop and mobile PDF viewers.
+\usepackage[top=0.70in,bottom=0.70in,left=0.65in,right=0.65in]{geometry}
+\usepackage{fontspec}
+\setmainfont{LiberationSerif}[
+  Path=fonts/,
+  Extension=.ttf,
+  UprightFont=*-Regular,
+  BoldFont=*-Bold,
+  ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic,
+  Ligatures={TeX,NoCommon}
+]
+\usepackage{xcolor}
+\definecolor{accent}{RGB}{204,41,68}
+\definecolor{secondary}{RGB}{72,72,72}
+\usepackage{enumitem}
+\usepackage[unicode,hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={Brenden Brusberg - Data Science Specialist},
+  pdfauthor={Brenden Brusberg},
+  pdfsubject={Resume: experience, education, and technical skills},
+  pdfkeywords={Brenden Brusberg, data science, applied AI, Jersey City, New York City, Stevens Institute of Technology},
+  pdflang={en-US},
+  pdfdisplaydoctitle=true,
+  pdfstartview=FitH
+}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{3em}
+\setlist[itemize]{
+  leftmargin=11pt,
+  labelsep=5pt,
+  label=\textcolor{accent}{\char"25CB},
+  topsep=1pt,
+  partopsep=0pt,
+  itemsep=0pt,
+  parsep=0pt
+}
+\newcommand{\cvsection}[1]{%
+  \par\vspace{10pt}%
+  {\color{accent}\fontsize{14}{16}\selectfont #1\par}%
+  \vspace{3pt}%
+}
+\newcommand{\role}[3]{%
+  \par\textbf{#1, McKinsey \& Company}, \textit{#2}\hfill #3\par
+}
+
+\begin{document}
+
+\begin{minipage}[t]{0.65\textwidth}
+  \vspace{0pt}
+  {\fontsize{32}{35}\selectfont Brenden Brusberg\par}
+  \vspace{6pt}
+  {\color{secondary}\fontsize{17}{20}\selectfont\itshape Data Science Specialist\par}
+\end{minipage}%
+\begin{minipage}[t]{0.35\textwidth}
+  \vspace{2pt}
+  \raggedleft\color{secondary}\fontsize{10}{11.5}\selectfont
+  Jersey City, NJ, USA\\
+  \href{mailto:brenbrus@gmail.com}{brenbrus@gmail.com}\\
+  \href{https://www.brendenbrusberg.com/}{BrendenBrusberg.com}\\
+  \href{https://www.linkedin.com/in/brendends/}{LinkedIn: brendends}\\
+  \href{https://github.com/brusberg}{GitHub: brusberg}
+\end{minipage}
+
+\cvsection{Summary}
+I operate at the crossroads of data science and software engineering, coordinating the development of Firmwide systems across multidisciplinary teams. With expertise in AI strategy, cloud infrastructure, and emerging technology, I leverage organizational data to inform strategic decisions that align leaders with their people to create a safer and more productive environment.
+
+\cvsection{Work Experience}
+\role{Data Science Specialist}{NYC, NY}{Jan 2024 -- Current}
+\begin{itemize}
+  \item Architecting agentic AI systems with multi-step orchestration, tool-use design, and autonomous task execution, balancing AI autonomy with human oversight through agent guardrails and feedback mechanisms.
+  \item Implementing LLM evaluation frameworks with PromptFoo, building CI/CD pipelines and dashboards for organi\-zation-wide red teaming, quality assurance, and democratized NLP through RAG.
+  \item Designing deep learning architectures for novel Stochastic and Ordinal Differential Equation methods in Diffusion and Flow Matching, with custom FIDNet models for evaluating generative AI output.
+  \item Owning full-stack workstreams across Python, Node.js, and AWS to ship agent-powered pipelines at Firm scale, from knowledge asset creation to structured content workflows.
+  \item Defined a taxonomy of skills for recruitment, staffing, and analytics by constructing a knowledge graph leveraged by downstream services and teams.
+\end{itemize}
+\vspace{3pt}
+\role{Senior Data Scientist}{NYC, NY}{Dec 2021 -- Dec 2023}
+\begin{itemize}
+  \item Designed topic modeling methods for millions of complex text documents over various data sources annually, including a weekly pulse to capture emerging topics and issues across the Firm.
+  \item Enabled faster cross-team development with CI/CD pipelines in GitHub Actions and AWS CloudFormation, mitigating risk across our data and deployment layers.
+  \item Led team deep-dives to implement new packages and papers, helped design the interview process, conducted interviews, and mentored two junior colleagues receiving promotions within a year of joining.
+\end{itemize}
+\vspace{3pt}
+\role{Data Scientist}{NYC, NY}{May 2019 -- Dec 2021}
+\begin{itemize}
+  \item Developed production-grade ML analytic pipelines in Kedro that outperformed vendor model, saving the Firm over a million dollars annually.
+  \item Transitioned our team's models to scalable AWS infrastructure, scaling to meet demand over 1.2 million times annually without error.
+  \item Increased explainability of highly sensitive model inferences across the people space to improve decision-making impact.
+\end{itemize}
+
+\cvsection{Education}
+\textbf{Master of Science, Machine Learning}, Stevens Institute of Technology, \textit{Hoboken, NJ}\hfill Dec 2021\par
+\textbf{GPA} -- 3.97\par
+\vspace{4pt}
+\textbf{Bachelor of Science, Computer Science}, Stevens Institute of Technology, \textit{Hoboken, NJ}\hfill May 2021\par
+\textbf{GPA} -- 3.82, \textbf{Mathematics Minor, Literature Minor}\par
+\vspace{8pt}
+\textbf{Software/Tools:}\quad Python, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions
+
+\end{document}
