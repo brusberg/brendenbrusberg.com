@@ -6,16 +6,16 @@ This is the handoff for deploying `brendenbrusberg.com` from GitHub to Vercel an
 
 ```text
 GitHub repo: brusberg/brendenbrusberg.com
-Branch to deploy first: codex/simant-one-screen-rebuild
+Production branch: main
 Framework preset: Vite
 Package manager: pnpm
 Root directory: .
 Install command: pnpm install --frozen-lockfile
 Build command: pnpm run build
 Output directory: dist
-Primary domain: brendenbrusberg.com
-Secondary domain: www.brendenbrusberg.com
-Recommended canonical domain: brendenbrusberg.com
+Primary domain: www.brendenbrusberg.com
+Secondary domain: brendenbrusberg.com
+Canonical domain: www.brendenbrusberg.com
 ```
 
 ## Local Preflight
@@ -47,7 +47,7 @@ git push -u origin codex/simant-one-screen-rebuild
    - Environment Variables: none for the current static site
 5. Deploy the pushed branch as a preview first.
 6. Open the Vercel preview URL and verify:
-   - resume button opens the PDF
+   - resume button opens the responsive /resume/ page and Download PDF retrieves the PDF
    - GitHub, LinkedIn, and email links work
    - simulation renders and does not cover text
    - mobile viewport scroll/drag behavior is acceptable
@@ -69,7 +69,7 @@ brendenbrusberg.com
 www.brendenbrusberg.com
 ```
 
-Use `brendenbrusberg.com` as the primary/canonical domain and set `www.brendenbrusberg.com` to redirect to it.
+The current Vercel configuration uses `www.brendenbrusberg.com` as the primary/canonical domain and redirects `brendenbrusberg.com` to it with HTTP 308. Keep canonical tags, structured data, robots.txt, and the sitemap aligned with this configuration.
 
 Important: copy the exact DNS values Vercel shows in the dashboard. Vercel's current docs say an apex/root domain uses an `A` record, a subdomain uses a `CNAME`, and Vercel may provide a project-specific recommended apex IP from Domain Settings.
 
@@ -175,7 +175,7 @@ Expected:
 ```text
 HTTPS works.
 Primary domain returns 200.
-www redirects to the primary domain.
+The apex domain redirects to www.
 ```
 
 DNS may work quickly, but certificate and DNS propagation can still take time. If Vercel shows a warning, wait a bit and re-check the exact Route 53 values.

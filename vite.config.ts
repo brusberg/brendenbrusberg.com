@@ -19,6 +19,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         ant: resolve(__dirname, 'ant.html'),
+        resume: resolve(__dirname, 'resume/index.html'),
       },
     },
   },

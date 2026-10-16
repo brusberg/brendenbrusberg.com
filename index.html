@@ -6,70 +6,98 @@
     <meta name="theme-color" content="#08100b" />
     <meta
       name="description"
-      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
+      content="Brenden Brusberg is a data scientist in Jersey City working in New York City (NYC), a Data Science Specialist at McKinsey, and a Stevens Institute of Technology graduate."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://brendenbrusberg.com/" />
+    <link rel="canonical" href="https://www.brendenbrusberg.com/" />
+    <link rel="stylesheet" href="/src/profile.css" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://brendenbrusberg.com/" />
-    <meta property="og:title" content="Brenden Brusberg" />
+    <meta property="og:url" content="https://www.brendenbrusberg.com/" />
+    <meta property="og:title" content="Brenden Brusberg | Data Scientist in Jersey City &amp; NYC" />
     <meta
       property="og:description"
-      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
+      content="Brenden Brusberg is a data scientist in Jersey City working in New York City (NYC), a Data Science Specialist at McKinsey, and a Stevens Institute of Technology graduate."
     />
-    <meta property="og:image" content="https://brendenbrusberg.com/og-image.png" />
+    <meta property="og:image" content="https://www.brendenbrusberg.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Brusberg wordmark on a dark portfolio preview" />
     <meta property="og:site_name" content="Brenden Brusberg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Brenden Brusberg" />
+    <meta name="twitter:title" content="Brenden Brusberg | Data Scientist in Jersey City &amp; NYC" />
     <meta
       name="twitter:description"
-      content="Applied AI systems, data platforms, writing, art, and complex systems work by Brenden Brusberg, with interactive simulations throughout."
+      content="Brenden Brusberg is a data scientist in Jersey City working in New York City (NYC), a Data Science Specialist at McKinsey, and a Stevens Institute of Technology graduate."
     />
-    <meta name="twitter:image" content="https://brendenbrusberg.com/og-image.png" />
+    <meta name="twitter:image" content="https://www.brendenbrusberg.com/og-image.png" />
     <meta name="twitter:image:alt" content="Brusberg wordmark on a dark portfolio preview" />
-    <title>Brenden Brusberg | Applied AI Systems</title>
+    <title>Brenden Brusberg | Data Scientist in Jersey City &amp; NYC</title>
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Brenden Brusberg",
-        "url": "https://brendenbrusberg.com/",
-        "email": "mailto:brenbrus@gmail.com",
-        "jobTitle": "Data Science Specialist",
-        "worksFor": {
-          "@type": "Organization",
-          "name": "McKinsey & Company"
-        },
-        "sameAs": [
-          "https://github.com/brusberg",
-          "https://www.linkedin.com/in/brendends/"
-        ],
-        "knowsAbout": [
-          "Applied AI",
-          "Data systems",
-          "Knowledge graphs",
-          "Simulation UI",
-          "Deep learning",
-          "Retrieval augmented generation"
-        ]
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://www.brendenbrusberg.com/#person",
+      "name": "Brenden Brusberg",
+      "givenName": "Brenden",
+      "familyName": "Brusberg",
+      "url": "https://www.brendenbrusberg.com/",
+      "email": "mailto:brenbrus@gmail.com",
+      "jobTitle": "Data Science Specialist",
+      "description": "Data scientist based in Jersey City, New Jersey, working in New York City (NYC).",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "McKinsey & Company"
+      },
+      "homeLocation": {
+        "@type": "Place",
+        "name": "Jersey City, New Jersey"
+      },
+      "workLocation": {
+        "@type": "Place",
+        "name": "New York City, NY"
+      },
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "Stevens Institute of Technology",
+        "url": "https://www.stevens.edu/"
+      },
+      "sameAs": [
+        "https://github.com/brusberg",
+        "https://www.linkedin.com/in/brendends/"
+      ],
+      "knowsAbout": [
+        "Data science",
+        "Machine learning",
+        "Applied AI",
+        "Knowledge graphs",
+        "Deep learning",
+        "Retrieval augmented generation"
+      ]
+    },
+    {
+      "@type": "ProfilePage",
+      "@id": "https://www.brendenbrusberg.com/#profile",
+      "url": "https://www.brendenbrusberg.com/",
+      "name": "Brenden Brusberg | Data Scientist in Jersey City & NYC",
+      "mainEntity": {
+        "@id": "https://www.brendenbrusberg.com/#person"
       }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Brenden Brusberg",
-        "url": "https://brendenbrusberg.com/",
-        "author": {
-          "@type": "Person",
-          "name": "Brenden Brusberg"
-        }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.brendenbrusberg.com/#website",
+      "name": "Brenden Brusberg",
+      "url": "https://www.brendenbrusberg.com/",
+      "author": {
+        "@id": "https://www.brendenbrusberg.com/#person"
       }
+    }
+  ]
+}
     </script>
     <style>
       :root {
@@ -114,11 +142,11 @@
 
       .app.is-ants-panel {
         display: grid;
-        grid-template-rows: minmax(30rem, 1fr) max-content;
+        grid-template-rows: var(--ant-frame-height, 36rem) auto max-content;
         align-content: start;
         gap: clamp(0.5rem, 1vw, 0.8rem);
         min-height: 100svh;
-        height: 100svh;
+        height: auto;
         padding: clamp(0.45rem, 1vw, 0.9rem);
         overflow: visible;
       }
@@ -127,7 +155,7 @@
         .app.is-ants-panel {
           height: auto;
           width: 100%;
-          grid-template-rows: clamp(59rem, 87svh, 70rem) max-content;
+          grid-template-rows: var(--ant-frame-height, 36rem) auto max-content;
         }
       }
 
@@ -790,8 +818,8 @@
 
         .app.is-ants-panel {
           min-height: 100svh;
-          height: 100svh;
-          grid-template-rows: minmax(20rem, 1fr) max-content;
+          height: auto;
+          grid-template-rows: var(--ant-frame-height, 36rem) auto max-content;
         }
 
         .app.is-art-panel {
@@ -901,7 +929,7 @@
     </style>
   </head>
   <body>
-    <main class="app">
+    <main class="app is-ants-panel">
       <section class="stage-wrap" aria-label="Interactive scene">
         <canvas id="stage2d" class="stage-canvas" aria-label="Interactive simulation panel"></canvas>
         <canvas id="stagegl" class="stage-canvas" aria-label="Interactive WebGL fractal panel"></canvas>
@@ -915,6 +943,31 @@
         <div class="scene-readout" id="scene-readout">Arrow keys, swipes, or panel buttons</div>
       </section>
 
+      <section class="home-profile" aria-label="About Brenden Brusberg">
+        <div class="home-identity">
+          <div class="home-copy">
+            <h1>Brenden Brusberg</h1>
+            <p class="home-intro">I'm a data scientist living in Jersey City and working in New York City. I design platforms that help people understand complex systems and turn ideas into useful tools.</p>
+            <nav class="home-links" aria-label="Primary links">
+              <a href="/resume/">Resume</a>
+              <a href="https://github.com/brusberg" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="https://www.linkedin.com/in/brendends/" target="_blank" rel="noreferrer">LinkedIn</a>
+              <a href="mailto:brenbrus@gmail.com">Email</a>
+            </nav>
+          </div>
+          <figure class="home-portrait"><img src="/art/laplacian.png" alt="Laplacian profile still of Brenden Brusberg" width="400" height="300" /></figure>
+        </div>
+        <dl class="home-facts">
+          <div><dt>Current</dt><dd>Data Science Specialist, McKinsey &amp; Company</dd></div>
+          <div><dt>Focus</dt><dd>Agentic AI harness design and orchestration, cloud systems, deep learning and diffusion, embeddings/RAG, knowledge graphs</dd></div>
+          <div><dt>Tools</dt><dd>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</dd></div>
+        </dl>
+        <p class="home-note">One of the first computer games I played was
+          <a href="https://en.wikipedia.org/wiki/SimAnt" target="_blank" rel="noopener noreferrer">SimAnt</a>. Even
+          before I could read I would sneak onto the family computer where my much older brother had working DOS
+          games like Sim City and Sim Ant. This simulation is a recreation of what started my journey into computers&nbsp;:)</p>
+      </section>
+
       <section class="info-window" aria-live="polite">
         <div class="info-main">
           <div class="eyebrow" id="panel-eyebrow">Ant Sim</div>
@@ -924,7 +977,7 @@
             organizations, leveraging multidisciplinary skills and teams to nurture real value.
           </p>
           <div class="actions" id="panel-actions">
-            <a href="#resume">Resume</a>
+            <a href="/resume/">Resume</a>
             <a href="https://github.com/brusberg">GitHub</a>
             <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
             <a href="mailto:brenbrus@gmail.com">Email</a>
@@ -968,6 +1021,14 @@
       const glCanvas = document.querySelector('#stagegl');
       const stageFrame = document.querySelector('#stage-frame');
       const readout = document.querySelector('#scene-readout');
+      // The embedded homepage reports its natural height, so the outer page owns scrolling.
+      window.addEventListener('message', (event) => {
+        if (event.origin !== location.origin || event.source !== stageFrame.contentWindow) return;
+        const { type, height } = event.data || {};
+        if (type !== 'portfolio:height' || !Number.isFinite(height) || height <= 0 || height > 20000) return;
+        document.querySelector('.app').style.setProperty('--ant-frame-height', `${Math.ceil(height) + 2}px`);
+      });
+      if (location.hash === '#resume') location.replace('/resume/');
       const ctx = canvas.getContext('2d');
       const localDevToolsEnabled = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname);
       const searchParams = new URLSearchParams(location.search);
@@ -6808,10 +6869,9 @@
           const by = center.y + ny * buildingOffset;
           const buildingSize = station.kind === 'town' ? size * 0.82 : size * 0.72;
           this.drawStationBuilding(g, station, bx, by, buildingSize);
-          const cargo = station.produces || station.accepts.join('/');
           const labelX = bx + nx * size * 0.2;
           const labelY = by + ny * size * 0.92;
-          this.drawMapLabel(g, view, [station.name, cargo || 'safe wait'], labelX, labelY);
+          this.drawMapLabel(g, view, [station.name], labelX, labelY);
         }
 
         platformVisualLength(station) {

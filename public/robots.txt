@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://brendenbrusberg.com/sitemap.xml
+Sitemap: https://www.brendenbrusberg.com/sitemap.xml
