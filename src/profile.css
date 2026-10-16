@@ -1,0 +1,43 @@
+.home-profile { display: none; }
+.app.is-ants-panel .home-profile {
+  display: grid;
+  grid-template-columns: minmax(24rem, 0.95fr) minmax(31rem, 1fr) minmax(15rem, 0.52fr);
+  grid-template-areas: "identity facts note";
+  align-items: start;
+  gap: clamp(0.9rem, 1.35vw, 1.45rem);
+  margin: 0 clamp(0.7rem, 1vw, 1rem);
+  padding: clamp(1.15rem, 2vw, 1.55rem) clamp(1.35rem, 2.2vw, 1.8rem);
+  border: 1px solid rgba(238, 220, 167, 0.16);
+  background: #11140f;
+}
+.home-identity { grid-area: identity; display: grid; grid-template-columns: minmax(0, 1fr) clamp(12rem, 20vw, 16rem); gap: clamp(0.75rem, 1.4vw, 1.2rem); align-items: center; min-width: 0; }
+.home-copy { min-width: 0; }
+.home-identity h1 { margin: 0; color: #fff9e9; font-size: clamp(2.05rem, 4.1vw, 3.35rem); line-height: 1.05; }
+.home-intro { max-width: 36rem; margin: 0.55rem 0; color: rgba(247, 241, 223, 0.86); font-size: 0.95rem; line-height: 1.5; }
+.home-links { display: flex; flex-wrap: wrap; gap: 0.46rem; }
+.home-links a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0.5rem 0.72rem; border: 1px solid rgba(247, 241, 223, 0.18); border-radius: 0.28rem; color: #fff9e9; background: rgba(247, 241, 223, 0.08); font-size: 0.86rem; font-weight: 760; text-decoration: none; }
+.home-links a:hover, .home-links a:focus-visible { border-color: #b9d08f; background: rgba(185, 208, 143, 0.2); }
+.home-portrait { margin: 0; }
+.home-portrait img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid rgba(211, 184, 120, 0.38); }
+.home-facts { grid-area: facts; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; margin: 0; }
+.home-facts div { border-top: 1px solid rgba(238, 220, 167, 0.16); padding-top: 0.55rem; }
+.home-facts dt { margin-bottom: 0.28rem; color: #d3b878; font-size: 0.68rem; font-weight: 790; text-transform: uppercase; }
+.home-facts dd { margin: 0; color: rgba(255, 249, 233, 0.92); font-size: clamp(0.8rem, 1.04vw, 0.96rem); line-height: 1.4; font-weight: 650; }
+.home-note { grid-area: note; margin: 0; padding-top: 0.55rem; border-top: 1px solid rgba(238, 220, 167, 0.16); color: rgba(247, 241, 223, 0.7); font-size: 0.9rem; line-height: 1.5; }
+.home-note a { color: #d3b878; text-underline-offset: 0.15em; }
+@media (max-width: 1800px) {
+  .app.is-ants-panel .home-profile { grid-template-columns: minmax(0, 1fr); grid-template-areas: "identity" "facts" "note"; }
+}
+@media (max-width: 700px) {
+  .app.is-ants-panel .home-profile { margin: 0 0.65rem; padding: 0.85rem; gap: 1.2rem; }
+  .home-identity { grid-template-columns: minmax(0, 1fr) 5.5rem; grid-template-areas: "title portrait" "intro intro" "links links"; gap: 0.85rem; }
+  .home-copy { display: contents; }
+  .home-identity h1 { grid-area: title; font-size: clamp(1.8rem, 7.5vw, 2.6rem); }
+  .home-intro { grid-area: intro; margin: 0; font-size: 1rem; }
+  .home-portrait { grid-area: portrait; }
+  .home-portrait img { aspect-ratio: 1; }
+  .home-links { grid-area: links; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-links a { font-size: 0.9rem; }
+  .home-facts { grid-template-columns: minmax(0, 1fr); }
+  .home-facts dd { font-size: 0.95rem; }
+}

@@ -28,6 +28,15 @@
           "value": "noindex, nofollow"
         }
       ]
+    },
+    {
+      "source": "/assets/brenden-brusberg-resume.pdf",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://www.brendenbrusberg.com/resume/>; rel=\"canonical\""
+        }
+      ]
     }
   ]
 }

@@ -877,3 +877,12 @@ h1 {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* The embedded simulation reports its natural height to the parent page. */
+.is-embedded, .is-embedded body { min-width: 0; }
+.is-embedded .page-shell { display: flow-root; min-height: 0; }
+.is-embedded .site-shell { min-height: 0; grid-template-rows: clamp(18rem, 35vw, 34rem); }
+@media (max-width: 700px) {
+  .is-embedded .site-shell { grid-template-rows: clamp(14rem, 52vw, 20rem); }
+  .allocation-panel { width: 7.3rem; padding: 0.4rem; }
+}

@@ -11,9 +11,6 @@ const loading = document.querySelector<HTMLElement>('#loading');
 const errorMessage = document.querySelector<HTMLElement>('#error-message');
 const allocationTriangle = document.querySelector<SVGSVGElement>('#allocation-triangle');
 const allocationThumb = document.querySelector<SVGCircleElement>('#allocation-thumb');
-const foragePercent = document.querySelector<HTMLElement>('#forage-percent');
-const digPercent = document.querySelector<HTMLElement>('#dig-percent');
-const nursePercent = document.querySelector<HTMLElement>('#nurse-percent');
 const antCount = document.querySelector<HTMLElement>('#ant-count');
 const foodCount = document.querySelector<HTMLElement>('#food-count');
 const broodCount = document.querySelector<HTMLElement>('#brood-count');
@@ -80,18 +77,6 @@ function updateAllocation(allocation: TaskAllocation): void {
   const forage = Math.round(allocation.forage * 100);
   const dig = Math.round(allocation.dig * 100);
   const nurse = Math.max(0, 100 - forage - dig);
-
-  if (foragePercent) {
-    foragePercent.textContent = String(forage);
-  }
-
-  if (digPercent) {
-    digPercent.textContent = String(dig);
-  }
-
-  if (nursePercent) {
-    nursePercent.textContent = String(nurse);
-  }
 
   allocationTriangle?.setAttribute('aria-valuetext', `${forage}% forage, ${dig}% dig, ${nurse}% nurse`);
 }
@@ -243,3 +228,19 @@ if (document.readyState === 'loading') {
 }
 
 updateAllocation(currentAllocation);
+
+// Observe content rather than the viewport to avoid nested scrolling and resize feedback.
+if (window.parent !== window.self) {
+  const pageShell = document.querySelector<HTMLElement>('.page-shell');
+  if (pageShell) {
+    let lastHeight = 0;
+    const reportHeight = () => {
+      const height = Math.ceil(pageShell.getBoundingClientRect().height);
+      if (height === lastHeight) return;
+      lastHeight = height;
+      window.parent.postMessage({ type: 'portfolio:height', height }, window.location.origin);
+    };
+    new ResizeObserver(reportHeight).observe(pageShell);
+    reportHeight();
+  }
+}

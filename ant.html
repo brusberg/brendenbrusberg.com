@@ -9,9 +9,11 @@
     />
     <meta name="theme-color" content="#191d19" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>Brenden Brusberg</title>
+    <link rel="canonical" href="https://www.brendenbrusberg.com/" />
+    <title>Brenden Brusberg | Data Scientist in Jersey City &amp; NYC</title>
     <script>
       (() => {
+        if (window.parent !== window.self) document.documentElement.classList.add('is-embedded');
         if (window.top === window.self) {
           const target = new URL('/', window.location.origin);
           target.search = window.location.search;
@@ -44,11 +46,6 @@
                 <text class="allocation-label" x="81" y="43" transform="rotate(60 81 43)" aria-hidden="true">NURSE</text>
                 <circle id="allocation-thumb" class="allocation-thumb" cx="44" cy="52" r="5"></circle>
               </svg>
-              <div class="allocation-values" aria-live="polite">
-                <span><b id="forage-percent">62</b>% Forage</span>
-                <span><b id="dig-percent">34</b>% Dig</span>
-                <span><b id="nurse-percent">4</b>% Nurse</span>
-              </div>
               <div class="ant-tracker" aria-label="Live ant colony tracker">
                 <div>
                   <span>Ants</span>
@@ -74,68 +71,7 @@
           </section>
         </section>
 
-        <aside class="profile-panel" aria-label="Brenden Brusberg resume links">
-          <section class="identity" aria-labelledby="site-title">
-            <div class="identity-copy">
-              <h1 id="site-title">Brenden Brusberg</h1>
-              <p class="summary">
-                I work on designing platforms to better understand and evaluate complex systems in organizations,
-                leveraging multidisciplinary skills and teams to nurture real value.
-              </p>
-              <nav class="links" aria-label="Primary links">
-                <a href="/assets/brenden-brusberg-resume.pdf" target="_blank" rel="noreferrer">Resume</a>
-                <a href="https://github.com/brusberg" target="_blank" rel="noreferrer">GitHub</a>
-                <a href="https://www.linkedin.com/in/brendends/" target="_blank" rel="noreferrer">LinkedIn</a>
-                <a href="mailto:brenbrus@gmail.com">Email</a>
-              </nav>
-            </div>
-            <figure class="main-profile-still">
-              <img src="/art/laplacian.png" alt="Laplacian profile still of Brenden Brusberg" />
-            </figure>
-          </section>
-
-          <section class="simant-panel" aria-label="SimAnt inspiration and worker hunger">
-            <p class="simant-note">
-              One of the first computer games I played was
-              <a href="https://en.wikipedia.org/wiki/SimAnt" target="_blank" rel="noopener noreferrer">SimAnt</a>. Even
-              before I could read I would sneak onto the family computer where my much older brother had working DOS
-              games like Sim City and Sim Ant. This simulation is a recreation of what started my journey into computers&nbsp;:)
-            </p>
-          </section>
-
-
-
-          <section class="profile-facts" aria-label="Resume summary">
-            <div>
-              <span>Current</span>
-              <strong>Data Science Specialist, McKinsey &amp; Company</strong>
-            </div>
-            <div>
-              <span>Focus</span>
-              <strong>Agentic AI harness design and orchestration, cloud systems, deep learning and diffusion, embeddings/RAG, knowledge graphs</strong>
-            </div>
-            <div>
-              <span>Tools</span>
-              <strong>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</strong>
-            </div>
-          </section>
-        </aside>
       </div>
-
-      <section class="resume-details" aria-label="Resume details">
-        <div>
-          <span>Current</span>
-          <strong>Data Science Specialist, McKinsey &amp; Company</strong>
-        </div>
-        <div>
-          <span>Focus</span>
-          <strong>Agentic AI harness design and orchestration, cloud systems, deep learning and diffusion, embeddings/RAG, knowledge graphs</strong>
-        </div>
-        <div>
-          <span>Tools</span>
-          <strong>Python, PyTorch, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</strong>
-        </div>
-      </section>
     </main>
 
     <script type="module" src="/src/main.ts"></script>
