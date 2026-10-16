@@ -13,6 +13,7 @@
 .home-identity { grid-area: identity; display: grid; grid-template-columns: minmax(0, 1fr) clamp(12rem, 20vw, 16rem); gap: clamp(0.75rem, 1.4vw, 1.2rem); align-items: center; min-width: 0; }
 .home-copy { min-width: 0; }
 .home-identity h1 { margin: 0; color: #fff9e9; font-size: clamp(2.05rem, 4.1vw, 3.35rem); line-height: 1.05; }
+.home-location { margin: 0.55rem 0 0; color: #d3b878; font-size: 0.85rem; line-height: 1.5; }
 .home-intro { max-width: 36rem; margin: 0.55rem 0; color: rgba(247, 241, 223, 0.86); font-size: 0.95rem; line-height: 1.5; }
 .home-links { display: flex; flex-wrap: wrap; gap: 0.46rem; }
 .home-links a { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0.5rem 0.72rem; border: 1px solid rgba(247, 241, 223, 0.18); border-radius: 0.28rem; color: #fff9e9; background: rgba(247, 241, 223, 0.08); font-size: 0.86rem; font-weight: 760; text-decoration: none; }
@@ -30,9 +31,10 @@
 }
 @media (max-width: 700px) {
   .app.is-ants-panel .home-profile { margin: 0 0.65rem; padding: 0.85rem; gap: 1.2rem; }
-  .home-identity { grid-template-columns: minmax(0, 1fr) 5.5rem; grid-template-areas: "title portrait" "intro intro" "links links"; gap: 0.85rem; }
+  .home-identity { grid-template-columns: minmax(0, 1fr) 5.5rem; grid-template-areas: "title portrait" "location location" "intro intro" "links links"; gap: 0.85rem; }
   .home-copy { display: contents; }
   .home-identity h1 { grid-area: title; font-size: clamp(1.8rem, 7.5vw, 2.6rem); }
+  .home-location { grid-area: location; margin: 0; }
   .home-intro { grid-area: intro; margin: 0; font-size: 1rem; }
   .home-portrait { grid-area: portrait; }
   .home-portrait img { aspect-ratio: 1; }
