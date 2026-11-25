@@ -2171,6 +2171,10 @@
           this.cameraPanY = 0;
           this.cameraDrag = null;
           this.staticMapCache = null;
+          // Dev-only counters so the cache can be measured rather than argued
+          // about. `blits` is a frame that reused the bitmap; `renders` is a
+          // frame that had to redraw it.
+          this.staticMapStats = { renders: 0, blits: 0, lastMs: 0, totalMs: 0, marginCss: 0 };
           this.buildNetwork();
           this.stateMachine = new RailStateMachine(this);
         }
@@ -2181,6 +2185,16 @@
             this.staticMapCache.canvas.height = 0;
           }
           this.staticMapCache = null;
+        }
+
+        // How much slack the cached bitmap carries outside the viewport, in CSS
+        // pixels. This is the one knob: bigger means fewer re-renders during a
+        // drag and more memory, and the area cost is quadratic because the
+        // margin applies to both axes. 14% of the short edge, clamped, puts a
+        // 900x600 panel at 84px -- about seven frames of a brisk drag between
+        // re-renders -- for 1.52x the pixels of an unpadded cache.
+        staticMapMargin(size) {
+          return Math.max(48, Math.min(112, Math.round(Math.min(size.w, size.h) * 0.14)));
         }
 
         buildNetwork() {
@@ -3050,6 +3064,13 @@
             document.documentElement.dataset.openttdDebug = JSON.stringify({
               live: true,
               capturedAt: Math.round(t),
+              staticMap: {
+                renders: this.staticMapStats.renders,
+                blits: this.staticMapStats.blits,
+                lastMs: Number(this.staticMapStats.lastMs.toFixed(2)),
+                totalMs: Number(this.staticMapStats.totalMs.toFixed(1)),
+                marginCss: this.staticMapStats.marginCss
+              },
               trackTiles: this.track.size,
               signalCount: this.signals.length,
               reservations: this.reservations.size,
@@ -4340,36 +4361,105 @@
           };
         }
 
+        // The static map layer, cached with a margin.
+        //
+        // Every static thing is positioned through iso():
+        //     x = view.ox + (tx - ty) * tileW * 0.5
+        //     y = view.oy + (tx + ty) * tileH * 0.5
+        // so ox/oy are a pure translation -- pan the camera and the whole
+        // static layer slides rigidly, unchanged. A pan therefore does not need
+        // a redraw, only a different window onto the same bitmap. That is the
+        // whole idea here, and it is only sound because nothing in the static
+        // layer is viewport-relative: drawTile's loop below runs over every row
+        // and column of the map rather than over the visible region, and none of
+        // drawTerrainProps / drawRails / drawTracksideDetails reads size.w or
+        // size.h. (Checked, because if any of them culled against the viewport
+        // the padded region would come out blank.)
+        //
+        // The same fact makes the margin nearly free to render: padding the
+        // canvas adds area to one background fillRect and to nothing else.
+        //
+        // The old key included ox/oy to 0.1px, so every pan was a miss --
+        // measured at 22 misses in 24 pan moves, 7.3ms each.
         drawStaticMap(g, size, view) {
-          const key = [
-            Math.round(size.w),
-            Math.round(size.h),
-            Number(size.dpr).toFixed(2),
-            Number(view.tileW).toFixed(2),
-            Number(view.ox).toFixed(1),
-            Number(view.oy).toFixed(1)
-          ].join(':');
-          if (!this.staticMapCache || this.staticMapCache.key !== key) {
-            this.releaseStaticMapCache();
-            const cacheCanvas = document.createElement('canvas');
-            cacheCanvas.width = Math.max(1, Math.round(size.w * size.dpr));
-            cacheCanvas.height = Math.max(1, Math.round(size.h * size.dpr));
-            const cacheCtx = cacheCanvas.getContext('2d');
-            cacheCtx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
-            cacheCtx.imageSmoothingEnabled = false;
-            cacheCtx.fillStyle = '#07120d';
-            cacheCtx.fillRect(0, 0, size.w, size.h);
-            for (let y = 0; y < view.rows; y++) {
-              for (let x = 0; x < view.cols; x++) {
-                this.drawTile(cacheCtx, view, x, y, this.tileKind(x, y));
-              }
-            }
-            this.drawTerrainProps(cacheCtx, view);
-            this.drawRails(cacheCtx, view);
-            this.drawTracksideDetails(cacheCtx, view);
-            this.staticMapCache = { key, canvas: cacheCanvas };
+          const dpr = Number(size.dpr) || 1;
+          const wDev = Math.max(1, Math.round(size.w * dpr));
+          const hDev = Math.max(1, Math.round(size.h * dpr));
+          const marginCss = this.staticMapMargin(size);
+          // The margin is held in device pixels so the sub-rect offset is
+          // always a whole number of source pixels and the blit can never
+          // resample a pixel-art tile.
+          const marginDev = Math.max(1, Math.round(marginCss * dpr));
+          // Everything that changes the static layer except a pan.
+          const key = [wDev, hDev, dpr.toFixed(2), Number(view.tileW).toFixed(3)].join(':');
+
+          let cache = this.staticMapCache;
+          // Camera drift since the bitmap was drawn, rounded to whole device
+          // pixels. Rounding here rather than blitting at a fractional source
+          // offset keeps the static layer pixel-aligned; the price is up to half
+          // a device pixel of registration error against the trains and signals,
+          // which are still drawn live at their exact positions.
+          let dx = 0;
+          let dy = 0;
+          let reusable = false;
+          if (cache && cache.key === key) {
+            dx = Math.round((view.ox - cache.ox) * dpr);
+            dy = Math.round((view.oy - cache.oy) * dpr);
+            reusable = Math.abs(dx) <= cache.marginDev && Math.abs(dy) <= cache.marginDev;
           }
-          g.drawImage(this.staticMapCache.canvas, 0, 0, size.w, size.h);
+
+          if (!reusable) {
+            cache = this.renderStaticMap(size, view, key, wDev, hDev, marginDev);
+            // Re-centred, so the full margin is available again in both
+            // directions. A steady drag therefore gets marginDev/velocity
+            // frames per re-render; leading the re-centre in the direction of
+            // travel would roughly double that, at the cost of carrying a
+            // velocity estimate and guessing wrong when the drag reverses.
+            dx = 0;
+            dy = 0;
+            this.staticMapStats.renders += 1;
+          } else {
+            this.staticMapStats.blits += 1;
+          }
+          this.staticMapStats.marginCss = marginCss;
+
+          g.drawImage(
+            cache.canvas,
+            cache.marginDev - dx, cache.marginDev - dy, wDev, hDev,
+            0, 0, size.w, size.h
+          );
+        }
+
+        renderStaticMap(size, view, key, wDev, hDev, marginDev) {
+          this.releaseStaticMapCache();
+          const dpr = Number(size.dpr) || 1;
+          const started = performance.now();
+          const canvas = document.createElement('canvas');
+          canvas.width = wDev + marginDev * 2;
+          canvas.height = hDev + marginDev * 2;
+          const cg = canvas.getContext('2d');
+          // Translate in device pixels, then scale, so a CSS coordinate u lands
+          // at device pixel marginDev + u * dpr: the padding is an exact whole
+          // number of source pixels regardless of dpr.
+          cg.setTransform(dpr, 0, 0, dpr, marginDev, marginDev);
+          cg.imageSmoothingEnabled = false;
+          cg.fillStyle = '#07120d';
+          // The padding is filled too. Leaving it transparent would have shown
+          // as a blank band along two edges the moment the camera moved.
+          const padCss = marginDev / dpr;
+          cg.fillRect(-padCss, -padCss, canvas.width / dpr, canvas.height / dpr);
+          for (let y = 0; y < view.rows; y++) {
+            for (let x = 0; x < view.cols; x++) {
+              this.drawTile(cg, view, x, y, this.tileKind(x, y));
+            }
+          }
+          this.drawTerrainProps(cg, view);
+          this.drawRails(cg, view);
+          this.drawTracksideDetails(cg, view);
+          this.staticMapStats.lastMs = performance.now() - started;
+          this.staticMapStats.totalMs += this.staticMapStats.lastMs;
+          this.staticMapCache = { key, canvas, ox: view.ox, oy: view.oy, marginDev, dpr };
+          return this.staticMapCache;
         }
 
         networkSummary() {
@@ -4630,7 +4720,24 @@
           this.cameraZoom = clamp(this.cameraZoom, minZoom, maxZoom);
           let view = this.rawView(size, this.cameraZoom, this.cameraPanX, this.cameraPanY);
           this.clampCamera(size, view);
-          return this.rawView(size, this.cameraZoom, this.cameraPanX, this.cameraPanY);
+          view = this.rawView(size, this.cameraZoom, this.cameraPanX, this.cameraPanY);
+          // Snap the camera origin to whole device pixels at read time.
+          //
+          // iso() offsets everything by ox/oy, so this puts every redraw of the
+          // scene on the same pixel grid. Two reasons:
+          //   - the static map cache blits a sub-rect at an integer offset, and
+          //     a camera sitting half a device pixel off-grid made that blit
+          //     misregister against a fresh render by up to half a pixel
+          //     (measured: 27% of pixels changed, mean 40/channel, against
+          //     1.4% and mean 15 once snapped);
+          //   - it is what stops a slow pan from shimmering, which is the usual
+          //     reason a pixel-art camera snaps at all.
+          // cameraPanX/cameraPanY themselves stay continuous, so nothing
+          // accumulates and the drag and pinch arithmetic is untouched.
+          const dpr = Number(size.dpr) || 1;
+          view.ox = Math.round(view.ox * dpr) / dpr;
+          view.oy = Math.round(view.oy * dpr) / dpr;
+          return view;
         }
 
         defaultCameraZoom(size) {
@@ -8128,7 +8235,14 @@
         }
 
         stepBodies(dt, size, t) {
-          const k = Math.min(1.4, dt * 60);
+          // Frames-worth-of-motion for this tick. The clamp is a stability
+          // guard against a huge delta after a stall, not a speed limit -- but
+          // at 1.4 it was also clipping the ordinary 30fps tick, where
+          // dt * 60 == 2.0, so the card drift ran at 70% of its intended
+          // speed once the frame cap landed. 2.2 clears a 30fps frame with a
+          // little headroom and still bounds a 100ms stall (maxFrameDeltaSeconds)
+          // to ~2.2 frames of motion instead of 6.
+          const k = Math.min(2.2, dt * 60);
           const mouseFresh = t - this.mouse.t < 1700;
           for (let i = 0; i < this.bodies.length; i++) {
             const body = this.bodies[i];
