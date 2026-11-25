@@ -125,10 +125,19 @@ animations look half as fast as they used to, because they are no longer double 
 
 **The colony is not slowed by the cap.** `AntModel` runs a fixed `FRAME_STEP = 1/60`
 timestep behind an accumulator, so a 33ms frame simply runs two model steps instead of
-one. Capping saves the *draw* half of the work only; the 60Hz model updates still run.
+one. Capping saves the *draw* half of the work only — the 60Hz model updates still run
+every second.
 
-> **Corrected 25 Nov.** An earlier version of this paragraph said "if the sim is slow on
-> a phone, profile `model.update` — not rendering." That is wrong at small colonies.
+**Correction to what this paragraph used to say.** It said "if the sim is slow on a
+phone, profile `model.update` — not rendering". Wrong at the colony sizes the page
+starts at. Measured: at 3 ants the model costs 4.1 ms/s against 14.3 ms/s for drawing,
+so rendering is 3.5x the model. Model cost grows strongly with the colony (4.1 → 37.7 →
+58.6 ms/s at 3 → 21 ants) while draw cost stays flat near 14, so the model only
+overtakes rendering somewhere around 8–10 ants. Profile both.
+
+`AntModel.update` now emits User Timing marks per phase when `window.__antProfile` is
+set, so a Chrome performance recording answers this by measurement rather than by
+inference." That is wrong at small colonies.
 > Measured on this Mac: at 3 ants the model costs 4.1 ms/s against drawing's 14.3 ms/s,
 > so the frame cap was addressing the larger half. The model only overtakes rendering
 > somewhere around 8–10 ants — but it then keeps growing (37.7 ms/s at 11 ants, 58.6 at
@@ -263,8 +272,12 @@ Head inconsistencies:
   `<script>`. None of it is type-checked, linted or minified; `tsc` only sees
   `src/`. Extracting the scenes into `src/` modules would put them under the same
   compiler as the ant sim.
-- **The ant simulation exists twice** — `src/sim/AntModel.ts` (3,544 lines) and a
-  separate copy inline in `index.html`. Two implementations of one thing will diverge.
+- ~~**The ant simulation exists twice**~~ — **wrong, and withdrawn.** Checked by reading
+  it: `AntScene` in `index.html` is a bare iframe shim (`mount` / `unmount` / `tick` /
+  `reloadFrame`) pointing at `/ant.html`. There is no inline model — no `FRAME_STEP`, no
+  accumulator, no ant stepping anywhere in the file. The only ant simulation is
+  `src/sim/AntModel.ts` (3,558 lines) via `src/sim/AntPatchSimulation.ts`. Nothing to
+  deduplicate.
 - **Shader compiles looked expensive — they were not.** Switching into a GL scene showed
   ~1–3s frame gaps, which turned out to be the automation pane throttling
   `requestAnimationFrame` to about 4 fps while still reporting `document.hidden === false`.

@@ -446,6 +446,34 @@ export const DEFAULT_ANT_MODEL_CONFIG: AntModelConfig = {
   redScoutSpeed: 7.2,
 };
 
+/*
+ * Dev-only phase timing for the colony (proposal P8, "profile it properly
+ * first"). On /ant.html:
+ *
+ *     window.__antProfile = true
+ *
+ * then take a Chrome performance recording. Each phase of update() shows up as
+ * a named span in the Timings track, so the flame chart answers "where does a
+ * grown colony spend its time" directly.
+ *
+ * This is deliberately measurement rather than inference. The obvious
+ * alternative -- stub a phase out, run again, diff the totals -- does not work
+ * on a stateful model: removing a phase changes the trajectory of every step
+ * after it. It was tried, and it returned negative percentages.
+ *
+ * Off by default. Eight marks and eight measures at 60 steps a second is a
+ * small but real cost, and it would otherwise show up inside the very profile
+ * it exists to clarify. The flag is read once per update(), not once per phase.
+ * Entries are never cleared, so keep recordings short -- at 480 entries a
+ * second a minute of profiling is 29k of them.
+ */
+function antProfilingEnabled(): boolean {
+  const g = globalThis as unknown as { __antProfile?: boolean };
+  return g.__antProfile === true
+    && typeof performance !== 'undefined'
+    && typeof performance.measure === 'function';
+}
+
 export class AntModel {
   readonly cells: Cell[] = [];
   readonly ants: Ant[] = [];
@@ -514,17 +542,23 @@ export class AntModel {
   }
 
   update(delta: number): void {
+    const prof = antProfilingEnabled();
     this.elapsed += delta;
     this.taskRebalanceTimer += delta;
 
     if (this.taskRebalanceTimer >= 1.5) {
       this.taskRebalanceTimer = 0;
+      if (prof) performance.mark('ant:rebalance:s');
       this.rebalanceTasks();
+      if (prof) performance.measure('ant:rebalance', 'ant:rebalance:s');
     }
 
+    if (prof) performance.mark('ant:pheromones:s');
     this.decayPheromones(delta);
     this.reinforceNestPheromone();
+    if (prof) performance.measure('ant:pheromones', 'ant:pheromones:s');
 
+    if (prof) performance.mark('ant:workers:s');
     for (let index = 0; index < this.ants.length; index += 1) {
       const ant = this.ants[index];
 
@@ -538,12 +572,24 @@ export class AntModel {
         index -= 1;
       }
     }
+    if (prof) performance.measure('ant:workers', 'ant:workers:s');
 
+    if (prof) performance.mark('ant:queen:s');
     this.updateQueen(delta);
     this.updateQueenStarvation(delta);
+    if (prof) performance.measure('ant:queen', 'ant:queen:s');
+
+    if (prof) performance.mark('ant:larvae:s');
     this.updateLarvae(delta);
+    if (prof) performance.measure('ant:larvae', 'ant:larvae:s');
+
+    if (prof) performance.mark('ant:corpses:s');
     this.updateCorpses(delta);
+    if (prof) performance.measure('ant:corpses', 'ant:corpses:s');
+
+    if (prof) performance.mark('ant:redScouts:s');
     this.updateRedScouts(delta);
+    if (prof) performance.measure('ant:redScouts', 'ant:redScouts:s');
 
     if (this.food.length < this.config.initialFoodCount && this.random() < delta * this.config.foodSpawnRate) {
       this.food.push(this.createFood());

@@ -8673,6 +8673,10 @@
         });
       }
 
+      /* business-days:begin -- extracted verbatim by
+         tests/business-days.test.mjs. The markers are load bearing: keep them
+         on their own lines, and keep everything between them free of page
+         state so the test can run it in Node. */
       function isWeekday(date) {
         const day = date.getDay();
         return day !== 0 && day !== 6;
@@ -8702,6 +8706,8 @@
         // than (end, start]; shift the endpoints so the two agree exactly.
         return -(weekdaysAfterUpTo(end, start) - (isWeekday(start) ? 1 : 0) + (isWeekday(end) ? 1 : 0));
       }
+
+      /* business-days:end */
 
       function formatWorkDays() {
         const now = new Date();

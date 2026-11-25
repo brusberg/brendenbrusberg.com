@@ -1,4 +1,40 @@
-// old implementation (loop)
+/*
+ * The shipped business-day arithmetic, checked against the loop it replaced.
+ *
+ * The implementation is READ OUT OF index.html between the business-days:begin
+ * and business-days:end markers. An earlier version of this file declared its
+ * own copy of isWeekday / weekdaysAfterUpTo / businessDaysBetween and imported
+ * nothing, so it verified a transcription rather than the site -- it would have
+ * passed with the page shipping anything at all. There is no module boundary to
+ * import through (the functions live in an ~8000-line inline <script>), so the
+ * test extracts the source instead. If the markers go missing, this fails
+ * loudly rather than quietly testing a copy.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const BEGIN = '/* business-days:begin';
+const END = '/* business-days:end */';
+const b = SRC.indexOf(BEGIN);
+const e = SRC.indexOf(END, b);
+if (b < 0 || e < 0) {
+  throw new Error('business-days:begin / business-days:end markers missing from index.html');
+}
+const BODY = SRC.slice(SRC.indexOf('function isWeekday', b), e);
+for (const name of ['function isWeekday', 'function weekdaysAfterUpTo', 'function businessDaysBetween']) {
+  if (!BODY.includes(name)) throw new Error(`extracted span does not contain ${name}`);
+}
+// eslint-disable-next-line no-new-func
+const { isWeekday, newBD } = new Function(
+  `${BODY}\nreturn { isWeekday, newBD: businessDaysBetween };`
+)();
+
+// The implementation this replaced: one calendar day per iteration, so it grew
+// by a step every day the site stayed up. Kept here as the oracle.
 function oldBD(startDate, endDate) {
   const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
@@ -10,31 +46,6 @@ function oldBD(startDate, endDate) {
     if (day !== 0 && day !== 6) count += direction;
   }
   return count;
-}
-// new implementation (closed form)
-function isWeekday(d) { const k = d.getDay(); return k !== 0 && k !== 6; }
-
-// weekdays in the half-open range (a, b], a <= b -- O(1) plus at most 6 steps
-function weekdaysAfterUpTo(a, b) {
-  const days = Math.round((b - a) / 86400000);
-  const weeks = Math.floor(days / 7);
-  let count = weeks * 5;
-  const cursor = new Date(a);
-  cursor.setDate(cursor.getDate() + weeks * 7);
-  for (let i = weeks * 7; i < days; i += 1) {
-    cursor.setDate(cursor.getDate() + 1);
-    if (isWeekday(cursor)) count += 1;
-  }
-  return count;
-}
-
-function newBD(startDate, endDate) {
-  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-  if (end >= start) return weekdaysAfterUpTo(start, end);
-  // Stepping backwards, the original loop lands on [end, start) rather than
-  // (end, start], so shift the endpoints to match exactly.
-  return -(weekdaysAfterUpTo(end, start) - (isWeekday(start) ? 1 : 0) + (isWeekday(end) ? 1 : 0));
 }
 
 import { test } from 'node:test';
