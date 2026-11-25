@@ -73,8 +73,29 @@
     .page { max-width: 66rem; margin: auto; padding: clamp(1.1rem, 5vw, 3.5rem); }
     .top-nav, .contact { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; align-items: center; }
     .top-nav { justify-content: space-between; margin-bottom: 2.5rem; }
-    .top-nav a, .contact a { display: inline-flex; align-items: center; min-height: 44px; }
+    .top-nav a, .contact a { display: inline-flex; align-items: center; gap: 0.42rem; min-height: 44px; }
+    /* Inline SVG rather than an icon font or three image requests: the whole
+       set is under 1.5KB, it inherits the link colour through currentColor so
+       hover and focus need no extra rules, and it costs no network round trip
+       on the page search sends people to. aria-hidden because the link text
+       already says what each one is. */
+    .ico { width: 1em; height: 1em; flex: none; fill: currentColor; }
     .download { padding: 0.5rem 1rem; border: 1px solid #655c38; border-radius: 0.25rem; text-decoration: none; }
+    /* Search sends more people to this page than to the homepage, so this link
+       is the way most visitors reach the rest of the site. It was plain text at
+       body size next to a Download button with full button chrome, which had
+       the emphasis exactly backwards. */
+    .back {
+      padding: 0.55rem 1.1rem;
+      border: 1px solid #e1c978;
+      border-radius: 0.25rem;
+      font-size: 1.08rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: rgba(225, 201, 120, 0.08);
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .back:hover { background: #e1c978; color: #08100b; }
     h1 { font-size: clamp(2.2rem, 7vw, 3.7rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 0.8rem; }
     .role { font-size: 1.2rem; margin: 0 0 0.35rem; }
     .location, .dates { color: #cec8b9; }
@@ -90,28 +111,54 @@
     li { margin: 0.5rem 0; padding-left: 0.1rem; }
     li::marker { color: #e1c978; }
     footer { margin-top: 3rem; font-size: 0.85rem; color: #cec8b9; }
+    /* The vine lives in the page's own left and right margins. .page is capped
+       at 66rem and centred, so above ~1200px there is real empty gutter either
+       side -- a tall narrow strip, which is the shape the vine was built for.
+       Fixed rather than absolute, so it stays alongside you as you scroll.
+       pointer-events: none because it must never eat a click on the text. */
+    .vine-margin {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: min(calc((100vw - 66rem) / 2 - 0.9rem), 13rem);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .vine-margin.left { left: 0.3rem; }
+    .vine-margin.right { right: 0.3rem; }
+    .vine-margin canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .page { position: relative; z-index: 1; }
+    /* Below this the gutter is too narrow to hold a garden, not merely
+       absent. The strip is (100vw - 66rem)/2 - 0.9rem, so at a 1200px viewport
+       it is 58px -- two stems crammed into 58px read as one tangled line
+       rather than as planting. 1320px is where the strip reaches ~118px, which
+       is the spacing one stem is given. */
+    @media (max-width: 1320px) { .vine-margin { display: none; } }
+
     @media (max-width: 480px) { .top-nav { gap: 0.8rem; margin-bottom: 2rem; } .entry-heading { display: block; } .dates { margin-top: 0.35rem; } }
-    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, footer { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
+    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, .vine-margin { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
   </style>
 </head>
 <body>
+  <div class="vine-margin left" aria-hidden="true"><canvas id="vine-left"></canvas></div>
+  <div class="vine-margin right" aria-hidden="true"><canvas id="vine-right"></canvas></div>
   <main class="page">
     <nav class="top-nav" aria-label="Resume navigation">
-      <a href="/">← Back to my website</a>
+      <a class="back" href="/">← Back to my website</a>
       <a class="download" href="/assets/brenden-brusberg-resume.pdf?v=20261020" download>Download PDF</a>
     </nav>
     <header>
       <h1>Brenden Brusberg</h1>
       <p class="role">Data Science Specialist · McKinsey &amp; Company</p>
-      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City (NYC)</p>
       <nav class="contact" aria-label="Contact and profiles">
-        <a href="mailto:brenbrus@gmail.com">Email</a>
-        <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
-        <a href="https://github.com/brusberg">GitHub</a>
+        <a href="mailto:brenbrus@gmail.com"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h17A1.5 1.5 0 0 1 22 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5zM4.3 6l7.7 5.9L19.7 6zM20 7.9l-7.4 5.7a1 1 0 0 1-1.2 0L4 7.9V18h16z"/></svg>Email</a>
+        <a href="https://www.linkedin.com/in/brendends/"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.13 1.44-2.13 2.94v5.66H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13m1.78 13.02H3.56V9h3.56zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0"/></svg>LinkedIn</a>
+        <a href="https://github.com/brusberg"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.2 4.9 18.2 5.2 18.2 5.2c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>GitHub</a>
       </nav>
     </header>
     <section aria-labelledby="summary">
       <h2 id="summary">Summary</h2>
+      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City</p>
       <p>I operate at the crossroads of data science and software engineering, coordinating the development of Firmwide systems across multidisciplinary teams. With expertise in AI strategy, cloud infrastructure, and emerging technology, I leverage organizational data to inform strategic decisions that align leaders with their people to create a safer and more productive environment.</p>
     </section>
     <section aria-labelledby="experience">
@@ -145,23 +192,68 @@
           <li>Increased explainability of highly sensitive model inferences across the people space to improve decision-making impact.</li>
         </ul>
       </article>
+      <article>
+        <div class="entry-heading"><h3>Data Science Intern, McKinsey &amp; Company</h3><p class="dates">2018</p></div>
+        <p class="location">New York City, NY</p>
+        <ul>
+          <li>Joined as a software engineering intern and moved onto the data science team in the first week.</li>
+        </ul>
+      </article>
     </section>
     <section aria-labelledby="education">
       <h2 id="education">Education — Stevens Institute of Technology</h2>
       <article>
         <div class="entry-heading"><h3>Master of Science, Machine Learning</h3><p class="dates">Dec 2021</p></div>
-        <p>Stevens Institute of Technology, Hoboken, NJ</p><p>GPA: 3.97</p>
+        <p class="location">Hoboken, NJ &middot; GPA 3.97</p>
+        <p>Focused on advanced methods for machine learning, statistics, and analytics.</p>
       </article>
       <article>
         <div class="entry-heading"><h3>Bachelor of Science, Computer Science</h3><p class="dates">May 2021</p></div>
-        <p>Stevens Institute of Technology, Hoboken, NJ</p><p>GPA: 3.82 · Mathematics Minor · Literature Minor</p>
+        <p class="location">Hoboken, NJ &middot; GPA 3.82 &middot; Mathematics Minor &middot; Literature Minor</p>
+        <p>Honors: Dean&rsquo;s List, Presidential Scholarship, and the Accelerated Masters Program.</p>
       </article>
     </section>
     <section aria-labelledby="tools">
-      <h2 id="tools">Software &amp; Tools</h2>
-      <p>Python, FastAPI, Kedro, TypeScript, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions</p>
+      <h2 id="tools">Languages &amp; Tools</h2>
+      <p><strong>Languages:</strong> Python, C++, C, CUDA, Rust, TypeScript</p>
+      <p><strong>Tools:</strong> FastAPI, Kedro, Next.js, PromptFoo, Docker, AWS, Terraform, GitHub Actions, Jupyter, OpenGL</p>
     </section>
-    <footer>All opinions are my own and do not represent my employer.</footer>
+    <section aria-labelledby="achievements">
+      <h2 id="achievements">Achievements</h2>
+      <p>Eagle Scout · Order of the Arrow</p>
+    </section>
   </main>
+  <!-- External and conditional on purpose. This page is the one search sends
+       people to, and it is 11KB; inlining 40KB of growth algorithm into it
+       would make the decoration three times the weight of the document. Loaded
+       on demand it costs the HTML nothing, arrives after paint, is cached
+       across visits, and is never fetched at all on a phone. -->
+  <script>
+    function startVines() {
+      if (!window.createFlora) return;
+      var vines = [];
+      ['vine-left', 'vine-right'].forEach(function (id) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var flora = window.createFlora(canvas);
+        flora.plant(id);          // the id is the seed, so the two differ
+        vines.push(flora);
+      });
+      if (vines.length) window.runFlora(vines);
+    }
+
+    // Fetch the growth algorithm only where there is a gutter to grow it in.
+    // The margins are display:none below this breakpoint, so a phone was
+    // downloading and parsing 45KB to then do nothing with it -- on the one
+    // page search actually sends people to.
+    if (matchMedia('(min-width: 1321px)').matches) {
+      addEventListener('DOMContentLoaded', function () {
+        var s = document.createElement('script');
+        s.src = '/flora.js';
+        s.onload = startVines;   // dynamic scripts are async; onload is the cue
+        document.head.appendChild(s);
+      });
+    }
+  </script>
 </body>
 </html>

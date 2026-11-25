@@ -19,7 +19,23 @@ interface AntPatchOptions {
 
 const THROTTLED_MAX_DELTA = 1;
 const RESUME_MAX_DELTA = 30;
+// Returning to a tab the browser had throttled produces a large rawDelta, and
+// RESUME_MAX_DELTA then allows up to 30 simulated seconds of arrears. Running
+// those as 1,800 fixed steps inside a single frame blocks the main thread:
+// measured at 966ms with a 10-ant colony, 236x a normal frame, and it grows
+// with the colony. Catch-up is now spread across frames instead -- 12 steps a
+// frame is ~6x speed at 30fps, so 30s of arrears clears in about 5 seconds
+// while the page stays responsive throughout.
+const MAX_CATCHUP_STEPS = 12;
 const BACKGROUND_FRAME_MS = 125;
+// Draw at ~30Hz rather than the display's native rate. The model keeps its own
+// fixed 1/60s timestep (see FRAME_STEP), so this only skips redundant redraws;
+// on a 120Hz panel it cuts GPU work roughly in half with no change to the
+// simulation, which matters on phones and low-end hardware.
+const TARGET_FRAME_MS = 1000 / 30;
+// Frame timestamps never land exactly on the budget: four 120Hz frames is
+// 33.33ms against a 33.34ms target, which would otherwise drop us to 24fps.
+const FRAME_BUDGET_TOLERANCE_MS = 2;
 
 const VERTEX_SHADER = `#version 300 es
 in vec2 a_position;
@@ -51,9 +67,12 @@ void main() {
 export class AntPatchSimulation {
   private readonly canvas: HTMLCanvasElement;
   private readonly gl: WebGL2RenderingContext;
-  private readonly program: WebGLProgram;
-  private readonly texture: WebGLTexture;
-  private readonly vertexArray: WebGLVertexArrayObject;
+  // reassigned when the GL context is restored, so not readonly
+  private program: WebGLProgram;
+  // reassigned when the GL context is restored, so not readonly
+  private texture: WebGLTexture;
+  // reassigned when the GL context is restored, so not readonly
+  private vertexArray: WebGLVertexArrayObject;
   private readonly model = new AntModel();
   private readonly scene = new Uint8Array(FIELD_SIZE * 4);
   private readonly noise = new Uint8Array(FIELD_SIZE);
@@ -71,6 +90,8 @@ export class AntPatchSimulation {
   private cameraCenterY = GRID_HEIGHT * 0.52;
   private cameraViewWidth = GRID_WIDTH;
   private cameraViewHeight = GRID_HEIGHT;
+  private contextLost = false;
+  private lastDrawTime = 0;
   private activePointerId: number | null = null;
   private lastPointerX = 0;
   private lastPointerY = 0;
@@ -101,6 +122,8 @@ export class AntPatchSimulation {
     this.snapshotElement = this.createSnapshotElement();
 
     this.seedNoise();
+    canvas.addEventListener('webglcontextlost', this.handleContextLost, false);
+    canvas.addEventListener('webglcontextrestored', this.handleContextRestored, false);
     this.resizeObserver.observe(canvas);
     window.addEventListener('resize', this.handleViewportResize);
     window.visualViewport?.addEventListener('resize', this.handleViewportResize);
@@ -139,6 +162,8 @@ export class AntPatchSimulation {
     window.removeEventListener('resize', this.handleViewportResize);
     window.visualViewport?.removeEventListener('resize', this.handleViewportResize);
     this.removeCameraInputListeners();
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
     this.gl.deleteTexture(this.texture);
     this.gl.deleteVertexArray(this.vertexArray);
     this.gl.deleteProgram(this.program);
@@ -177,8 +202,47 @@ export class AntPatchSimulation {
     this.snapshotElement.textContent = JSON.stringify(this.snapshot());
   }
 
+  /**
+   * The browser can take the WebGL context away at any time (GPU driver reset,
+   * sleep/wake, memory pressure). Calling preventDefault() is what makes a
+   * restore possible at all — without it the context is gone for good and every
+   * later gl.* call silently does nothing, which looks exactly like a freeze.
+   */
+  private readonly handleContextLost = (event: Event): void => {
+    event.preventDefault();
+    this.contextLost = true;
+    console.warn('[ant-sim] WebGL context lost; simulation paused until restore');
+  };
+
+  private readonly handleContextRestored = (): void => {
+    // Every GL object died with the old context; rebuild them. The simulation
+    // state itself lives in plain arrays, so the colony survives untouched.
+    try {
+      this.program = this.createProgram();
+      this.texture = this.createTexture();
+      this.vertexArray = this.createVertexArray();
+      this.seedNoise();
+      this.contextLost = false;
+      this.resize();
+      this.draw();
+      console.info('[ant-sim] WebGL context restored');
+    } catch (error) {
+      console.error('[ant-sim] could not rebuild after context restore', error);
+    }
+  };
+
   private readonly tick = (time: number): void => {
-    this.advanceFrame(time);
+    // Keep the loop running while the context is gone: it is what notices the
+    // restore. Just don't advance or draw against a dead context.
+    //
+    // The draw rate is capped at TARGET_FRAME_MS, but the colony is not slowed
+    // by it: advanceFrame() accumulates real elapsed time and runs as many
+    // fixed FRAME_STEP (1/60s) model updates as that time covers. Drawing half
+    // as often simply means two model steps per draw instead of one.
+    if (!this.contextLost && time - this.lastDrawTime >= TARGET_FRAME_MS - FRAME_BUDGET_TOLERANCE_MS) {
+      this.lastDrawTime = time;
+      this.advanceFrame(time);
+    }
     this.frameId = window.requestAnimationFrame(this.tick);
   };
 
@@ -199,11 +263,15 @@ export class AntPatchSimulation {
     if (this.reducedMotion) {
       this.update(FRAME_STEP * 0.2);
     } else {
-      this.accumulator += delta;
+      // Bound the arrears as well as the per-frame work, so a very long
+      // absence cannot queue more than RESUME_MAX_DELTA of simulated time.
+      this.accumulator = Math.min(this.accumulator + delta, RESUME_MAX_DELTA);
 
-      while (this.accumulator >= FRAME_STEP) {
+      let steps = 0;
+      while (this.accumulator >= FRAME_STEP && steps < MAX_CATCHUP_STEPS) {
         this.update(FRAME_STEP);
         this.accumulator -= FRAME_STEP;
+        steps += 1;
       }
     }
 

@@ -130,7 +130,7 @@ a {
 
 .allocation-heading span,
 .allocation-values span {
-  color: #d3b878;
+  color: #cdbb78;
   font-size: 0.65rem;
   font-weight: 790;
   letter-spacing: 0;
@@ -138,7 +138,7 @@ a {
 }
 
 .allocation-heading strong {
-  color: rgba(255, 249, 233, 0.92);
+  color: rgba(255, 248, 232, 0.92);
   font-size: 0.93rem;
   line-height: 1.1;
 }
@@ -164,12 +164,12 @@ a {
 
 .allocation-thumb {
   fill: #b9d08f;
-  stroke: #fff9e9;
+  stroke: #fff8e8;
   stroke-width: 1.6;
 }
 
 .allocation-label {
-  fill: rgba(211, 184, 120, 0.92);
+  fill: rgba(205, 187, 120, 0.92);
   dominant-baseline: middle;
   font-size: 11px;
   font-weight: 850;
@@ -195,7 +195,7 @@ a {
   align-items: baseline;
   justify-content: center;
   gap: 0.22rem;
-  color: rgba(255, 249, 233, 0.82);
+  color: rgba(255, 248, 232, 0.82);
   font-size: 0.61rem;
   line-height: 1;
   white-space: nowrap;
@@ -203,7 +203,7 @@ a {
 
 .allocation-values b {
   min-width: 2ch;
-  color: #fff9e9;
+  color: #fff8e8;
   font-variant-numeric: tabular-nums;
 }
 
@@ -227,7 +227,7 @@ a {
 }
 
 .simant-note a {
-  color: #d3b878;
+  color: #cdbb78;
   font-weight: 760;
   text-decoration: none;
   pointer-events: auto;
@@ -235,7 +235,7 @@ a {
 
 .simant-note a:hover,
 .simant-note a:focus-visible {
-  color: #fff9e9;
+  color: #fff8e8;
   outline: none;
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -259,7 +259,7 @@ a {
 }
 
 .ant-tracker span {
-  color: #d3b878;
+  color: #cdbb78;
   font-size: 0.54rem;
   font-weight: 790;
   letter-spacing: 0;
@@ -268,7 +268,7 @@ a {
 }
 
 .ant-tracker strong {
-  color: #fff9e9;
+  color: #fff8e8;
   font-size: 0.82rem;
   font-weight: 760;
   line-height: 1;
@@ -299,7 +299,7 @@ a {
 
 .hunger-chart-heading span,
 .hunger-chart-heading strong {
-  color: #d3b878;
+  color: #cdbb78;
   font-size: 0.54rem;
   font-weight: 790;
   letter-spacing: 0;
@@ -308,7 +308,7 @@ a {
 }
 
 .hunger-chart-heading strong {
-  color: rgba(255, 249, 233, 0.88);
+  color: rgba(255, 248, 232, 0.88);
   font-variant-numeric: tabular-nums;
 }
 
@@ -367,7 +367,7 @@ a {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border: 1px solid rgba(211, 184, 120, 0.38);
+  border: 1px solid rgba(205, 187, 120, 0.38);
   background: rgba(247, 241, 223, 0.04);
   image-rendering: auto;
 }
@@ -384,7 +384,7 @@ a {
 h1 {
   max-width: none;
   margin: 0;
-  color: #fff9e9;
+  color: #fff8e8;
   font-size: clamp(2.05rem, 4.1vw, 3.35rem);
   line-height: 0.94;
   letter-spacing: 0;
@@ -414,7 +414,7 @@ h1 {
   border: 1px solid rgba(247, 241, 223, 0.18);
   border-radius: 0.28rem;
   background: rgba(247, 241, 223, 0.08);
-  color: #fff9e9;
+  color: #fff8e8;
   font-size: 0.86rem;
   font-weight: 760;
   letter-spacing: 0;
@@ -466,7 +466,7 @@ h1 {
 .resume-details span {
   display: block;
   margin-bottom: 0.28rem;
-  color: #d3b878;
+  color: #cdbb78;
   font-size: 0.68rem;
   font-weight: 790;
   letter-spacing: 0;
@@ -476,7 +476,7 @@ h1 {
 .profile-facts strong,
 .resume-details strong {
   display: block;
-  color: rgba(255, 249, 233, 0.92);
+  color: rgba(255, 248, 232, 0.92);
   font-size: clamp(0.74rem, 1.05vw, 0.88rem);
   font-weight: 650;
   line-height: 1.22;
@@ -490,8 +490,8 @@ h1 {
   max-width: min(22rem, calc(100% - 2rem));
   padding: 1rem 1.15rem;
   border: 1px solid rgba(238, 220, 167, 0.2);
-  background: rgba(17, 19, 16, 0.84);
-  color: #fff9e9;
+  background: rgba(17, 20, 15, 0.84);
+  color: #fff8e8;
   font-weight: 700;
   text-align: center;
   transform: translate(-50%, -50%);
@@ -886,3 +886,25 @@ h1 {
   .is-embedded .site-shell { grid-template-rows: clamp(14rem, 52vw, 20rem); }
   .allocation-panel { width: 7.3rem; padding: 0.4rem; }
 }
+/* Only when the parent has measured the window and handed this frame an explicit
+   height does the shell fill it. sizeAntStage (index.html) adds .is-parent-sized
+   above 860px; below that it REMOVES the height and waits for this page to report
+   its own, so the chain has to come off. With `height: 100%` still applied, the
+   height this page reports is the frame's current height -- a fixed point. The
+   frame latches at its 36rem fallback and the stage sits short inside it, which
+   is the 331px of dead space this rule exists to prevent.
+
+   Keyed off a class the parent sets rather than a media query, because a media
+   query evaluated inside the frame sees the panel's width, not the window's: a
+   1400px window with an 800px-wide panel owns the height but would fail
+   `min-width: 861px`.
+
+   The old unscoped rule replaced sizing the row from `35vw` of the frame's own
+   width with a 34rem cap, which ignored the window height and hard-capped the
+   stage at 544px above a 1554px viewport. That fix still holds -- it just only
+   applies where the parent is actually doing the measuring. */
+.is-parent-sized.is-embedded,
+.is-parent-sized.is-embedded body { height: 100%; }
+.is-parent-sized.is-embedded .page-shell { height: 100%; }
+.is-parent-sized.is-embedded .site-shell { height: 100%; grid-template-rows: 100%; }
+

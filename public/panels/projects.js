@@ -1,5 +1,81 @@
 (() => {
   const registry = window.portfolioPanelFactories = window.portfolioPanelFactories || {};
+
+  // How each project was actually built.
+  //   'vibe' — written mostly by prompting a model, reviewed and steered by me
+  //   'hand' — written by hand, line by line
+  // Edit the `mode` field to re-file a project; the panel groups itself.
+  const PROJECTS = [
+    {
+      mode: 'vibe',
+      name: 'Poker Snake',
+      href: 'https://poker-snake.com/',
+      blurb:
+        'Build poker hands by drawing connected paths through a 6x6 card board in a twelve-round roguelike campaign.',
+    },
+    {
+      mode: 'vibe',
+      name: 'This site',
+      href: 'https://github.com/brusberg/brendenbrusberg.com',
+      blurb:
+        'The ant colony, the fractals and the starfield behind this page — an agent and I traded branches until the simulation felt right.',
+    },
+    {
+      mode: 'vibe',
+      name: 'Dungeons and Kittens',
+      href: 'https://dungeons-kitten-table.vercel.app/',
+      blurb: 'Online tabletop.',
+    },
+    {
+      mode: 'hand',
+      name: 'Rust Steaming Coffee',
+      href: 'https://github.com/brusberg/coffee',
+      blurb: 'Written by hand to learn.',
+    },
+    {
+      mode: 'hand',
+      name: 'Emotion Archive',
+      href: 'https://www.mckinsey.com/capabilities/mckinsey-design/how-we-help-clients/design-blog/the-emotion-archive-finding-global-empathy-in-a-challenging-time',
+      blurb: 'Finding global empathy in a challenging time.',
+    },
+  ];
+
+  // Hand-written first. The order is the point: what you typed yourself leads,
+  // and what a model helped with follows.
+  const GROUPS = [
+    {
+      mode: 'hand',
+      label: 'Written by hand',
+      note: 'Typed line by line, usually to learn the thing rather than to ship it fast.',
+    },
+    {
+      mode: 'vibe',
+      label: 'Vibe coded',
+      note: 'Built by prompting, reviewing and steering a model. I decided what it should be and what was good enough.',
+    },
+  ];
+
+  const projectBlock = (p) => `
+          <a class="project-block" href="${p.href}">
+            <strong>${p.name}</strong>
+            <span>${p.blurb}</span>
+          </a>`;
+
+  const projectGroupsHtml = GROUPS.map((g) => {
+    const items = PROJECTS.filter((p) => p.mode === g.mode);
+    if (!items.length) return '';
+    return `
+      <div class="project-group">
+        <div class="project-group-heading">
+          <span class="project-group-label" data-mode="${g.mode}">${g.label}</span>
+          <span class="project-group-count">${items.length}</span>
+        </div>
+        <p class="project-group-note">${g.note}</p>
+        <div class="project-grid">${items.map(projectBlock).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
   registry.art = ({ poemButtonHtml }) => ({
     coord: { x: 0, y: 1 },
     eyebrow: '',
@@ -12,24 +88,8 @@
       </div>
       <div class="story-section">
         <span class="story-subhead">Projects</span>
-        <div class="project-grid">
-          <a class="project-block" href="https://poker-snake.com/">
-            <strong>Poker Snake</strong>
-            <span>Build poker hands by drawing connected paths through a 6x6 card board in a twelve-round roguelike campaign.</span>
-          </a>
-          <a class="project-block" href="https://dungeons-kitten-table.vercel.app/">
-            <strong>Dungeons and Kittens</strong>
-            <span>Online tabletop.</span>
-          </a>
-          <a class="project-block" href="https://github.com/brusberg/coffee">
-            <strong>Rust Steaming Coffee</strong>
-            <span>Written by hand to learn.</span>
-          </a>
-          <a class="project-block" href="https://www.mckinsey.com/capabilities/mckinsey-design/how-we-help-clients/design-blog/the-emotion-archive-finding-global-empathy-in-a-challenging-time">
-            <strong>Emotion Archive</strong>
-            <span>Finding global empathy in a challenging time.</span>
-          </a>
-        </div>
+        <p class="project-intro">Split by how they were made, because the two are different crafts and I want to be straight about which is which.</p>
+        ${projectGroupsHtml}
       </div>
       <div class="story-section">
         <p><span class="story-subhead">Writing</span>Writing is coming soon, likely through Substack. For now, one older poem lives here as a popout instead of taking over the whole page.</p>
