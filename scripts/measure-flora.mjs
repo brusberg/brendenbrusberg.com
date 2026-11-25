@@ -60,25 +60,31 @@ function makeCanvasStub(w, h) {
 }
 
 /** Build and run one arm. `rewrite` patches constants in the module source. */
-function run({ w = WIDTH, h = HEIGHT, panel = 'projects', rewrite = (s) => s, resizeTo = null } = {}) {
+function run({ w = WIDTH, h = HEIGHT, panel = 'projects', rewrite = (s) => s, resizeTo = null, search = '' } = {}) {
   const el = makeCanvasStub(w, h);
   const src = rewrite(MODULE_SRC);
   // eslint-disable-next-line no-new-func
   const factory = new Function(
-    'document', 'window', 'dprCap', 'prefersReducedMotion', 'Math_',
+    'document', 'window', 'location', 'URLSearchParams', 'dprCap', 'prefersReducedMotion',
     `${src}\nreturn panelFlora;`
   );
   const flora = factory(
     { getElementById: () => el },
     { devicePixelRatio: 1 },
+    { search },
+    URLSearchParams,
     1.5,
-    null,
-    Math
+    null
   );
 
+  // Three renders of the SAME panel. renderInfo() calls plant() on every
+  // render, and every call after the first must be a no-op -- that is the
+  // "do not regrow on a panel switch" property, and it holds in both garden
+  // modes. Switching to a DIFFERENT panel is a separate behaviour with its own
+  // check below, because under per-panel gardens it is supposed to swap.
   flora.plant(panel);
-  flora.plant('ants');       // a second panel render must NOT restart anything
-  flora.plant('history');
+  flora.plant(panel);
+  flora.plant(panel);
 
   let steps = 0;
   const STEP_MS = 1000;      // one tick is far more than growthMs, so several
@@ -270,6 +276,60 @@ if (process.argv.includes('--sizes')) {
   process.exit(0);
 }
 
+// --- when each vine finishes ----------------------------------------------
+// The garden should not stop all at once. Each vine grows at its own rate, so
+// some are still climbing well after others have flowered.
+if (process.argv.includes('--finish')) {
+  const el = makeCanvasStub(WIDTH, HEIGHT);
+  // eslint-disable-next-line no-new-func
+  const flora = new Function(
+    'document', 'window', 'location', 'URLSearchParams', 'dprCap', 'prefersReducedMotion',
+    `${MODULE_SRC}\nreturn panelFlora;`
+  )({ getElementById: () => el }, { devicePixelRatio: 1 }, { search: '' }, URLSearchParams, 1.5, null);
+  flora.plant('projects');
+  const STEP_MS = 1000 / 60;
+  const lastChange = new Map();
+  let tick = 0;
+  let prev = [];
+  // do/while again: `settled` starts true and only sow() clears it.
+  do {
+    flora.tick(STEP_MS);
+    tick += 1;
+    const now = flora.debug().vines.map((v) => v.segs.length);
+    now.forEach((n, i) => { if (n !== prev[i]) lastChange.set(i, tick); });
+    prev = now;
+  } while (!flora.debug().settled && tick < 60000);
+  const d = flora.debug();
+  const secs = [...lastChange.entries()].sort((a, b) => a[0] - b[0]).map(([i, t]) => ({
+    vine: i, rate: Math.round(d.vines[i].rate * 100) / 100, finishedAtSec: Math.round(t / 60 * 10) / 10,
+    segs: d.vines[i].segs.length
+  }));
+  console.log('\n  vine  rate   finished at   segments');
+  for (const v of secs) console.log(`  ${String(v.vine).padEnd(6)}${String(v.rate).padEnd(7)}${String(v.finishedAtSec + 's').padEnd(14)}${v.segs}`);
+  const times = secs.map((v) => v.finishedAtSec);
+  console.log(`\n  first finishes ${Math.min(...times)}s, last ${Math.max(...times)}s — a ${Math.round((Math.max(...times) - Math.min(...times)) * 10) / 10}s spread\n`);
+  process.exit(0);
+}
+
+// --- growth-treatment comparison -------------------------------------------
+// The treatments are about MOTION, so most of these numbers should be
+// identical: creep and pop are paint-only and must not touch the plant. Only
+// `fine` is allowed to differ, because halving the step length really does
+// change the geometry.
+if (process.argv.includes('--anim')) {
+  console.log('\n  mode   segments  steps to settle  heavy overlap  reach  plant identical to raw?');
+  const base = run({ search: '?vine=raw' });
+  const baseFp = fingerprint(base.state);
+  for (const mode of ['raw', 'creep', 'pop', 'fine']) {
+    const r = run({ search: `?vine=${mode}` });
+    const m = densityMetrics(r.state);
+    const rr = reach(r.state);
+    console.log(`  ${mode.padEnd(7)}${String(m.segments).padEnd(10)}${String(r.state.lifeCap).padEnd(17)}${String(m.heavyOverlapPct + '%').padEnd(15)}${String(rr.tallestVinePct + '%').padEnd(7)}${fingerprint(r.state) === baseFp ? 'yes' : 'NO'}`);
+  }
+  console.log('');
+  process.exit(0);
+}
+
 // --- fork-target scan ------------------------------------------------------
 // FORK_TARGET has to satisfy two sizes at once: keep the tall column near the
 // ~1600 segments that already looked right, while giving the short column
@@ -307,6 +367,47 @@ if (process.argv.includes('--sweep')) {
   }
   console.log('');
   process.exit(0);
+}
+
+// --- garden-per-panel check ------------------------------------------------
+// Each panel keeps its own garden, grown for its own column height, and coming
+// back to a panel restores it rather than regrowing it.
+if (process.argv.includes('--gardens')) {
+  const el = makeCanvasStub(413, 1315);
+  // eslint-disable-next-line no-new-func
+  const flora = new Function(
+    'document', 'window', 'location', 'URLSearchParams', 'dprCap', 'prefersReducedMotion',
+    `${MODULE_SRC}\nreturn panelFlora;`
+  )({ getElementById: () => el }, { devicePixelRatio: 1 }, { search: '' }, URLSearchParams, 1.5, null);
+
+  const HEIGHTS = { stats: 192, history: 613, projects: 1315 };
+  const grow = (panel, ticks) => {
+    el.clientHeight = HEIGHTS[panel];
+    flora.plant(panel);
+    for (let i = 0; i < ticks; i += 1) flora.tick(1000);
+    const d = flora.debug();
+    return { panel, boxH: d.boxH, segs: d.vines.reduce((n, v) => n + v.segs.length, 0),
+             settled: d.settled, seed: d.seed, gardens: d.gardens.length };
+  };
+  const first = ['stats', 'history', 'projects'].map((p) => grow(p, 400));
+  // tick(0) advances no time, so the box is re-measured without growing.
+  const second = ['stats', 'history', 'projects'].map((p) => {
+    el.clientHeight = HEIGHTS[p];
+    flora.plant(p);
+    flora.tick(0);
+    const d = flora.debug();
+    return { panel: p, boxH: d.boxH, segs: d.vines.reduce((n, v) => n + v.segs.length, 0),
+             settled: d.settled, seed: d.seed, gardens: d.gardens.length };
+  });
+  console.log('\n  first visit (grown)');
+  for (const r of first) console.log(`    ${r.panel.padEnd(10)} box ${String(r.boxH).padEnd(6)} segs ${String(r.segs).padEnd(7)} settled ${r.settled}`);
+  console.log('  returning (no ticks)');
+  for (const r of second) console.log(`    ${r.panel.padEnd(10)} box ${String(r.boxH).padEnd(6)} segs ${String(r.segs).padEnd(7)} gardens held ${r.gardens}`);
+  const kept = first.every((f, i) => second[i].segs === f.segs);
+  const distinct = new Set(first.map((f) => f.seed)).size === first.length;
+  console.log(`\n  gardens restored unchanged: ${kept ? 'yes' : 'NO'}`);
+  console.log(`  each panel its own seed:    ${distinct ? 'yes' : 'NO'}\n`);
+  process.exit(kept && distinct ? 0 : 1);
 }
 
 const withDensity = run({});

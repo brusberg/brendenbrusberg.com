@@ -9142,6 +9142,38 @@
         const RAGGED_MIN = 0.18;   // skyline spread on a tall column
         const RAGGED_MAX = 0.42;   // ...and on a short one
 
+        // A bud that has topped out is PARKED, not discarded. The column's
+        // height changes on every panel switch -- 192px on Stats against
+        // 1315px on Projects -- and a garden grown in the short box looked
+        // stunted when the same garden was shown in the tall one, with the
+        // shortest vines apparently having stopped for no reason. Parked buds
+        // resume exactly where they left off when the ceiling rises, which is
+        // continuing to grow rather than regrowing. Bounded, so it still settles.
+        const MAX_REVIVALS = 3;
+
+        // Growth advances in discrete steps -- one segment of ~10px every
+        // growthMs -- while the page draws at 30fps, so at the default rate a
+        // segment appears on every other frame and the eye reads a stutter.
+        // Three treatments, switchable so they can be compared rather than
+        // argued about:
+        //   creep  the growing tip is drawn partway along its next segment, so
+        //          the stem extends continuously between model steps. Paint
+        //          only: the model, and therefore the plant, is untouched.
+        //   fine   half-length steps at twice the rate. Same fill time, half
+        //          the jump, twice the segments and twice the model work --
+        //          and a visibly smoother plant, because the curves resolve
+        //          at half the chord length.
+        //   pop    the newest segments ease in over a couple of steps, so a
+        //          step reads as a deliberate pixel-art bloom instead of a
+        //          stutter. Leans into the discreteness rather than hiding it.
+        //   raw    no treatment, for comparison.
+        const VINE_ANIM = (() => {
+          const v = new URLSearchParams(location.search).get('vine');
+          return ['creep', 'fine', 'pop', 'raw'].includes(v) ? v : 'creep';
+        })();
+        const STEP_SCALE = VINE_ANIM === 'fine' ? 0.5 : 1;
+        const POP_STEPS = 2.5;     // how long a new segment takes to settle in
+
         // ---- density -------------------------------------------------------
         // Candidate turns, tried in this order, first one under STEER_LO wins.
         // +-0.30 is a fine correction; +-0.62 is enough to see past a stem.
@@ -9171,11 +9203,39 @@
 
         // ---- the garden ----------------------------------------------------
         const VINE_WAIT = 6;        // steps of stagger between vines sprouting
+        // Each vine advances at its own rate, so the garden does not grow and
+        // then stop in lockstep -- some vines are still climbing well after
+        // others have flowered. Centred on 1, so the average fill time is still
+        // FILL_SECONDS; the quickest vine finishes at about 0.78 of it and the
+        // slowest at about 1.4.
+        const RATE_MIN = 0.72;
+        const RATE_MAX = 1.28;
         const SIZE_QUANTUM = 16;    // box size is quantised, so a resize drag is
                                     // deterministic rather than per-pixel noise
 
+        // ONE GARDEN PER PANEL, each kept for the life of the page.
+        //
+        // The panels do not share a shape. The column is ~192px tall on Stats,
+        // ~613px on History and ~1270px on Projects, and only the width is
+        // constant. A single garden shared across all of them is always wrong
+        // for at least two: grown in the short box it looks stunted in the tall
+        // one, and grown in the tall box it is clipped to its own trunks in the
+        // short one.
+        //
+        // So each panel gets its own, seeded from the panel id -- which is the
+        // original "a different plant per panel" idea, now that it can survive.
+        // Nothing regrows: a panel's garden is stashed when you leave and
+        // restored exactly as it was when you come back.
+        //
+        // ?garden=one keeps the single shared garden, to compare.
+        const GARDEN_MODE =
+          new URLSearchParams(location.search).get('garden') === 'one' ? 'one' : 'per-panel';
+        const gardens = new Map();
+        let currentPanel = null;
+
         let seed = 0, rnd = null, sown = false;
-        let vines = [], buds = [];
+        let vines = [], buds = [], parked = [];
+        let stepNo = 0;
         let settled = true, acc = 0, dirty = false;
         let boxW = 0, boxH = 0, lastDpr = 0, lastQW = 0, lastQH = 0;
         let stemLen = 10, step = 5, lifeCap = 150, growthMs = 90;
@@ -9204,15 +9264,48 @@
         const snap = (v) => Math.round(v / PX) * PX;
         const visible = () => el.offsetParent !== null && boxW > 40 && boxH > 40;
 
-        // The garden is chosen once per page load and then left alone.
-        // renderInfo() calls this on every panel render, so every call after the
-        // first is a no-op -- which is the whole point: switching panels must
-        // not restart the growth. The panel the visitor LANDS on still picks
-        // which garden grows, which is as much of "a seed per panel" as can
-        // survive a garden that persists.
+        // All of the per-garden state, swapped as a block. A save/restore pair
+        // rather than threading a state object through 250 lines of growth code:
+        // the growth reads and writes these names directly, and leaving it that
+        // way keeps the diff to this one pair of functions.
+        function stashGarden() {
+          if (!currentPanel) return;
+          gardens.set(currentPanel, {
+            seed, rnd, sown, vines, buds, parked, stepNo, settled, acc,
+            stemLen, step, lifeCap, growthMs, occ, GX, GY, CELL, DEP,
+            STEER_LO, BLOCK, FORK_MAX, LEAF_MAX, INTERNODE, FORK_P, lastQW, lastQH
+          });
+        }
+
+        function restoreGarden(g) {
+          ({
+            seed, rnd, sown, vines, buds, parked, stepNo, settled, acc,
+            stemLen, step, lifeCap, growthMs, occ, GX, GY, CELL, DEP,
+            STEER_LO, BLOCK, FORK_MAX, LEAF_MAX, INTERNODE, FORK_P, lastQW, lastQH
+          } = g);
+        }
+
+        // renderInfo() calls this on every panel render. Switching panels must
+        // never restart growth, so the only thing that happens here is a swap.
         function plant(panelId) {
-          if (seed) return;
-          seed = hash(`flora:${panelId}`) || 1;
+          const id = panelId || 'ants';
+          if (GARDEN_MODE === 'one') {
+            if (seed) return;
+            seed = hash(`flora:${id}`) || 1;
+            currentPanel = id;
+            return;
+          }
+          if (id === currentPanel) return;
+          stashGarden();
+          currentPanel = id;
+          const kept = gardens.get(id);
+          if (kept) { restoreGarden(kept); dirty = true; return; }
+          // First time on this panel: a fresh garden, seeded from its id, sown
+          // on the first tick that can measure the column.
+          seed = hash(`flora:${id}`) || 1;
+          rnd = null; sown = false; settled = true; acc = 0; dirty = true;
+          vines = []; buds = []; parked = []; stepNo = 0;
+          lastQW = 0; lastQH = 0;
         }
 
         // ---- the occupancy field -------------------------------------------
@@ -9311,13 +9404,10 @@
         }
 
         // ---- sowing ---------------------------------------------------------
-        function sow() {
-          rnd = makeRnd(seed);
-          stemLen = Math.max(7, Math.min(22, boxH / 72));
-          step = stemLen * STEP_FRAC;
-          // The column height is a growth BUDGET -- it decides when a bud tops
-          // out -- never a scale factor.
-          //
+        // The budget, as opposed to the scale. Everything in here is re-derived
+        // whenever the column's height changes, because the height says how far
+        // a vine may get -- not how big it is.
+        function rebudget() {
           // The slack matters. A bud only makes boxH/step steps of progress if
           // it climbs dead straight, and it does not: it wanders, it steers
           // around its neighbours, it leans away from the busy side. At 0.95
@@ -9326,8 +9416,6 @@
           // ends a bud, which is what the cap is supposed to mean.
           lifeCap = Math.max(24, Math.ceil((boxH / step) * 1.45));
           growthMs = Math.max(24, (FILL_SECONDS * 1000) / lifeCap);
-          sizeGrid();
-
           // A stem forks about once every INTERNODE + 1/FORK_P steps, and the
           // height ceiling ends it well before lifeCap does, so budget against
           // roughly two thirds of lifeCap.
@@ -9335,6 +9423,26 @@
           const usableLife = Math.max(8, lifeCap * 0.66);
           const interval = Math.max(1, usableLife / FORK_TARGET - INTERNODE);
           FORK_P = Math.max(FORK_P_MIN, Math.min(FORK_P_MAX, 1 / interval));
+        }
+
+        function sow() {
+          rnd = makeRnd(seed);
+          // Scale comes from the WIDTH, and the budget from the height.
+          //
+          // The column's width is the same on every panel; only its height
+          // changes, from 192px on Stats to ~1315px on Projects. Deriving the
+          // stem length from the height meant the garden's whole scale was
+          // decided by whichever panel you happened to land on first -- sow it
+          // on Stats and it was built out of 3.5px steps, which in the tall
+          // column reads as fine moss and needs 360 steps a vine to climb.
+          // Measured: a garden sown short reached 29% of the tall column.
+          //
+          // Width is stable, so the garden is the same size whatever panel it
+          // is shown in, and the height only decides how far up it gets.
+          stemLen = Math.max(7, Math.min(22, boxW / 20));
+          step = stemLen * STEP_FRAC * STEP_SCALE;
+          rebudget();
+          sizeGrid();
 
           // Bases sit in even slots with bounded jitter, so adjacent roots are
           // always at least half a slot apart: a real hedge rather than a clump.
@@ -9344,12 +9452,15 @@
           const count = Math.max(2, Math.min(6, Math.round(boxW / spacing)));
           vines = [];
           buds = [];
+          parked = [];
+          stepNo = 0;
           for (let i = 0; i < count; i += 1) {
             const slot = (i + 0.5) / count;
             const ax01 = Math.min(0.94, Math.max(0.06, slot + (rnd() - 0.5) * (0.5 / count)));
             vines.push({
               ax01,
               ax0: ax01 * boxW,
+              rate: RATE_MIN + rnd() * (RATE_MAX - RATE_MIN),
               // A ragged skyline has to be ragged in PIXELS, not in percent.
               // 0.82-1.0 of a 1300px column is a 233px spread and reads as a
               // hedge; the same fraction of a 174px column is 31px, so every
@@ -9371,7 +9482,7 @@
         function newBud(v, x, y, a, lenScale, depth, life, spread) {
           return {
             v, x, y, a, lenScale, depth, life, spread,
-            stuck: 0, sinceFork: 0, t0: -1, t1: -1, t2: -1
+            stuck: 0, sinceFork: 0, revivals: 0, prog: 0, t0: -1, t1: -1, t2: -1
           };
         }
 
@@ -9394,8 +9505,12 @@
             if (b.life < 0) { plans.push({ b, wait: true }); continue; }
 
             const vine = vines[b.v];
-            const len = stemLen * b.lenScale;
-            const stepLen = len * STEP_FRAC;
+            // A vine slower than 1 skips some steps; one faster than 1 never
+            // skips. Deterministic, costs no PRNG draws, and it desynchronises
+            // the whole garden rather than only its start.
+            b.prog += vine.rate;
+            if (b.prog < 1) { plans.push({ b, idle: true }); continue; }
+            const stepLen = stemLen * b.lenScale * STEP_FRAC * STEP_SCALE;
 
             // New sprouts spread before they climb: the restoring force toward
             // vertical ramps in over SPREAD_STEPS, and while it is weak an
@@ -9497,13 +9612,15 @@
             const b = p.b;
             const keep = (bud) => { (survivors[slot] || (survivors[slot] = [])).push(bud); };
             if (p.wait) { b.life += 1; keep(b); continue; }
+            if (p.idle) { keep(b); continue; }
             if (p.bloomInPlace) {
+              b.prog -= 1;
               p.vine.flowers.push({ x: b.x, y: b.y, petals: p.petals });
               deposit(p.vine.ax0 + b.x, b.y);
               continue;
             }
             b.stuck = p.blocked ? b.stuck + 1 : 0;
-            p.vine.segs.push({ x1: b.x, y1: b.y, x2: p.nx, y2: p.ny, d: b.depth });
+            p.vine.segs.push({ x1: b.x, y1: b.y, x2: p.nx, y2: p.ny, d: b.depth, born: stepNo });
             deposit(p.vine.ax0 + p.nx, p.ny);
             const cell = cellOf(p.vine.ax0 + p.nx, p.ny);
             if (cell !== b.t0) { b.t2 = b.t1; b.t1 = b.t0; b.t0 = cell; }
@@ -9513,23 +9630,57 @@
             }
 
             if (p.tops) {
-              p.vine.flowers.push({ x: p.nx, y: p.ny, petals: p.petals });
+              const flower = { x: p.nx, y: p.ny, petals: p.petals };
+              p.vine.flowers.push(flower);
               deposit(p.vine.ax0 + p.nx, p.ny);
+              b.prog -= 1;
+              if (b.revivals < MAX_REVIVALS) {
+                b.x = p.nx; b.y = p.ny; b.a = p.a; b.life = p.life;
+                parked.push({ bud: b, vine: p.vine, flower });
+              }
               continue;
             }
 
+            b.prog -= 1;
             b.x = p.nx; b.y = p.ny; b.a = p.a; b.life = p.life; b.sinceFork += 1;
             keep(b);
 
             if (p.fork) {
               b.sinceFork = 0;
-              keep(newBud(b.v, p.nx, p.ny, p.fork.childA, b.lenScale * 0.75, b.depth + 1, 0, p.fork.side));
+              const child = newBud(b.v, p.nx, p.ny, p.fork.childA, b.lenScale * 0.75, b.depth + 1, 0, p.fork.side);
+              child.prog = b.prog;
+              keep(child);
             }
           }
           buds = [];
           for (const group of survivors) if (group) buds.push(...group);
+          stepNo += 1;
           if (!buds.length) settled = true;
           dirty = true;
+        }
+
+        // A taller column means a higher ceiling, so any bud that stopped
+        // because of the old one gets to carry on. The flower that marked its
+        // tip is removed, because it is no longer a tip.
+        function unpark() {
+          if (!parked.length) return;
+          const ceiling = boxH - 18;
+          let woke = 0;
+          for (let i = parked.length - 1; i >= 0; i -= 1) {
+            const entry = parked[i];
+            const b = entry.bud;
+            const stillDone = -b.y > ceiling * entry.vine.topFrac
+              || b.life > lifeCap - b.depth * Math.round(lifeCap * 0.26);
+            if (stillDone) continue;
+            const at = entry.vine.flowers.indexOf(entry.flower);
+            if (at >= 0) entry.vine.flowers.splice(at, 1);
+            b.revivals += 1;
+            b.stuck = 0;
+            buds.push(b);
+            parked.splice(i, 1);
+            woke += 1;
+          }
+          if (woke) { settled = false; dirty = true; }
         }
 
         // ---- painting --------------------------------------------------------
@@ -9537,6 +9688,24 @@
         // feedback: if anything ever hands this a runaway clientHeight again it
         // costs one clamped allocation, not 170MB of canvas.
         const MAX_BACKING_PX = 4096;
+
+        const BASE_ALPHA = 0.72;
+        const STEM_COLORS = ['#3f5a2e', '#4c6b36', '#5a7a41'];
+
+        // One stem segment as a run of PX blocks, optionally only part of the
+        // way along it. `frac` is what both the pop ease and the creeping tip
+        // are built out of.
+        function drawStem(ox, sg, frac) {
+          const x2 = sg.x1 + (sg.x2 - sg.x1) * frac;
+          const y2 = sg.y1 + (sg.y2 - sg.y1) * frac;
+          const n = Math.max(1, Math.ceil(Math.hypot(x2 - sg.x1, y2 - sg.y1) / PX));
+          for (let i = 0; i <= n; i += 1) {
+            const x = snap(ox + sg.x1 + (x2 - sg.x1) * (i / n));
+            const y = snap(sg.y1 + (y2 - sg.y1) * (i / n));
+            g.fillRect(x, y, PX, PX);
+            if (sg.d === 0) g.fillRect(x + PX, y, PX, PX);
+          }
+        }
 
         function paint() {
           const dprCapped = Math.min(dprCap, window.devicePixelRatio || 1);
@@ -9547,20 +9716,30 @@
           g.clearRect(0, 0, boxW, boxH);
           // Decoration, not content: it should read as texture beside the
           // column rather than compete with the words next to it.
-          g.globalAlpha = 0.72;
+          g.globalAlpha = BASE_ALPHA;
           g.translate(0, boxH - 4);
+
+          // How far into the current growth step we are. acc is the leftover
+          // time after tick() has run every whole step it could, so this is
+          // exactly the sub-step phase -- which is what lets a 15Hz model be
+          // drawn smoothly at 30fps without touching the model.
+          const phase = settled ? 1 : Math.min(1, acc / growthMs);
 
           for (const v of vines) {
             const ox = Math.round(v.ax0);
             for (const sg of v.segs) {
-              g.fillStyle = sg.d === 0 ? '#3f5a2e' : sg.d === 1 ? '#4c6b36' : '#5a7a41';
-              const steps = Math.max(1, Math.ceil(Math.hypot(sg.x2 - sg.x1, sg.y2 - sg.y1) / PX));
-              for (let i = 0; i <= steps; i += 1) {
-                const x = snap(ox + sg.x1 + (sg.x2 - sg.x1) * (i / steps));
-                const y = snap(sg.y1 + (sg.y2 - sg.y1) * (i / steps));
-                g.fillRect(x, y, PX, PX);
-                if (sg.d === 0) g.fillRect(x + PX, y, PX, PX);
+              g.fillStyle = STEM_COLORS[sg.d > 2 ? 2 : sg.d];
+              if (VINE_ANIM === 'pop' && !settled) {
+                const age = stepNo - sg.born + phase;
+                if (age < POP_STEPS) {
+                  const t = age / POP_STEPS;
+                  g.globalAlpha = BASE_ALPHA * (0.22 + 0.78 * t);
+                  drawStem(ox, sg, 0.3 + 0.7 * t);
+                  g.globalAlpha = BASE_ALPHA;
+                  continue;
+                }
               }
+              drawStem(ox, sg, 1);
             }
             for (const l of v.leaves) {
               g.fillStyle = l.d === 0 ? '#6d8f4a' : '#7fa054';
@@ -9579,6 +9758,28 @@
               g.fillRect(fx, fy, PX, PX);
             }
           }
+          // The creeping tip: a partial segment ahead of every live bud, along
+          // the angle it is currently heading. The model has not taken this
+          // step yet, so nothing here is recorded or deposited -- it is a
+          // drawing of a step in progress, and it is thrown away and redrawn
+          // every frame.
+          if (VINE_ANIM === 'creep' && !settled && phase > 0) {
+            for (const b of buds) {
+              if (b.life < 0) continue;
+              const v = vines[b.v];
+              const ox = Math.round(v.ax0);
+              const sub = Math.min(1, b.prog + v.rate * phase);
+              const len = stemLen * b.lenScale * STEP_FRAC * STEP_SCALE * sub;
+              g.fillStyle = STEM_COLORS[b.depth > 2 ? 2 : b.depth];
+              drawStem(ox, {
+                x1: b.x, y1: b.y,
+                x2: b.x + Math.cos(b.a) * len,
+                y2: b.y + Math.sin(b.a) * len,
+                d: b.depth
+              }, 1);
+            }
+          }
+
           g.globalAlpha = 1;
           g.setTransform(1, 0, 0, 1, 0, 0);
           dirty = false;
@@ -9599,7 +9800,9 @@
           else if (qw !== lastQW || qh !== lastQH) {
             lastQW = qw; lastQH = qh;
             for (const v of vines) v.ax0 = v.ax01 * boxW;
+            rebudget();
             rebuildGrid();
+            unpark();
             dirty = true;
           }
 
@@ -9622,14 +9825,19 @@
           let guard = 0;
           while (acc >= growthMs && !settled && guard < 24) { grow(); acc -= growthMs; guard += 1; }
           if (guard >= 24) acc = 0;
-          if (dirty) paint();
+          // creep and pop both draw a sub-step phase, so they need a frame even
+          // when the model did not advance -- that is the entire point of them.
+          if (dirty || VINE_ANIM === 'creep' || VINE_ANIM === 'pop') paint();
         }
 
         // Read-only view for the measurement harness.
         const debug = () => ({
+          mode: GARDEN_MODE, anim: VINE_ANIM, panel: currentPanel,
+          gardens: [...gardens.keys()].concat(currentPanel && !gardens.has(currentPanel) ? [currentPanel] : []),
+          parked: parked.length,
           seed, sown, settled, boxW, boxH, CELL, GX, GY, stemLen, lifeCap,
           vines: vines.map((v) => ({
-            ax01: v.ax01, ax0: v.ax0, topFrac: v.topFrac,
+            ax01: v.ax01, ax0: v.ax0, topFrac: v.topFrac, rate: v.rate,
             segs: v.segs, leaves: v.leaves, flowers: v.flowers
           })),
           liveBuds: buds.length,
