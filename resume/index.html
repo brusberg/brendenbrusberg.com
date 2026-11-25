@@ -223,17 +223,14 @@
       <p>Eagle Scout · Order of the Arrow</p>
     </section>
   </main>
-  <!-- Deferred and external on purpose. This page is the one search sends
+  <!-- External and conditional on purpose. This page is the one search sends
        people to, and it is 11KB; inlining 40KB of growth algorithm into it
-       would make the decoration three times the weight of the document.
-       Deferred, it arrives after paint and is cached across visits. -->
-  <script src="/flora.js" defer></script>
-  <script defer>
-    addEventListener('DOMContentLoaded', function () {
-      // Nothing to grow into below the gutter breakpoint, and nothing to grow
-      // for someone who asked not to see motion.
+       would make the decoration three times the weight of the document. Loaded
+       on demand it costs the HTML nothing, arrives after paint, is cached
+       across visits, and is never fetched at all on a phone. -->
+  <script>
+    function startVines() {
       if (!window.createFlora) return;
-      if (!matchMedia('(min-width: 1321px)').matches) return;
       var vines = [];
       ['vine-left', 'vine-right'].forEach(function (id) {
         var canvas = document.getElementById(id);
@@ -243,7 +240,20 @@
         vines.push(flora);
       });
       if (vines.length) window.runFlora(vines);
-    });
+    }
+
+    // Fetch the growth algorithm only where there is a gutter to grow it in.
+    // The margins are display:none below this breakpoint, so a phone was
+    // downloading and parsing 45KB to then do nothing with it -- on the one
+    // page search actually sends people to.
+    if (matchMedia('(min-width: 1321px)').matches) {
+      addEventListener('DOMContentLoaded', function () {
+        var s = document.createElement('script');
+        s.src = '/flora.js';
+        s.onload = startVines;   // dynamic scripts are async; onload is the cue
+        document.head.appendChild(s);
+      });
+    }
   </script>
 </body>
 </html>

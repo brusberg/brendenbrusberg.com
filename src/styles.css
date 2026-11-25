@@ -881,14 +881,30 @@ h1 {
 /* The embedded simulation reports its natural height to the parent page. */
 .is-embedded, .is-embedded body { min-width: 0; }
 .is-embedded .page-shell { display: flow-root; min-height: 0; }
-/* Embedded, the frame's height is set by the parent (see sizeAntStage in
-   index.html), so the shell simply fills it. The old rule sized this row from
-   `35vw` of the frame's own width with a 34rem cap, which ignored the window
-   height entirely and hard-capped the stage at 544px above a 1554px viewport. */
-.is-embedded, .is-embedded body { height: 100%; }
-.is-embedded .page-shell { height: 100%; }
-.is-embedded .site-shell { min-height: 0; height: 100%; grid-template-rows: 100%; }
+.is-embedded .site-shell { min-height: 0; grid-template-rows: clamp(18rem, 35vw, 34rem); }
 @media (max-width: 700px) {
   .is-embedded .site-shell { grid-template-rows: clamp(14rem, 52vw, 20rem); }
   .allocation-panel { width: 7.3rem; padding: 0.4rem; }
 }
+/* Only when the parent has measured the window and handed this frame an explicit
+   height does the shell fill it. sizeAntStage (index.html) adds .is-parent-sized
+   above 860px; below that it REMOVES the height and waits for this page to report
+   its own, so the chain has to come off. With `height: 100%` still applied, the
+   height this page reports is the frame's current height -- a fixed point. The
+   frame latches at its 36rem fallback and the stage sits short inside it, which
+   is the 331px of dead space this rule exists to prevent.
+
+   Keyed off a class the parent sets rather than a media query, because a media
+   query evaluated inside the frame sees the panel's width, not the window's: a
+   1400px window with an 800px-wide panel owns the height but would fail
+   `min-width: 861px`.
+
+   The old unscoped rule replaced sizing the row from `35vw` of the frame's own
+   width with a 34rem cap, which ignored the window height and hard-capped the
+   stage at 544px above a 1554px viewport. That fix still holds -- it just only
+   applies where the parent is actually doing the measuring. */
+.is-parent-sized.is-embedded,
+.is-parent-sized.is-embedded body { height: 100%; }
+.is-parent-sized.is-embedded .page-shell { height: 100%; }
+.is-parent-sized.is-embedded .site-shell { height: 100%; grid-template-rows: 100%; }
+

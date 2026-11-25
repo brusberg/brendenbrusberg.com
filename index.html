@@ -1213,10 +1213,21 @@
       const antStageStrategy =
         new URLSearchParams(location.search).get('stage') || 'peek';
 
+      // The frame is same-origin, so tell it outright which side owns its
+      // height rather than leaving its stylesheet to infer it from a width
+      // media query: inside the frame, a media query sees the panel's width,
+      // not the window's. styles.css keys its `height: 100%` chain off this.
+      function markAntFrameOwnership() {
+        const doc = stageFrame && stageFrame.contentDocument;
+        if (!doc || !doc.documentElement) return;
+        doc.documentElement.classList.toggle('is-parent-sized', antStageOwnedByParent);
+      }
+
       function sizeAntStage() {
         const app = document.querySelector('.app');
         if (!app) return;
         antStageOwnedByParent = window.innerWidth > 860;
+        markAntFrameOwnership();
         if (!antStageOwnedByParent) {
           app.style.removeProperty('--ant-frame-height');
           return;
@@ -1245,6 +1256,8 @@
       }
 
       addEventListener('resize', sizeAntStage);
+      // A reload of the frame drops the class, so re-apply it on every load.
+      if (stageFrame) stageFrame.addEventListener('load', markAntFrameOwnership);
       if (location.hash === '#resume') location.replace('/resume/');
       const ctx = canvas.getContext('2d');
       const localDevToolsEnabled = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname);
