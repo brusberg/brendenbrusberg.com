@@ -17,13 +17,23 @@
  * never edits a <script>.
  */
 (() => {
+  // The widths and STYLES are here because of how var() fails. An unresolvable
+  // custom property does not fall back to the literal -- it makes the whole
+  // declaration invalid at computed-value time, so `border: 1px solid
+  // var(--typo)` loses its width and its style, not just its colour. Checking
+  // only border-top-width and the colours would have let a mistyped token
+  // delete every border on the page and still report an identical snapshot.
   const PROPS = [
     'color', 'background-color', 'background-image',
+    'background-size', 'background-repeat', 'background-position',
     'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
-    'outline-color', 'text-decoration-color', 'caret-color', 'column-rule-color',
+    'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style',
+    'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width',
+    'outline-color', 'outline-style', 'outline-width',
+    'text-decoration-color', 'caret-color', 'column-rule-color',
     'fill', 'stroke', 'box-shadow', 'text-shadow', 'accent-color',
     'font-size', 'font-family', 'font-weight', 'line-height', 'letter-spacing',
-    'border-top-width', 'border-radius', 'opacity',
+    'border-radius', 'opacity',
   ];
 
   // A path that survives re-rendering: tag plus position among siblings.
@@ -48,28 +58,50 @@
     return (h >>> 0).toString(16);
   };
 
-  window.__styleSnapshot = (full = false) => {
-    const els = [...document.querySelectorAll('*')].filter(
+  // Same-origin frames are walked too. querySelectorAll('*') stops dead at an
+  // iframe boundary, and on the homepage that is 45% of the styled DOM -- the
+  // half governed by src/styles.css, which is the entire ant dialect. It also
+  // cannot be reached any other way: ant.html redirects to /#ants when it is
+  // loaded as a top-level document, so inside the frame is the only place it
+  // exists.
+  const collect = (doc, win, prefix, rows) => {
+    const els = [...doc.querySelectorAll('*')].filter(
       (el) => !['SCRIPT', 'META', 'TITLE', 'LINK'].includes(el.tagName),
     );
-    const rows = [];
     for (const el of els) {
-      const cs = getComputedStyle(el);
-      const vals = PROPS.map((p) => cs.getPropertyValue(p));
-      rows.push(`${pathOf(el)}|${vals.join('|')}`);
+      const cs = win.getComputedStyle(el);
+      rows.push(`${prefix}${pathOf(el)}|${PROPS.map((p) => cs.getPropertyValue(p)).join('|')}`);
       // Pseudo-elements carry a surprising amount of this site's colour.
       for (const pseudo of ['::before', '::after']) {
-        const pcs = getComputedStyle(el, pseudo);
+        const pcs = win.getComputedStyle(el, pseudo);
         if (pcs.content && pcs.content !== 'none') {
-          rows.push(`${pathOf(el)}${pseudo}|${PROPS.map((p) => pcs.getPropertyValue(p)).join('|')}`);
+          rows.push(`${prefix}${pathOf(el)}${pseudo}|${PROPS.map((p) => pcs.getPropertyValue(p)).join('|')}`);
         }
       }
     }
+    for (const frame of doc.querySelectorAll('iframe')) {
+      try {
+        const fd = frame.contentDocument;
+        if (fd && fd.body) collect(fd, frame.contentWindow, `${prefix}[${frame.id || 'iframe'}]/`, rows);
+        else rows.push(`${prefix}[${frame.id || 'iframe'}]|EMPTY`);
+      } catch {
+        rows.push(`${prefix}[${frame.id || 'iframe'}]|CROSS-ORIGIN, NOT CAPTURED`);
+      }
+    }
+    return els.length;
+  };
+
+  window.__styleSnapshot = (full = false) => {
+    const rows = [];
+    const els = collect(document, window, '', rows);
+    // Sorted, so the hash depends on what is styled rather than on the order
+    // the walk happened to visit it in.
     rows.sort();
     const body = rows.join('\n');
     const out = {
       url: location.pathname + location.search + location.hash,
-      elements: els.length,
+      elements: els,
+      framesCaptured: rows.filter((r) => r.includes('[') && !r.includes('NOT CAPTURED')).length > 0,
       rowsCaptured: rows.length,
       properties: PROPS.length,
       hash: fnv(body),
