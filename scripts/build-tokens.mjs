@@ -40,6 +40,33 @@ export const SOURCES = [
 
 const COLOUR = /#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b|rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(?:,\s*[\d.%]+\s*)?\)/g;
 
+/*
+ * MERGES. Clustering proposes these; a surface check disposes of them, and the
+ * verdicts below are reviewed by hand rather than taken from the distance.
+ *
+ * The check that matters is not "are these two colours close". It is "are both
+ * of them backgrounds of elements that sit inside one another" -- because then
+ * the small difference IS the design, and merging deletes a visible boundary.
+ * Three of the ten candidates failed exactly that way, and one is the resume's
+ * print ink, which a clustering pass would have folded into a panel background
+ * on use count alone.
+ */
+const MERGE = [
+  { from: '#fff9e9', to: '#fff8e8', d: 0.0025, why: 'cream, text and stroke only; far below anything visible' },
+  { from: '#f8f1de', to: '#f7f1df', d: 0.0018, why: 'the body-text cream, written at 12 opacities in index.html' },
+  { from: '#d3b878', to: '#cdbb78', d: 0.0114, why: 'the label gold, text only, in the ant dialect' },
+  { from: '#080c0a', to: '#08100b', d: 0.0162, why: 'a translucent readout badge over the canvas, not a nested surface' },
+  { from: '#111310', to: '#11140f', d: 0.0050, why: 'the translucent status panel; different context from the opaque one' },
+  { from: '#d9c56d', to: '#e1c978', d: 0.0193, why: 'the accent gold, drifted between error.css and index.html' },
+];
+
+const REFUSED = [
+  { from: '#07100b', to: '#08100b', d: 0.0019, why: '.panel-footer and .popout-panel sit ON body. Merging deletes the panel edge.' },
+  { from: '#151812', to: '#11140f', d: 0.0176, why: "the ant page's own body background, with .profile-panel sitting on it." },
+  { from: '#10170f', to: '#11140f', d: 0.0118, why: '.route-card against the panel it sits on, on the error pages.' },
+  { from: '#111111', to: '#11140f', d: 0.0138, why: "the resume's PRINT ink. Clustering picked a green-tinted panel background for it, on use count." },
+];
+
 /**
  * Split a file into [prefix, css, suffix, ...] slices. For a .css file that is
  * one css slice. For html it is every <style> body, with everything else inert.
@@ -146,6 +173,53 @@ const tIdx = argv.indexOf('--threshold');
 // visible on a large flat area; a hairline or a text colour needs more than
 // that to read at all. Tight on purpose -- anything larger is a design change.
 const THRESHOLD = tIdx >= 0 ? Number(argv[tIdx + 1]) : 0.02;
+
+// --- apply ------------------------------------------------------------------
+function applyMerges() {
+  const map = new Map(MERGE.map((m) => [m.from, m.to]));
+  let changed = 0;
+  const touched = [];
+  for (const src of SOURCES) {
+    const full = path.join(ROOT, src.file);
+    if (!fs.existsSync(full)) continue;
+    const text = fs.readFileSync(full, 'utf8');
+    const parts = slice(text, src.kind);
+    let fileChanged = 0;
+    const rebuilt = parts.map((part) => {
+      if (!part.css) return part.text;   // markup and <script> are never touched
+      return part.text.replace(COLOUR, (tok) => {
+        const p = parse(tok);
+        if (!p) return tok;
+        const to = map.get(hex(p.rgb));
+        if (!to) return tok;
+        fileChanged += 1;
+        if (p.alpha === 1 && tok.trim().startsWith('#')) return to;
+        const [r, g, b] = [1, 3, 5].map((i) => parseInt(to.slice(i, i + 2), 16));
+        return `rgba(${r}, ${g}, ${b}, ${p.alpha})`;
+      });
+    }).join('');
+    if (fileChanged) {
+      // Belt and braces: the non-CSS slices must come back byte-identical.
+      const before = parts.filter((x) => !x.css).map((x) => x.text).join('\u0000');
+      const after = slice(rebuilt, src.kind).filter((x) => !x.css).map((x) => x.text).join('\u0000');
+      if (before !== after) throw new Error(`${src.file}: non-CSS content changed — refusing to write`);
+      fs.writeFileSync(full, rebuilt);
+      touched.push(`${src.file} (${fileChanged})`);
+      changed += fileChanged;
+    }
+  }
+  return { changed, touched };
+}
+
+if (process.argv.includes('--apply-merges')) {
+  const r = applyMerges();
+  console.log(`\nmerged ${MERGE.length} colours away, rewriting ${r.changed} literals`);
+  for (const m of MERGE) console.log(`  ${m.from} -> ${m.to}   d=${m.d}   ${m.why}`);
+  console.log(`\nrefused ${REFUSED.length}:`);
+  for (const m of REFUSED) console.log(`  ${m.from} -> ${m.to}   d=${m.d}   ${m.why}`);
+  console.log(`\nfiles: ${r.touched.join(', ')}\n`);
+  process.exit(0);
+}
 
 const { uses, rgbOnly } = inventory();
 const groups = cluster(rgbOnly, THRESHOLD);

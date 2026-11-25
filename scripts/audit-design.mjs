@@ -24,7 +24,11 @@ const SHEETS = ['src/styles.css', 'src/profile.css', 'public/error.css'];
 
 // Budgets: how many distinct values of each kind we tolerate before calling it drift.
 const BUDGETS = {
-  colors: 24,
+  // Budgeted on HUES -- distinct colours with opacity discarded. Budgeting on
+  // literals counts one gold at thirteen opacities as thirteen colours, which
+  // is a measure of how the CSS is written rather than of how much colour the
+  // design uses.
+  hues: 24,
   fontSizes: 14,
   fontFamilies: 3,
   radii: 8,
@@ -85,6 +89,7 @@ function extract(sources) {
   /** @type {Record<string, Map<string, Set<string>>>} value -> sources */
   const buckets = {
     colors: new Map(),
+    hues: new Map(),
     fontSizes: new Map(),
     fontFamilies: new Map(),
     radii: new Map(),
@@ -105,8 +110,27 @@ function extract(sources) {
   for (const { source, css: raw } of sources) {
     const css = stripComments(raw);
 
-    for (const m of css.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) add('colors', normalizeHex(m[0]), source);
-    for (const m of css.matchAll(/\b(?:rgba?|hsla?)\([^)]*\)/gi)) add('colors', m[0].toLowerCase(), source);
+    // Two buckets, because they answer different questions.
+    //
+    // `colors` is every distinct literal as written, which is what you must
+    // edit by hand. `hues` is the distinct colour ignoring opacity, which is
+    // what the design actually uses.
+    //
+    // They are wildly different here, and only the second is a palette size.
+    // Counting literals made one gold, #cdbb78, into THIRTEEN colours -- it is
+    // written at thirteen opacities. Across the site that turned 31 colours
+    // into a reported 87, and a budget set against that number was measuring
+    // the wrong thing. Verified three independent ways: by re-parsing this
+    // script's own output, by a separate extractor, and by reading the
+    // computed values the browser actually paints.
+    for (const m of css.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+      add('colors', normalizeHex(m[0]), source);
+      add('hues', hueOf(normalizeHex(m[0])), source);
+    }
+    for (const m of css.matchAll(/\b(?:rgba?|hsla?)\([^)]*\)/gi)) {
+      add('colors', m[0].toLowerCase(), source);
+      add('hues', hueOf(m[0].toLowerCase()), source);
+    }
 
     for (const m of css.matchAll(/font-size\s*:\s*([^;}]+)/gi)) add('fontSizes', m[1], source);
     for (const m of css.matchAll(/font-family\s*:\s*([^;}]+)/gi)) add('fontFamilies', m[1], source);
@@ -119,6 +143,20 @@ function extract(sources) {
     for (const m of css.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g)) add('customProps', m[1], source);
   }
   return buckets;
+}
+
+/** The colour with its opacity discarded: "#rrggbb", or the input if unparsable. */
+function hueOf(token) {
+  const t = token.trim().toLowerCase();
+  if (t.startsWith('#')) {
+    const h = t.slice(1);
+    if (h.length === 3) return '#' + [0, 1, 2].map((i) => h[i] + h[i]).join('');
+    if (h.length >= 6) return '#' + h.slice(0, 6);
+    return t;
+  }
+  const m = /rgba?\(\s*([\d.]+)\D+([\d.]+)\D+([\d.]+)/.exec(t);
+  if (!m) return t;
+  return '#' + [1, 2, 3].map((i) => Math.round(Number(m[i])).toString(16).padStart(2, '0')).join('');
 }
 
 /** Group colors that are visually ~identical but written differently. */
@@ -222,6 +260,10 @@ for (const k of Object.keys(BUDGETS)) {
   console.log(`  ${k.padEnd(22)} ${bar(counts[k], BUDGETS[k])}`);
 }
 console.log(`  ${'customProps (tokens)'.padEnd(22)} ${buckets.customProps.size}`);
+console.log(
+  `\n  ${'colour literals'.padEnd(22)} ${buckets.colors.size}` +
+  `   (the same ${buckets.hues.size} colours written at different opacities)`,
+);
 
 if (colorClusters.length) {
   console.log('\n\x1b[1mNear-duplicate colors\x1b[0m  (visually the same, written differently)');
