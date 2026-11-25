@@ -9,13 +9,22 @@
     "test:artwork-source": "node --test tests/artwork-catalog.test.mjs",
     "test:artwork-assets": "node --test tests/artwork-assets.test.mjs",
     "test:artwork": "pnpm test:artwork-source && pnpm test:artwork-assets",
+    "test:business-days": "node --test tests/business-days.test.mjs",
+    "test": "pnpm test:artwork && pnpm test:business-days",
     "audit": "pnpm exec tsc -p tsconfig.tune.json && node scripts/audit-ant-model.mjs",
     "tune": "pnpm exec tsc -p tsconfig.tune.json && node scripts/tune-ant-model.mjs",
     "dig:fast": "pnpm exec tsc -p tsconfig.tune.json && node scripts/fast-forward-digging.mjs",
     "dig:collage": "node scripts/build-fast-dig-collage.mjs",
     "audit:design": "node scripts/audit-design.mjs",
+    "flora": "node scripts/measure-flora.mjs",
+    "flora:gardens": "node scripts/measure-flora.mjs --gardens",
+    "palette:check": "node scripts/palette-lock.mjs --check",
+    "portrait:check": "node scripts/build-portrait.mjs --check",
     "soak": "node scripts/soak-webgl.mjs",
-    "soak:long": "node scripts/soak-webgl.mjs --minutes 60 --headful"
+    "soak:long": "node scripts/soak-webgl.mjs --minutes 60 --headful",
+    "verify": "pnpm test && pnpm flora && pnpm flora:gardens && pnpm palette:check && pnpm portrait:check && pnpm flora:bundle:check && (pnpm audit:design --strict || true)",
+    "flora:bundle": "node scripts/build-flora-bundle.mjs",
+    "flora:bundle:check": "node scripts/build-flora-bundle.mjs --check"
   },
   "devDependencies": {
     "postcss": "^8.5.15",

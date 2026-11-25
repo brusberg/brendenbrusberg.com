@@ -1,0 +1,66 @@
+{
+  "generatedBy": "scripts/palette-lock.mjs --apply",
+  "size": 16,
+  "meanShiftOklab": 0.0059,
+  "palette": [
+    "#d6bd68",
+    "#fff8e8",
+    "#a64435",
+    "#a8c77d",
+    "#102817",
+    "#07120d",
+    "#8b7f5e",
+    "#203923",
+    "#2d6a35",
+    "#203d24",
+    "#5d4b2c",
+    "#15301d",
+    "#6c7e45",
+    "#24251e",
+    "#8fa9aa",
+    "#295a31"
+  ],
+  "fixed": [
+    "#d6bd68",
+    "#fff8e8",
+    "#a64435",
+    "#a8c77d"
+  ],
+  "liveries": [
+    {
+      "train": 0,
+      "from": "#d6bd68",
+      "to": "#d6bd68"
+    },
+    {
+      "train": 1,
+      "from": "#fff0a3",
+      "to": "#fff8e8"
+    },
+    {
+      "train": 2,
+      "from": "#91b682",
+      "to": "#a8c77d"
+    },
+    {
+      "train": 3,
+      "from": "#b7c98b",
+      "to": "#6c7e45"
+    },
+    {
+      "train": 4,
+      "from": "#b08345",
+      "to": "#8b7f5e"
+    },
+    {
+      "train": 5,
+      "from": "#d6bd68",
+      "to": "#d6bd68"
+    },
+    {
+      "train": 6,
+      "from": "#9cb1a7",
+      "to": "#8fa9aa"
+    }
+  ]
+}

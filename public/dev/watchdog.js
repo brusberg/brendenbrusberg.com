@@ -23,12 +23,17 @@
   'use strict';
 
   const params = new URLSearchParams(location.search);
+  // Clear the sticky flag BEFORE the early return, or ?watchdog=0 only
+  // silences this one page load and the next plain visit turns it back on --
+  // the off switch stopped working the moment it was most wanted, on a host
+  // where the only other way off is the devtools console.
+  if (params.get('watchdog') === '0') localStorage.removeItem('watchdog');
+  if (params.get('watchdog') === '1') localStorage.setItem('watchdog', '1');
+
   const enabled =
     params.get('watchdog') === '1' ||
     (params.get('watchdog') !== '0' && localStorage.getItem('watchdog') === '1');
   if (!enabled) return;
-  if (params.get('watchdog') === '1') localStorage.setItem('watchdog', '1');
-  if (params.get('watchdog') === '0') localStorage.removeItem('watchdog');
 
   // --- config ------------------------------------------------------------
   const STALL_MS = 250;        // a gap this long between frames counts as a hitch
@@ -292,6 +297,99 @@
     }, HEAP_EVERY_MS);
   }
 
+  // --- runaway layout ----------------------------------------------------
+  // Added because the failure it looks for actually happened and everything
+  // above it missed completely.
+  //
+  // The decorative vine canvas sat in normal flow, so paint() writing
+  // clientHeight * devicePixelRatio into its height ATTRIBUTE made its own
+  // intrinsic size the input to the next layout. On a display with a pixel
+  // ratio above 1 that multiplied the box every paint and the page ran away
+  // downwards. There was no error, no dropped frame, no context loss and no
+  // heap climb worth flagging -- the page just quietly got taller forever,
+  // and a canvas backing store reached 42,652px.
+  //
+  // Two cheap polls, because the thing to catch is a slow ratchet rather than
+  // a single bad frame:
+  //   1. a canvas whose backing store keeps growing, or is absurd outright
+  //   2. the document getting taller on sample after sample
+  const CANVAS_MAX_PX = 8192;   // no legitimate backing store on this site
+  const GROWTH_STRIKES = 4;     // consecutive 1s samples of monotonic growth
+  const canvasSeen = new WeakMap();
+  const docHeight = { last: 0, strikes: 0, reported: false };
+
+  const canvasName = (c) =>
+    c.id || (typeof c.className === 'string' && c.className) || '<canvas>';
+
+  const scanLayout = () => {
+    for (const canvas of document.querySelectorAll('canvas')) {
+      const prev = canvasSeen.get(canvas) || { w: 0, h: 0, strikes: 0, reported: false };
+      const grew = canvas.width > prev.w || canvas.height > prev.h;
+      const next = {
+        w: canvas.width,
+        h: canvas.height,
+        strikes: grew ? prev.strikes + 1 : 0,
+        reported: prev.reported,
+      };
+      if (!next.reported && (canvas.width > CANVAS_MAX_PX || canvas.height > CANVAS_MAX_PX)) {
+        next.reported = true;
+        record(
+          'canvas-runaway',
+          `canvas "${canvasName(canvas)}" backing store is ${canvas.width}x${canvas.height}`,
+          { mb: +((canvas.width * canvas.height * 4) / 1048576).toFixed(1) },
+        );
+      } else if (!next.reported && next.strikes >= GROWTH_STRIKES) {
+        next.reported = true;
+        record(
+          'canvas-runaway',
+          `canvas "${canvasName(canvas)}" grew on ${next.strikes} checks in a row, now ${canvas.width}x${canvas.height}`,
+          { hint: 'a canvas in normal flow sizes itself from its width/height attributes' },
+        );
+      }
+      canvasSeen.set(canvas, next);
+    }
+
+    const h = document.documentElement.scrollHeight;
+    docHeight.strikes = h > docHeight.last ? docHeight.strikes + 1 : 0;
+    docHeight.last = h;
+    // A panel switch changes the height once, so one or two strikes is normal.
+    // Four seconds of uninterrupted growth is not.
+    if (!docHeight.reported && docHeight.strikes >= GROWTH_STRIKES) {
+      docHeight.reported = true;
+      record('layout-runaway', `document has grown on ${docHeight.strikes} checks in a row, now ${h}px tall`, {
+        viewport: innerHeight,
+      });
+    }
+    hud.dirty = true;
+  };
+  setInterval(scanLayout, 1000);
+
+  // --- the panel flora ---------------------------------------------------
+  // It is decoration, and the whole argument for it over the alternative was
+  // that it settles. If it is still growing after this long, something is
+  // reviving it in a loop and it is holding the CPU for nothing.
+  const FLORA_SETTLE_BUDGET_MS = 90000;
+  const flora = { reported: false, growingSince: 0 };
+  setInterval(() => {
+    const api = window.__flora;
+    if (!api || typeof api.debug !== 'function') return;
+    let d;
+    try { d = api.debug(); } catch { return; }
+    if (!d || d.settled) { flora.growingSince = 0; return; }
+    const now = performance.now();
+    if (!flora.growingSince) flora.growingSince = now;
+    const growingMs = now - flora.growingSince;
+    if (!flora.reported && growingMs > FLORA_SETTLE_BUDGET_MS) {
+      flora.reported = true;
+      record('flora-never-settles', `the vine has been growing for ${Math.round(growingMs / 1000)}s without settling`, {
+        panel: d.panel,
+        vines: d.vines?.length,
+        segments: d.vines?.reduce((n, v) => n + v.segs.length, 0),
+        parked: d.parked,
+      });
+    }
+  }, 5000);
+
   // --- errors ------------------------------------------------------------
   addEventListener('error', (e) => {
     record('error', e.message || 'uncaught error', {
@@ -378,7 +476,9 @@
       ? `${(performance.memory.usedJSHeapSize / 1048576).toFixed(0)}MB`
       : 'n/a';
     const problems =
-      log.filter((l) => ['context-lost', 'freeze', 'error'].includes(l.kind)).length +
+      log.filter((l) =>
+        ['context-lost', 'freeze', 'error', 'canvas-runaway', 'layout-runaway', 'flora-never-settles'].includes(l.kind),
+      ).length +
       kids.reduce(
         (n, k) => n + k.data.log.filter((l) => ['context-lost', 'error'].includes(l.kind)).length,
         0,
