@@ -514,6 +514,57 @@
         margin-top: 0.55rem;
       }
 
+      .project-intro {
+        color: rgba(248, 241, 222, 0.68);
+        margin: 0.2rem 0 0.1rem;
+      }
+
+      .project-group {
+        margin-top: 0.85rem;
+      }
+
+      .project-group-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 0.45rem;
+      }
+
+      .project-group-label {
+        color: #d6bd68;
+        font-size: 0.72rem;
+        font-weight: 820;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .project-group-label[data-mode='vibe']::before,
+      .project-group-label[data-mode='hand']::before {
+        content: '';
+        display: inline-block;
+        width: 0.42rem;
+        height: 0.42rem;
+        margin-right: 0.38rem;
+        vertical-align: 0.04rem;
+        border: 1px solid #d6bd68;
+      }
+
+      .project-group-label[data-mode='hand']::before {
+        background: #d6bd68;
+      }
+
+      .project-group-count {
+        color: rgba(248, 241, 222, 0.45);
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+
+      .project-group-note {
+        color: rgba(248, 241, 222, 0.52);
+        font-size: 0.82rem;
+        line-height: 1.35;
+        margin: 0.22rem 0 0;
+      }
+
       .gallery-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
@@ -1012,6 +1063,26 @@
       </section>
     </div>
 
+    <script>
+      // Local-only diagnostics: loads on localhost, or anywhere with ?watchdog=1.
+      // See public/dev/watchdog.js — never fetched in normal production visits.
+      (() => {
+        const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+        const asked = new URLSearchParams(location.search).get('watchdog') === '1';
+        const sticky = localStorage.getItem('watchdog') === '1';
+        if (!local && !asked && !sticky) return;
+        // Must run BEFORE any scene code calls getContext, or the first WebGL
+        // context (deep links like /#mandelbrot) is created unpatched and never
+        // tracked. A parser-inserted write is synchronous; appendChild is not.
+        if (document.readyState === 'loading') {
+          document.write('<script src="/dev/watchdog.js"><\/script>');
+        } else {
+          document.head.appendChild(
+            Object.assign(document.createElement('script'), { src: '/dev/watchdog.js' }),
+          );
+        }
+      })();
+    </script>
     <script src="/panels/main.js"></script>
     <script src="/panels/stats.js"></script>
     <script src="/panels/history.js"></script>
@@ -1040,6 +1111,20 @@
       const mandelbrotDprCap = 1;
       const statsFrameMs = 50;
       const mandelbrotFrameMs = 32;
+      // Rendering at the display's native rate (120Hz on recent Apple
+      // hardware) costs battery and stutters on phones and low-end GPUs, and
+      // buys nothing: the ant colony advances on a fixed 1/60s timestep behind
+      // an accumulator, so it reaches the same state either way. Cap the draw
+      // rate and let the simulation keep its own clock.
+      const defaultFrameMs = 1000 / 30;
+      // Frame timestamps never land exactly on the budget: at 120Hz four frames
+      // is 33.33ms against a 33.34ms target, which would drop us to 24fps. A
+      // small tolerance keeps the cadence honest.
+      const frameBudgetToleranceMs = 2;
+      const panelFrameMs = {
+        mandelbrot: mandelbrotFrameMs,
+        stats: statsFrameMs,
+      };
       const originalAntsUrl = `ant.html${location.search || ''}`;
       const workDaysBase = { date: new Date(2026, 5, 5), days: 1700 };
       const artImages = [
@@ -1257,6 +1342,12 @@
         unmount() {}
         resize() {}
         tick() {}
+        // Called when the shared #stagegl context is lost / comes back. Scenes
+        // that hold GL objects must drop them here: every program, buffer, VAO
+        // and texture is invalid after a loss, and reusing one silently
+        // no-ops forever.
+        glLost() {}
+        glRestored() {}
         pointerDown() {}
         pointerMove() {}
         pointerUp() {}
@@ -1332,6 +1423,25 @@
           this.mandelCamera = { center: { x: -0.72, y: 0 }, scale: 3.15 };
           this.juliaCamera = { center: { x: 0, y: 0 }, scale: 3.0 };
           this.drag = null;
+        }
+
+        glLost() {
+          // Don't delete anything: the objects are already gone with the
+          // context, and touching them would be a no-op at best.
+          this.gl = null;
+          this.program = null;
+          this.vao = null;
+          this.buffer = null;
+          this.uniforms = null;
+          this.fallback = true;
+          canvas.style.visibility = 'visible';
+          glCanvas.style.visibility = 'hidden';
+        }
+
+        glRestored() {
+          // mount() rebuilds the program and buffers from scratch; the scene
+          // switcher remounts us once the context is back.
+          this.fallback = false;
         }
 
         mount() {
@@ -7680,6 +7790,7 @@
           this.bodies = [];
           this.gl = null;
           this.glFailed = false;
+          this.glSuspended = false;
           this.program = null;
           this.vao = null;
           this.buffer = null;
@@ -7694,8 +7805,24 @@
           this.down = null;
         }
 
+        glLost() {
+          // Drop every handle and stop trying to build new ones until the
+          // context is actually back; drawBackground() falls through to the
+          // 2d starfield in the meantime.
+          this.gl = null;
+          this.program = null;
+          this.vao = null;
+          this.buffer = null;
+          this.uniforms = null;
+          this.glSuspended = true;
+        }
+
+        glRestored() {
+          this.glSuspended = false;
+        }
+
         setupGl() {
-          if (this.gl || this.glFailed) return;
+          if (this.gl || this.glFailed || this.glSuspended) return;
           try {
             const gl = glCanvas.getContext('webgl2');
             if (!gl) throw new Error('WebGL2 unavailable');
@@ -7986,6 +8113,64 @@
 
       let activeId = 'ants';
       let activeScene = ensureScene('ants');
+
+      // --- WebGL context loss -------------------------------------------
+      // The browser drops a WebGL context for reasons we don't control: a GPU
+      // driver reset, sleep/wake, memory pressure, switching GPUs. Without a
+      // webglcontextlost handler that calls preventDefault(), the browser will
+      // NEVER fire webglcontextrestored, and every later gl.* call is a silent
+      // no-op — the page looks frozen with nothing in the console.
+      let glContextLost = false;
+
+      glCanvas.addEventListener(
+        'webglcontextlost',
+        (event) => {
+          // This is the line that makes recovery possible at all.
+          event.preventDefault();
+          glContextLost = true;
+          for (const scene of Object.values(scenes)) {
+            try {
+              scene.glLost();
+            } catch (error) {
+              console.warn('[stagegl] scene failed to release GL state', error);
+            }
+          }
+          if (activeId === 'mandelbrot' || activeId === 'art') {
+            readout.textContent = 'Graphics context lost — restoring';
+          }
+          console.warn('[stagegl] WebGL context lost; waiting for restore');
+        },
+        false,
+      );
+
+      glCanvas.addEventListener(
+        'webglcontextrestored',
+        () => {
+          glContextLost = false;
+          for (const scene of Object.values(scenes)) {
+            try {
+              scene.glRestored();
+            } catch (error) {
+              console.warn('[stagegl] scene failed to reset after restore', error);
+            }
+          }
+          // Remount the active scene so it rebuilds programs and buffers
+          // against the new context. Scenes that never touched GL are cheap
+          // to remount, so this is unconditional on purpose.
+          if (activeScene) {
+            try {
+              activeScene.unmount();
+              activeScene.mount(canvas);
+              resize();
+            } catch (error) {
+              console.warn('[stagegl] remount after restore failed', error);
+            }
+          }
+          if (activeId === 'mandelbrot' || activeId === 'art') readout.textContent = '';
+          console.info('[stagegl] WebGL context restored');
+        },
+        false,
+      );
       let size = { w: 1, h: 1, dpr: 1 };
       let pointer = null;
       const activePointers = new Map();
@@ -7998,6 +8183,10 @@
       let running = true;
       let localCaptureQueued = localCaptureRequested;
       let lastHeavyPanelTick = 0;
+      let lastFrameTime = performance.now();
+      // One capped frame is ~33ms; anything far beyond that is a stall or a
+      // backgrounded tab, and should not be integrated in one jump.
+      const maxFrameDeltaSeconds = 0.1;
       const cleanupTasks = [];
 
       function on(target, eventName, handler, options) {
@@ -8491,14 +8680,29 @@
 
       function frame(t) {
         if (!running) return;
-        const activeFrameMs = activeId === 'mandelbrot' ? mandelbrotFrameMs : activeId === 'stats' ? statsFrameMs : 0;
-        if (activeFrameMs && lastHeavyPanelTick && t - lastHeavyPanelTick < activeFrameMs) {
+        const activeFrameMs = panelFrameMs[activeId] ?? defaultFrameMs;
+        if (activeFrameMs && lastHeavyPanelTick && t - lastHeavyPanelTick < activeFrameMs - frameBudgetToleranceMs) {
           rafId = requestAnimationFrame(frame);
           return;
         }
+        // Real elapsed seconds since the last tick we actually ran. Scenes
+        // integrate with this (`train.progress += ... * dt * 60`), so passing
+        // a hardcoded 1/60 tied animation speed to the refresh rate: the same
+        // page ran at double speed on a 120Hz display and would run at half
+        // speed once the draw rate is capped. Clamped so a background tab or a
+        // long stall doesn't teleport everything on the next frame.
+        const dt = Math.min(Math.max((t - lastFrameTime) / 1000, 0), maxFrameDeltaSeconds);
+        lastFrameTime = t;
         if (activeFrameMs) lastHeavyPanelTick = t;
         if (ctx) ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
-        activeScene.tick(1 / 60, size, t);
+        // While the GL context is gone, the Mandelbrot scene has nothing to
+        // draw. Keep the loop alive — it's what notices the restore — but
+        // don't burn a frame issuing calls that silently do nothing.
+        if (glContextLost && activeId === 'mandelbrot') {
+          rafId = requestAnimationFrame(frame);
+          return;
+        }
+        activeScene.tick(dt, size, t);
         rafId = requestAnimationFrame(frame);
       }
 

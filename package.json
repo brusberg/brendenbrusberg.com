@@ -12,7 +12,10 @@
     "audit": "pnpm exec tsc -p tsconfig.tune.json && node scripts/audit-ant-model.mjs",
     "tune": "pnpm exec tsc -p tsconfig.tune.json && node scripts/tune-ant-model.mjs",
     "dig:fast": "pnpm exec tsc -p tsconfig.tune.json && node scripts/fast-forward-digging.mjs",
-    "dig:collage": "node scripts/build-fast-dig-collage.mjs"
+    "dig:collage": "node scripts/build-fast-dig-collage.mjs",
+    "audit:design": "node scripts/audit-design.mjs",
+    "soak": "node scripts/soak-webgl.mjs",
+    "soak:long": "node scripts/soak-webgl.mjs --minutes 60 --headful"
   },
   "devDependencies": {
     "postcss": "^8.5.15",

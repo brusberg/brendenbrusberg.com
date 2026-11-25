@@ -74,6 +74,23 @@
       </div>
     </main>
 
+    <script>
+      // Local-only diagnostics; see public/dev/watchdog.js.
+      (() => {
+        const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+        const asked = new URLSearchParams(location.search).get('watchdog') === '1';
+        const sticky = localStorage.getItem('watchdog') === '1';
+        if (!local && !asked && !sticky) return;
+        // Synchronous on purpose: the sim creates its WebGL context on load.
+        if (document.readyState === 'loading') {
+          document.write('<script src="/dev/watchdog.js"><\/script>');
+        } else {
+          document.head.appendChild(
+            Object.assign(document.createElement('script'), { src: '/dev/watchdog.js' }),
+          );
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
