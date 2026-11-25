@@ -9110,11 +9110,37 @@
         // SPREAD_PUSH is how hard it leans while it does.
         const SPREAD_STEPS = 8;
         const SPREAD_PUSH = 0.17;
-        // Chosen from the sweep in scripts/measure-flora.mjs, not guessed.
-        // 0.17/9 gave 57% coverage and 45% heavily overlapped cells -- a hedge.
-        // 0.03/12 gives a column of distinct climbing stems.
-        const INTERNODE = 12;       // steps of refractory between forks on one stem
-        const FORK_P = 0.03;        // fork chance per step once out of refractory
+        // Branching is scaled to the room a vine actually has, because the
+        // column is not one shape: it is ~413x1315 on the Projects panel and
+        // ~413x192 on Stats, where min-height alone sets the box. A fixed
+        // 12-step refractory is 8% of a tall vine's life and a quarter of a
+        // short one's, so a short column got about one fork per stem and read
+        // as bare sticks with gaps between them -- measured at 37.7% of the
+        // width carrying material against 94.3% on the tall column.
+        //
+        // So both are derived in sow() from lifeCap. Values from the sweep in
+        // scripts/measure-flora.mjs, not guessed.
+        const INTERNODE_FRAC = 0.06;  // refractory as a share of a vine's life
+        const INTERNODE_MIN = 3;
+        const INTERNODE_MAX = 12;
+        // 2.8 from --forkscan. The tall column is unchanged across 2.6-3.0,
+        // because FORK_P clamps to its floor there; above 3.0 it unclamps and
+        // the tall column nearly doubles in segments. So this is the plateau
+        // where the short column gains everything and the tall one loses
+        // nothing.
+        const FORK_TARGET = 2.8;      // forks wanted per stem over its whole life
+        const FORK_P_MIN = 0.03;
+        const FORK_P_MAX = 0.16;
+        let INTERNODE = 12, FORK_P = 0.03;
+
+        // How much a vine has to climb, relative to how much width it has. 1 on
+        // a tall column, well under 1 on a short wide one.
+        const SLIMNESS = () => Math.min(1, boxH / Math.max(1, boxW * 2.2));
+        // Stems are packed closer when there is no height to climb into.
+        const VINE_SPACING = 118;
+        const VINE_SPACING_MIN_FRAC = 0.55;
+        const RAGGED_MIN = 0.18;   // skyline spread on a tall column
+        const RAGGED_MAX = 0.42;   // ...and on a short one
 
         // ---- density -------------------------------------------------------
         // Candidate turns, tried in this order, first one under STEER_LO wins.
@@ -9302,9 +9328,20 @@
           growthMs = Math.max(24, (FILL_SECONDS * 1000) / lifeCap);
           sizeGrid();
 
+          // A stem forks about once every INTERNODE + 1/FORK_P steps, and the
+          // height ceiling ends it well before lifeCap does, so budget against
+          // roughly two thirds of lifeCap.
+          INTERNODE = Math.max(INTERNODE_MIN, Math.min(INTERNODE_MAX, Math.round(lifeCap * INTERNODE_FRAC)));
+          const usableLife = Math.max(8, lifeCap * 0.66);
+          const interval = Math.max(1, usableLife / FORK_TARGET - INTERNODE);
+          FORK_P = Math.max(FORK_P_MIN, Math.min(FORK_P_MAX, 1 / interval));
+
           // Bases sit in even slots with bounded jitter, so adjacent roots are
           // always at least half a slot apart: a real hedge rather than a clump.
-          const count = Math.max(2, Math.min(5, Math.round(boxW / 118)));
+          const slim = SLIMNESS();
+          const ragged = RAGGED_MIN + (RAGGED_MAX - RAGGED_MIN) * (1 - slim);
+          const spacing = VINE_SPACING * (VINE_SPACING_MIN_FRAC + (1 - VINE_SPACING_MIN_FRAC) * slim);
+          const count = Math.max(2, Math.min(6, Math.round(boxW / spacing)));
           vines = [];
           buds = [];
           for (let i = 0; i < count; i += 1) {
@@ -9313,10 +9350,14 @@
             vines.push({
               ax01,
               ax0: ax01 * boxW,
-              // A ragged skyline -- but a ragged skyline near the top. At
-              // 0.62-0.96 the shortest vine stopped well short of the column
-              // head and the whole garden read as stunted.
-              topFrac: 0.82 + rnd() * 0.18,
+              // A ragged skyline has to be ragged in PIXELS, not in percent.
+              // 0.82-1.0 of a 1300px column is a 233px spread and reads as a
+              // hedge; the same fraction of a 174px column is 31px, so every
+              // vine topped out in the same stripe and all the flowers bunched
+              // into one horizontal band across the top. The range widens as
+              // the column gets shorter, which leaves the tall column exactly
+              // where it was.
+              topFrac: 1 - ragged + rnd() * ragged,
               segs: [], leaves: [], flowers: []
             });
             buds.push(newBud(i, 0, 0, -Math.PI / 2, 1 - i * 0.07, 0, -i * VINE_WAIT, 0));

@@ -160,6 +160,26 @@ function spreadMetric(state) {
   };
 }
 
+/** How much of the column's WIDTH carries material, and where the bases sit. */
+function widthUse(state) {
+  const { occ, GX, GY } = state;
+  const colHas = new Array(GX).fill(false);
+  for (let y = 0; y < GY; y += 1) {
+    for (let x = 0; x < GX; x += 1) if (occ[y * GX + x]) colHas[x] = true;
+  }
+  const used = colHas.filter(Boolean).length;
+  let first = colHas.indexOf(true);
+  let last = colHas.lastIndexOf(true);
+  if (first < 0) { first = 0; last = 0; }
+  return {
+    columnsWithMaterialPct: round(used / GX * 100),
+    spanPct: round((last - first + 1) / GX * 100),
+    deadLeftPct: round(first / GX * 100),
+    deadRightPct: round((GX - 1 - last) / GX * 100),
+    bases: state.vines.map((v) => round(v.ax01 * 100))
+  };
+}
+
 /** How close to the top of the column the garden actually gets. */
 function reach(state) {
   const tops = state.vines.map((v) =>
@@ -231,6 +251,42 @@ const NO_DENSITY = setConsts([
 const REVERSED = setConsts([['REVERSE_COMMIT', 'true']]);
 
 const NO_SPREAD = setConsts([['SPREAD_STEPS', '1'], ['SPREAD_PUSH', '0']]);
+
+// --- per-size report -------------------------------------------------------
+// The left column is not one shape. It is ~413x1315 on the wide Projects panel
+// and ~413x192 on Stats, where min-height: 12rem is the whole box. A garden
+// tuned on the tall one can read as a few bare sticks on the short one.
+if (process.argv.includes('--sizes')) {
+  const SIZES = [[413, 1315], [413, 620], [413, 300], [413, 192], [620, 220], [300, 192]];
+  console.log('\n  column      vines  width used  ink cover  reach max/min   segs   flowers');
+  for (const [w, h] of SIZES) {
+    const r = run({ w, h });
+    const u = widthUse(r.state);
+    const rr = reach(r.state);
+    const m = densityMetrics(r.state);
+    console.log(`  ${String(w + 'x' + h).padEnd(12)}${String(r.state.vines.length).padEnd(7)}${String(u.columnsWithMaterialPct + '%').padEnd(12)}${String(m.coveragePct + '%').padEnd(10)}${String(rr.tallestVinePct + '/' + rr.shortestVinePct).padEnd(16)}${String(m.segments).padEnd(7)}${m.flowers}`);
+  }
+  console.log('');
+  process.exit(0);
+}
+
+// --- fork-target scan ------------------------------------------------------
+// FORK_TARGET has to satisfy two sizes at once: keep the tall column near the
+// ~1600 segments that already looked right, while giving the short column
+// enough branching to actually use its width.
+if (process.argv.includes('--forkscan')) {
+  console.log('\n  target   413x1315 segs  width%   |  413x192 segs  width%');
+  for (const t of [2.6, 2.8, 3.0, 3.2, 3.6, 4.0, 4.4]) {
+    const rw = setConsts([['FORK_TARGET', t]]);
+    const tall = run({ w: 413, h: 1315, rewrite: rw });
+    const short = run({ w: 413, h: 192, rewrite: rw });
+    const tm = densityMetrics(tall.state), sm = densityMetrics(short.state);
+    const tu = widthUse(tall.state), su = widthUse(short.state);
+    console.log(`  ${String(t).padEnd(9)}${String(tm.segments).padEnd(15)}${String(tu.columnsWithMaterialPct + '%').padEnd(9)}|  ${String(sm.segments).padEnd(14)}${su.columnsWithMaterialPct}%`);
+  }
+  console.log('');
+  process.exit(0);
+}
 
 // --- constant sweep --------------------------------------------------------
 // The branching constants decide how much plant there is, and guessing them
