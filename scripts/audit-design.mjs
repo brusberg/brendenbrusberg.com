@@ -265,6 +265,37 @@ console.log(
   `   (the same ${buckets.hues.size} colours written at different opacities)`,
 );
 
+// The font-size ladder, because the count alone does not show the problem.
+// Unlike the colour count -- which was inflated by opacity and turned out to be
+// 31 rather than 87 -- this one is real drift: 28 plain steps inside a range of
+// less than 3x, with triplets a sixth of a pixel apart.
+{
+  const toRem = (v) => {
+    const t = v.trim();
+    let m = /^([\d.]+)rem$/.exec(t); if (m) return Number(m[1]);
+    m = /^([\d.]+)px$/.exec(t); if (m) return Number(m[1]) / 16;
+    m = /^([\d.]+)em$/.exec(t); if (m) return Number(m[1]);
+    return null;
+  };
+  const plain = [...buckets.fontSizes.keys()]
+    .map((v) => ({ v, rem: toRem(v), uses: buckets.fontSizes.get(v).size }))
+    .filter((x) => x.rem !== null)
+    .sort((a, b) => a.rem - b.rem);
+  const clamps = [...buckets.fontSizes.keys()].filter((v) => v.trim().startsWith('clamp')).length;
+  const tooClose = [];
+  for (let i = 1; i < plain.length; i += 1) {
+    const gap = (plain[i].rem - plain[i - 1].rem) * 16;
+    if (gap < 0.5) tooClose.push(`${plain[i - 1].v} / ${plain[i].v} (${gap.toFixed(2)}px apart)`);
+  }
+  console.log('\n\x1b[1mFont-size ladder\x1b[0m');
+  console.log(`  ${plain.length} fixed sizes from ${plain[0]?.v} to ${plain[plain.length - 1]?.v}, plus ${clamps} clamp() expressions`);
+  if (tooClose.length) {
+    console.log(`  \x1b[31m${tooClose.length} pairs closer than half a pixel\x1b[0m — no reader can tell these apart:`);
+    for (const t of tooClose.slice(0, 8)) console.log(`      ${t}`);
+    if (tooClose.length > 8) console.log(`      ...and ${tooClose.length - 8} more`);
+  }
+}
+
 if (colorClusters.length) {
   console.log('\n\x1b[1mNear-duplicate colors\x1b[0m  (visually the same, written differently)');
   for (const cluster of colorClusters) {
