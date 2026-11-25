@@ -1185,15 +1185,29 @@
       const stageFrame = document.querySelector('#stage-frame');
       const readout = document.querySelector('#scene-readout');
       // The embedded homepage reports its natural height, so the outer page owns scrolling.
+      // The height the frame last reported for itself. Kept even while the
+      // parent owns the stage, because the moment ownership goes back to the
+      // frame there has to be a value to hand it. src/main.ts reports only
+      // when its own height CHANGES, so if the property is simply removed the
+      // frame drops to its 36rem CSS fallback and nothing ever speaks again.
+      let frameReportedHeight = 0;
+
       window.addEventListener('message', (event) => {
         if (event.origin !== location.origin || event.source !== stageFrame.contentWindow) return;
         const { type, height } = event.data || {};
         if (type !== 'portfolio:height' || !Number.isFinite(height) || height <= 0 || height > 20000) return;
+        frameReportedHeight = Math.ceil(height) + 2;
         // On wide layouts the parent owns the stage height (see sizeAntStage);
         // the frame's self-reported height is only trusted when stacked.
         if (antStageOwnedByParent) return;
-        document.querySelector('.app').style.setProperty('--ant-frame-height', `${Math.ceil(height) + 2}px`);
+        document.querySelector('.app').style.setProperty('--ant-frame-height', `${frameReportedHeight}px`);
       });
+
+      // Ask the frame to restate its height even though nothing about it moved.
+      function askFrameForHeight() {
+        const frameWindow = stageFrame && stageFrame.contentWindow;
+        if (frameWindow) frameWindow.postMessage({ type: 'portfolio:requestHeight' }, location.origin);
+      }
 
       // The embedded stage used to size itself from `35vw` of its own width,
       // capped at 34rem (styles.css), so the browser window height never
@@ -1229,7 +1243,17 @@
         antStageOwnedByParent = window.innerWidth > 860;
         markAntFrameOwnership();
         if (!antStageOwnedByParent) {
-          app.style.removeProperty('--ant-frame-height');
+          // Hand the height back without dropping the frame to its fallback on
+          // the way: restore what the frame last told us, then ask for a fresh
+          // figure. A phone fires this on every scroll, because hiding the URL
+          // bar resizes the window -- which is how a 349px gap opened under the
+          // colony and stayed there.
+          if (frameReportedHeight) {
+            app.style.setProperty('--ant-frame-height', `${frameReportedHeight}px`);
+          } else {
+            app.style.removeProperty('--ant-frame-height');
+          }
+          askFrameForHeight();
           return;
         }
         const cs = getComputedStyle(app);

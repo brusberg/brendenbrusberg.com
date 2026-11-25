@@ -242,5 +242,17 @@ if (window.parent !== window.self) {
     };
     new ResizeObserver(reportHeight).observe(pageShell);
     reportHeight();
+
+    // The parent hands height control back to this page below 860px. Because
+    // reportHeight speaks only when its OWN height changes, it would stay
+    // silent through that handover and leave the frame at its CSS fallback --
+    // a gap under the colony that never closes. An explicit request clears the
+    // edge-trigger and restates the current height.
+    window.addEventListener('message', (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: string } | null)?.type !== 'portfolio:requestHeight') return;
+      lastHeight = 0;
+      reportHeight();
+    });
   }
 }
