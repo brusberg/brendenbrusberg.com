@@ -170,23 +170,231 @@
 <div class="wrap">
 
 <header class="hero">
-  <span class="kicker">Proposal catalogue &middot; brendenbrusberg.com</span>
+  <span class="kicker">Proposal catalogue &middot; round two &middot; brendenbrusberg.com</span>
   <h1>Polish Review</h1>
   <p class="lede">
-    Eleven proposals, each measured before it was argued for, and most of them built on a branch so you
-    can see it rather than imagine it. Pick an option per entry and the plan at the bottom writes
-    itself. Nothing is applied to <code>main</code>.
-    <strong style="color:var(--gold)">P10 is a second freeze bug, found and fixed tonight</strong> &mdash;
-    a measured 966&nbsp;ms of blocked page every time you return to a backgrounded tab.
+    Eleven proposals, each measured before it was argued for. You took the recommended option on every
+    entry and added five asks of your own, so this is now a record of what was built as much as a set of
+    choices. The options are still here and still selectable &mdash; the trade-offs you chose between are
+    worth being able to re-read. Nothing is applied to <code>main</code>, nothing is pushed.
   </p>
   <div class="runbar">
     <span><b>11</b> proposals</span>
     <span><b>39</b> options</span>
-    <span><b>8</b> built on the branch</span>
-    <span><b>5</b> corrections to my own earlier claims</span>
+    <span><b>11</b> applied</span>
+    <span><b>6</b> corrections to my own claims</span>
     <span>branch <b>proto/polish</b></span>
   </div>
 </header>
+
+<!-- ======================================================= ROUND TWO -->
+<section class="entry" id="round-two">
+  <div class="entry-head">
+    <span class="id" style="color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent)">R2</span>
+    <div class="t">
+      <h2>Round two &mdash; the picks are built</h2>
+      <p class="lede" style="font-size:1rem">
+        You took the recommended option on every entry and added five asks of your own. All of it is on
+        <code>proto/polish</code>, measured, nothing pushed, nothing on <code>main</code>. Everything below
+        the fold is the original catalogue, kept so the trade-offs you chose between are still readable.
+      </p>
+      <div class="chips">
+        <span class="chip ok">P1 peek</span><span class="chip ok">P2 full</span><span class="chip ok">P3 vine</span>
+        <span class="chip ok">P4 all</span><span class="chip ok">P5 palette</span><span class="chip ok">P6 visible</span>
+        <span class="chip ok">P7 raise</span><span class="chip ok">P8 profile</span><span class="chip">P9 none</span>
+        <span class="chip ok">P10 spread</span><span class="chip ok">P11 margin</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+
+    <div class="panel">
+      <span class="label">Your five asks</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th>You asked</th><th>What it needed</th><th class="n">Measured</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>The vine should stay between tabs, not regrow</td>
+            <td><code>plant()</code> is idempotent &mdash; one garden per page load, seeded by the panel you land on</td>
+            <td class="n">one seed, 2964&nbsp;segments constant across 5 panel switches</td>
+          </tr>
+          <tr>
+            <td>Handle screen resizing</td>
+            <td>Geometry stays in CSS pixels with the anchor stored as a fraction of width. A resize re-anchors, rebuilds the field and repaints &mdash; never regrows, never scales</td>
+            <td class="n">re-anchored, vine count unchanged</td>
+          </tr>
+          <tr>
+            <td>Multiple vines at the bottom</td>
+            <td>Four on a 434px column, in even slots with bounded jitter and a staggered sprout, each topping out at a different height</td>
+            <td class="n">4 vines, reach 98.9% / 81.5%</td>
+          </tr>
+          <tr>
+            <td>Density, so branches don&rsquo;t overlap heavily</td>
+            <td>One occupancy field shared by every vine. Five candidate angles, gentlest turn that clears; boxed in, two short steps then a flower</td>
+            <td class="n">heavily overlapped cells <b>24.6%</b> against <b>36.3%</b> with the field off</td>
+          </tr>
+          <tr>
+            <td>New sprouts should spread wider before climbing</td>
+            <td>The restoring force toward vertical ramps in over eight steps, with an outward push while it is weak</td>
+            <td class="n">lateral travel <b>17.8px</b> against <b>11.0px</b></td>
+          </tr>
+          <tr>
+            <td>Double-check the cache with a margin, build a sub-rect for panning</td>
+            <td>The static map renders onto a padded canvas and blits the sub-rect that matches the camera; re-renders only when the pan leaves the padding</td>
+            <td class="n"><b>4 renders / 56 blits</b> over a 60-frame drag, against 60 / 0</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">The map cache, measured</span>
+        <div class="scroll-x"><table>
+          <thead><tr><th>&nbsp;</th><th class="n">before</th><th class="n">after</th></tr></thead>
+          <tbody>
+            <tr><td>renders over a 270px drag</td><td class="n">60</td><td class="n">4</td></tr>
+            <tr><td>cache hit rate</td><td class="n">0%</td><td class="n">93.3%</td></tr>
+            <tr><td>ms per frame in the static layer</td><td class="n">7.83</td><td class="n">0.54</td></tr>
+            <tr><td>cache memory</td><td class="n">3.30&nbsp;MB</td><td class="n">4.94&nbsp;MB</td></tr>
+            <tr><td>live frame loop</td><td class="n">&mdash;</td><td class="n">403 blits / 3 renders</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note" style="margin-top:0.6rem">
+          Four renders is what the arithmetic predicts: 270px of travel, 103px of margin, re-centring on
+          each render, plus one for the direction reversal. The blit is byte-identical to the source
+          sub-rect &mdash; 0 pixels differ &mdash; once the camera snaps to whole device pixels.
+        </p>
+      </div>
+
+      <div class="panel">
+        <span class="label">What a blit is not</span>
+        <p style="font-size:0.9rem">
+          I tried to prove the sub-rect pixel-identical to a fresh render. It is not, and the reason is
+          worth stating rather than papering over: canvas 2d rasterisation is <b>not translation
+          invariant</b>. Shifting the scene by a single device pixel already changes anti-aliased
+          coverage on diagonal edges, and an isometric scene is almost nothing but diagonal edges.
+        </p>
+        <p class="note">
+          Measured at 1.4&ndash;2.1% of pixels, mean 15 summed across RGB, with <b>93% of them sitting on a
+          shape edge</b>. Rendering the same input twice is byte-identical, so the layer itself is
+          deterministic. Before the camera snap the fractional-offset case was 27% of pixels at mean 40
+          &mdash; that one was a real artefact, and it is gone.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel" style="border-color:color-mix(in srgb,var(--rust) 40%,var(--line))">
+      <span class="label" style="color:var(--rust)">Three things that bit me, and what they cost</span>
+      <div class="stack-sm">
+        <p style="font-size:0.92rem">
+          <b>The vine pushed the page open.</b> You saw it before I did: &ldquo;the bottom of the page keeps
+          expanding downwards, as if the page is falling&rdquo;. A canvas is a replaced element, so its
+          intrinsic size is its <code>width</code>/<code>height</code> <i>attributes</i> &mdash; and
+          <code>paint()</code> set those from <code>clientHeight &times; devicePixelRatio</code> while the
+          canvas sat in normal flow. Each paint multiplied the box by the pixel ratio. At
+          <code>devicePixelRatio&nbsp;1</code> the multiplier is exactly 1.0, a fixed point that never
+          moves, which is why every check I ran missed it: the browser pane runs at dpr&nbsp;1 and your Mac
+          does not. There was 42,652px of residue sitting in the page when I went looking. Fixed by taking
+          the canvas out of flow &mdash; and <code>inset:&nbsp;0</code> alone was not enough, because for an
+          absolutely positioned replaced element <code>height:&nbsp;auto</code> resolves to the intrinsic
+          height and <code>bottom</code> is dropped as over-constrained.
+        </p>
+        <p style="font-size:0.92rem">
+          <b>The first palette lock made the train sim worse.</b> I clustered colours weighted by how often
+          each is <i>written</i> in the source. The terrain collapsed into grey-olive, because a grass
+          colour appears once in a palette array and covers 33% of the canvas while a window highlight
+          appears once and covers four pixels. Reverted, re-weighted from a histogram of the rendered
+          canvas, and the palette now spends 77.6% of its slots where the pixels actually are.
+        </p>
+        <p style="font-size:0.92rem">
+          <b>Two harnesses were lying.</b> The flora harness tested <code>settled</code> before the first
+          tick, so it reported a 12-segment garden as though that were the design; and its constant
+          rewriting used a plain string replace, so once the module was retuned the sweep silently stopped
+          substituting and printed twenty identical rows as twenty experiments. Both now fail loudly.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="label">Corrections to things I told you</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th>I said</th><th>Actually</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>&ldquo;Brussels added to the countries row&rdquo;</td>
+            <td><b>I added Belgium, not Brussels.</b> You asked for Brussels; the row is labelled
+              &ldquo;Countries visited&rdquo;, so I substituted the country without saying so. Say the word and
+              it becomes Brussels, or the row becomes &ldquo;Places visited&rdquo;.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;Business days verified across 7,000 ranges&rdquo;</td>
+            <td>The test declared its own copy of the implementation and imported nothing, so it verified a
+              transcription &mdash; it would have passed with the page shipping anything. It now extracts the
+              real code out of <code>index.html</code>, and an injected off-by-one makes it fail.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;The ant simulation exists twice&rdquo;</td>
+            <td>It does not. <code>AntScene</code> in <code>index.html</code> is a bare iframe shim. The only
+              model is <code>src/sim/AntModel.ts</code>. Nothing to deduplicate.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;Profile <code>model.update</code>, not rendering&rdquo;</td>
+            <td>Wrong at the sizes the page starts at: 3 ants costs 4.1&nbsp;ms/s of model against
+              14.3&nbsp;ms/s of drawing. The model only overtakes rendering around 8&ndash;10 ants.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;Every panel defaults to 30fps&rdquo;</td>
+            <td>The <i>default</i> is 30fps, but stats is pinned at 20 and Mandelbrot at 31. Only ants and
+              art use the default.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;The fill takes 14 seconds&rdquo;</td>
+            <td>14.9s. A design pass claimed 25&ndash;37% overrun; measured, it is 6%, so I left it alone.</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">Still yours to decide</span>
+        <ul style="font-size:0.9rem;padding-left:1.1rem;display:grid;gap:0.4rem">
+          <li><b>P5 is only the first step.</b> The palette lock is deliberately subtle &mdash; an
+            area-weighted mean shift of 0.0059 dOKLab, under a just-noticeable difference. The sprite atlas
+            (40 boards at 1&times; and 4&times;) is generated and waiting; the drawing is yours.</li>
+          <li><b>Brussels or Belgium.</b> One word, your call.</li>
+          <li><b>16 colours is tight.</b> The scene wants about six hue families with four to five lightness
+            steps. <code>--size 20</code> measures 0.0042 against 16&rsquo;s 0.0059 if you want more room.</li>
+          <li><b>P8 is now a ten-minute job for you.</b> <code>window.__antProfile = true</code> on
+            <code>/ant.html</code>, record 30s with 6&times; CPU throttling, read the Timings track.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="label">Not verified</span>
+        <ul style="font-size:0.9rem;padding-left:1.1rem;display:grid;gap:0.4rem">
+          <li>Everything on a phone. No device here; the stage strategies are inert below 860px by design,
+            and the vine column is hidden there entirely.</li>
+          <li>The retina layout fix was proven by <i>emulating</i> <code>devicePixelRatio&nbsp;2</code>, not on
+            a retina display. The arithmetic is exact (1315&nbsp;&rarr;&nbsp;1973 = &times;1.5, then flat) but
+            it is worth one look on your screen.</li>
+          <li>The palette histogram is one viewport at one zoom and one camera position. A colour only
+            visible elsewhere got a floor weight rather than its true area.</li>
+          <li>Low-end GPU benefit from the 30fps cap. Reasoned, not measured.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="note">
+      Harnesses, all re-runnable: <code>scripts/measure-flora.mjs</code> (determinism, overlap, reach,
+      staying in frame, resize, <code>--sweep</code>), <code>scripts/measure-static-cache.js</code> (paste
+      into the console on <code>#stats</code>), <code>scripts/palette-lock.mjs --check</code>,
+      <code>scripts/model-digest.mjs --compare</code>, <code>node --test tests/</code>.
+    </p>
+
+  </div>
+</section>
 
 <!-- ======================================================= P1 -->
 <section class="entry" data-proposal="P1" data-title="Ant stage height">
