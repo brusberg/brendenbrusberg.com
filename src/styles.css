@@ -881,7 +881,13 @@ h1 {
 /* The embedded simulation reports its natural height to the parent page. */
 .is-embedded, .is-embedded body { min-width: 0; }
 .is-embedded .page-shell { display: flow-root; min-height: 0; }
-.is-embedded .site-shell { min-height: 0; grid-template-rows: clamp(18rem, 35vw, 34rem); }
+/* Embedded, the frame's height is set by the parent (see sizeAntStage in
+   index.html), so the shell simply fills it. The old rule sized this row from
+   `35vw` of the frame's own width with a 34rem cap, which ignored the window
+   height entirely and hard-capped the stage at 544px above a 1554px viewport. */
+.is-embedded, .is-embedded body { height: 100%; }
+.is-embedded .page-shell { height: 100%; }
+.is-embedded .site-shell { min-height: 0; height: 100%; grid-template-rows: 100%; }
 @media (max-width: 700px) {
   .is-embedded .site-shell { grid-template-rows: clamp(14rem, 52vw, 20rem); }
   .allocation-panel { width: 7.3rem; padding: 0.4rem; }

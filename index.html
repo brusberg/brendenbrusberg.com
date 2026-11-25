@@ -272,6 +272,26 @@
         cursor: grabbing;
       }
 
+      .marker-label {
+        position: absolute;
+        transform: translate(-50%, 0);
+        padding: 0.18rem 0.42rem;
+        background: rgba(8, 16, 11, 0.82);
+        border: 1px solid rgba(214, 189, 104, 0.4);
+        color: #fff8e8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 3;
+        transition: opacity 180ms ease-out;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .marker-label { transition: none; }
+      }
+
       .scene-readout {
         position: absolute;
         z-index: 4;
@@ -467,6 +487,11 @@
         gap: 0.7rem;
         border-top: 1px solid rgba(205, 187, 120, 0.18);
         padding-top: 0.42rem;
+      }
+
+      .stat-line-wide {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.18rem;
       }
 
       .stat-line span {
@@ -998,7 +1023,7 @@
         <div class="home-identity">
           <div class="home-copy">
             <h1>Brenden Brusberg</h1>
-            <p class="home-location">Based in Jersey City. Working in New York City (NYC).</p>
+            <p class="home-location">Based in Jersey City. Working in New York City.</p>
             <p class="home-intro">I work on designing platforms to better understand and evaluate complex systems in organizations, leveraging multidisciplinary skills and teams to nurture real value.</p>
             <nav class="home-links" aria-label="Primary links">
               <a href="/resume/">Resume</a>
@@ -1098,8 +1123,62 @@
         if (event.origin !== location.origin || event.source !== stageFrame.contentWindow) return;
         const { type, height } = event.data || {};
         if (type !== 'portfolio:height' || !Number.isFinite(height) || height <= 0 || height > 20000) return;
+        // On wide layouts the parent owns the stage height (see sizeAntStage);
+        // the frame's self-reported height is only trusted when stacked.
+        if (antStageOwnedByParent) return;
         document.querySelector('.app').style.setProperty('--ant-frame-height', `${Math.ceil(height) + 2}px`);
       });
+
+      // The embedded stage used to size itself from `35vw` of its own width,
+      // capped at 34rem (styles.css), so the browser window height never
+      // entered the calculation: a 950px window and a 1400px window both gave
+      // a 553px stage. The parent is the only party that knows the window, so
+      // on wide layouts it measures the room left over once the profile and
+      // footer have taken theirs, and hands the stage the rest.
+      const ANT_STAGE_MIN = 360;
+      const ANT_STAGE_MAX = 900;
+      let antStageOwnedByParent = false;
+
+      // Three defensible answers to "how tall should the colony be?", kept
+      // switchable so they can be compared rather than argued about:
+      //   fit  - whole panel fits one screen; profile always visible, stage smallest
+      //   peek - stage takes most of the screen, profile edge shows and invites a scroll
+      //   max  - stage takes everything except the footer; profile lives below the fold
+      const antStageStrategy =
+        new URLSearchParams(location.search).get('stage') || 'peek';
+
+      function sizeAntStage() {
+        const app = document.querySelector('.app');
+        if (!app) return;
+        antStageOwnedByParent = window.innerWidth > 860;
+        if (!antStageOwnedByParent) {
+          app.style.removeProperty('--ant-frame-height');
+          return;
+        }
+        const cs = getComputedStyle(app);
+        const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+        const gap = parseFloat(cs.rowGap) || 0;
+        const profile = document.querySelector('.home-profile');
+        const footer = document.querySelector('.panel-footer');
+        const profileH = profile ? profile.offsetHeight : 0;
+        const footerH = footer ? footer.offsetHeight : 0;
+
+        let avail;
+        if (antStageStrategy === 'fit') {
+          avail = window.innerHeight - padding - gap * 2 - profileH - footerH;
+        } else if (antStageStrategy === 'max') {
+          avail = window.innerHeight - padding - gap - footerH;
+        } else {
+          // peek: leave a sliver of the profile showing as a scroll affordance
+          const peek = Math.min(120, profileH * 0.28);
+          avail = window.innerHeight - padding - gap * 2 - peek - footerH;
+        }
+
+        const h = Math.round(Math.max(ANT_STAGE_MIN, Math.min(ANT_STAGE_MAX, avail)));
+        app.style.setProperty('--ant-frame-height', `${h}px`);
+      }
+
+      addEventListener('resize', sizeAntStage);
       if (location.hash === '#resume') location.replace('/resume/');
       const ctx = canvas.getContext('2d');
       const localDevToolsEnabled = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname);
@@ -1335,7 +1414,10 @@
       ];
 
       const birthTimestampMs = new Date('1999-05-11T10:14:00-04:00').getTime();
-      const liveAgeTimer = window.setInterval(updateLiveStats, 100);
+      // The age genuinely changes every tick; the work-day count changes at
+      // midnight. They no longer share a 10Hz timer.
+      const liveAgeTimer = window.setInterval(updateLiveAge, 100);
+      const liveWorkDaysTimer = window.setInterval(updateLiveWorkDays, 60000);
 
       class Scene {
         mount() {}
@@ -1423,6 +1505,11 @@
           this.mandelCamera = { center: { x: -0.72, y: 0 }, scale: 3.15 };
           this.juliaCamera = { center: { x: 0, y: 0 }, scale: 3.0 };
           this.drag = null;
+          // Marker attention: the seed ring is loud when you are working with
+          // it and recedes when you are not. Timestamp, not a boolean, so the
+          // fade is a function of how long you have been still.
+          this.markerActivity = performance.now();
+          this.markerHintSeen = false;
         }
 
         glLost() {
@@ -1442,6 +1529,11 @@
           // mount() rebuilds the program and buffers from scratch; the scene
           // switcher remounts us once the context is back.
           this.fallback = false;
+        }
+
+        unmount() {
+          this.removeMarkerLabel();
+          this.drag = null;
         }
 
         mount() {
@@ -1480,6 +1572,7 @@
             time: gl.getUniformLocation(this.program, 'u_time'),
             juliaC: gl.getUniformLocation(this.program, 'u_juliaC'),
             marker: gl.getUniformLocation(this.program, 'u_marker'),
+            markerFade: gl.getUniformLocation(this.program, 'u_markerFade'),
             mandelCenter: gl.getUniformLocation(this.program, 'u_mandelCenter'),
             mandelScale: gl.getUniformLocation(this.program, 'u_mandelScale'),
             juliaCenter: gl.getUniformLocation(this.program, 'u_juliaCenter'),
@@ -1521,12 +1614,47 @@
           gl.uniform1f(this.uniforms.time, t * 0.001);
           gl.uniform2f(this.uniforms.juliaC, this.juliaC.x, this.juliaC.y);
           gl.uniform2f(this.uniforms.marker, this.marker.x, this.marker.y);
+          gl.uniform1f(this.uniforms.markerFade, this.markerFade());
           gl.uniform2f(this.uniforms.mandelCenter, this.mandelCamera.center.x, this.mandelCamera.center.y);
           gl.uniform1f(this.uniforms.mandelScale, this.mandelCamera.scale);
           gl.uniform2f(this.uniforms.juliaCenter, this.juliaCamera.center.x, this.juliaCamera.center.y);
           gl.uniform1f(this.uniforms.juliaScale, this.juliaCamera.scale);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           readout.textContent = `Mandelbrot c = ${this.juliaC.x.toFixed(4)} ${this.juliaC.y >= 0 ? '+' : '-'} ${Math.abs(this.juliaC.y).toFixed(4)}i / zoom ${this.zoomLabel(this.mandelCamera)} | Julia ${this.zoomLabel(this.juliaCamera)}`;
+          this.positionMarkerLabel(size);
+        }
+
+        ensureMarkerLabel() {
+          if (this.markerLabel && this.markerLabel.isConnected) return this.markerLabel;
+          const el = document.createElement('div');
+          el.className = 'marker-label';
+          el.setAttribute('aria-hidden', 'true');
+          stageWrap.appendChild(el);
+          this.markerLabel = el;
+          return el;
+        }
+
+        positionMarkerLabel(size) {
+          const el = this.ensureMarkerLabel();
+          const fade = this.markerFade();
+          // The label is the part that explains the control, so it carries the
+          // hint until the first pick and the coordinate afterwards.
+          el.textContent = this.markerHintSeen
+            ? `c = ${this.juliaC.x.toFixed(3)} ${this.juliaC.y >= 0 ? '+' : '-'} ${Math.abs(this.juliaC.y).toFixed(3)}i`
+            : 'tap to choose a Julia seed';
+          const paneW = size.w * 0.5;
+          const x = this.marker.x * paneW;
+          const y = (1 - this.marker.y) * size.h;
+          // Flip above/below so a thumb or cursor never sits on the text.
+          const below = y < size.h * 0.5;
+          el.style.left = `${Math.round(Math.min(Math.max(x, 56), paneW - 56))}px`;
+          el.style.top = `${Math.round(y + (below ? 26 : -34))}px`;
+          el.style.opacity = String(this.markerHintSeen ? Math.max(0, (fade - 0.3) / 0.7) : 1);
+        }
+
+        removeMarkerLabel() {
+          if (this.markerLabel && this.markerLabel.isConnected) this.markerLabel.remove();
+          this.markerLabel = null;
         }
 
         paneFromInfo(info) {
@@ -1590,6 +1718,11 @@
         }
 
         pointerMove(event, info) {
+          // Hovering the seed pane counts as attention, drag or no drag.
+          if (info) {
+            const hovered = this.paneFromInfo(info);
+            if (hovered && !hovered.julia) this.wakeMarker();
+          }
           if (!this.drag || !info) return;
           const pane = this.paneFromInfo(info);
           if (!pane || pane.julia !== this.drag.julia) return;
@@ -1607,6 +1740,22 @@
           };
         }
 
+        // Full strength for 2.5s after you touch it, then eased down to a
+        // resting 0.3 over the next second. It never reaches zero: the marker
+        // is what tells you which Julia set you are looking at, so hiding it
+        // would break the link between the two panes.
+        markerFade() {
+          const idle = (performance.now() - this.markerActivity) / 1000;
+          if (idle < 2.5) return 1;
+          const t = Math.min(1, idle - 2.5);
+          const eased = t * t * (3 - 2 * t);
+          return 1 - eased * 0.7;
+        }
+
+        wakeMarker() {
+          this.markerActivity = performance.now();
+        }
+
         pointerUp(event, info) {
           const drag = this.drag;
           this.drag = null;
@@ -1616,6 +1765,8 @@
           const selected = this.localToWorld(this.mandelCamera, pane.local);
           this.juliaC = selected;
           this.marker = { ...pane.local };
+          this.wakeMarker();
+          this.markerHintSeen = true;
           event.preventDefault();
         }
 
@@ -8259,6 +8410,7 @@
           history.pushState(null, '', `#${id}`);
         }
         activeScene.mount(canvas);
+        if (id === 'ants') sizeAntStage();
         resize();
         renderInfo(panelData[id]);
         updateNav();
@@ -8297,7 +8449,9 @@
       function formatLiveAge() {
         const elapsedMs = Date.now() - birthTimestampMs;
         const years = elapsedMs / (1000 * 60 * 60 * 24 * 365.2425);
-        return years.toFixed(10);
+        // 10 decimals put the last digit at 1e-10 years = 3.2ms, while the
+        // timer redraws every 100ms: those digits were unobservable churn.
+        return years.toFixed(6);
       }
 
       function updateLiveAge() {
@@ -8306,18 +8460,34 @@
         });
       }
 
+      function isWeekday(date) {
+        const day = date.getDay();
+        return day !== 0 && day !== 6;
+      }
+
+      // Weekdays in the half-open range (a, b], a <= b. Constant time plus at
+      // most six steps, where the old version walked one calendar day per
+      // iteration and so grew by one step every day, forever.
+      function weekdaysAfterUpTo(a, b) {
+        const days = Math.round((b - a) / 86400000);
+        const weeks = Math.floor(days / 7);
+        let count = weeks * 5;
+        const cursor = new Date(a);
+        cursor.setDate(cursor.getDate() + weeks * 7);
+        for (let i = weeks * 7; i < days; i += 1) {
+          cursor.setDate(cursor.getDate() + 1);
+          if (isWeekday(cursor)) count += 1;
+        }
+        return count;
+      }
+
       function businessDaysBetween(startDate, endDate) {
         const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
         const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-        const direction = end >= start ? 1 : -1;
-        let cursor = new Date(start);
-        let count = 0;
-        while ((direction > 0 && cursor < end) || (direction < 0 && cursor > end)) {
-          cursor.setDate(cursor.getDate() + direction);
-          const day = cursor.getDay();
-          if (day !== 0 && day !== 6) count += direction;
-        }
-        return count;
+        if (end >= start) return weekdaysAfterUpTo(start, end);
+        // Stepping backwards, the original loop landed on [end, start) rather
+        // than (end, start]; shift the endpoints so the two agree exactly.
+        return -(weekdaysAfterUpTo(end, start) - (isWeekday(start) ? 1 : 0) + (isWeekday(end) ? 1 : 0));
       }
 
       function formatWorkDays() {
@@ -8711,6 +8881,7 @@
         running = false;
         cancelAnimationFrame(rafId);
         clearInterval(liveAgeTimer);
+        clearInterval(liveWorkDaysTimer);
         activeScene?.unmount();
         while (cleanupTasks.length) cleanupTasks.pop()();
         delete window.__panelPrototypeDispose;
@@ -8837,6 +9008,7 @@ uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec2 u_juliaC;
 uniform vec2 u_marker;
+uniform float u_markerFade;
 uniform vec2 u_mandelCenter;
 uniform float u_mandelScale;
 uniform vec2 u_juliaCenter;
@@ -8846,8 +9018,25 @@ const int MAX_ITER=150;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 vec3 pal(float t,float inSet){vec3 deep=vec3(.025,.075,.115);vec3 blue=vec3(.12,.36,.58);vec3 cyan=vec3(.48,.78,.84);vec3 cream=vec3(.98,.88,.55);vec3 c=mix(deep,blue,smoothstep(.04,.38,t));c=mix(c,cyan,smoothstep(.3,.72,t));c=mix(c,cream,smoothstep(.72,.96,t));return mix(c,vec3(.006,.007,.006),inSet);}
 float esc(vec2 point,vec2 jc,bool julia,out float inside){vec2 z=julia?point:vec2(0);vec2 c=julia?jc:point;float it=0.;float r=0.;for(int i=0;i<MAX_ITER;i++){z=vec2(z.x*z.x-z.y*z.y,2.*z.x*z.y)+c;r=dot(z,z);if(r>4.){it=float(i);break;}}inside=r>4.?0.:1.;if(inside>.5)return 0.;return it/float(MAX_ITER);}
-float marker(vec2 local){vec2 p=(local-u_marker)*vec2((u_resolution.x*.5)/u_resolution.y,1.);float d=length(p);float ring=smoothstep(.023,.019,abs(d-.045));float center=smoothstep(.012,.003,d);return max(ring,center);}
-void main(){vec2 uv=gl_FragCoord.xy/u_resolution;bool julia=uv.x>.5;vec2 local=julia?vec2((uv.x-.5)*2.,uv.y):vec2(uv.x*2.,uv.y);float aspect=(u_resolution.x*.5)/u_resolution.y;float scale=julia?u_juliaScale:u_mandelScale;vec2 center=julia?u_juliaCenter:u_mandelCenter;vec2 p=center+(local-.5)*vec2(aspect,1.)*scale;float inside=0.;float v=esc(p,u_juliaC,julia,inside);vec3 color=pal(v+.05*sin(v*32.+u_time*.18),inside);float vign=smoothstep(.8,.18,length(local-.5));color*=.74+.28*vign;color+=(hash(floor(local*u_resolution/8.))-.5)*.018;if(!julia)color=mix(color,vec3(1.,.91,.55),marker(local));float split=smoothstep(.002,0.,abs(uv.x-.5));color=mix(color,vec3(.78,.68,.42),split*.45);out_color=vec4(color,1.);}
+vec2 markerLayers(vec2 local){
+  vec2 p=(local-u_marker)*vec2((u_resolution.x*.5)/u_resolution.y,1.);
+  float d=length(p);
+  float r=.046;
+  // A ~3px ring rather than the old ~20px filled donut, which is what made
+  // the marker read as a blob sitting on top of the fractal.
+  float ring=smoothstep(.0060,.0028,abs(d-r));
+  // A thin dark ring just outside it, so the marker stays legible over the
+  // bright filaments as well as the dark interior.
+  float shade=smoothstep(.0105,.0060,abs(d-(r+.0055)));
+  // Soft outward falloff only; the centre stays clear so the chosen pixel
+  // is never covered by the thing selecting it.
+  float halo=step(r,d)*(1.-smoothstep(r,.090,d))*.18;
+  float ax=abs(p.x), ay=abs(p.y);
+  float band=step(.013,d)*step(d,.034);
+  float tick=max(smoothstep(.0038,.0016,ay),smoothstep(.0038,.0016,ax))*band;
+  return vec2(min(1.,ring+tick*.85), min(1.,shade*.5+halo));
+}
+void main(){vec2 uv=gl_FragCoord.xy/u_resolution;bool julia=uv.x>.5;vec2 local=julia?vec2((uv.x-.5)*2.,uv.y):vec2(uv.x*2.,uv.y);float aspect=(u_resolution.x*.5)/u_resolution.y;float scale=julia?u_juliaScale:u_mandelScale;vec2 center=julia?u_juliaCenter:u_mandelCenter;vec2 p=center+(local-.5)*vec2(aspect,1.)*scale;float inside=0.;float v=esc(p,u_juliaC,julia,inside);vec3 color=pal(v+.05*sin(v*32.+u_time*.18),inside);float vign=smoothstep(.8,.18,length(local-.5));color*=.74+.28*vign;color+=(hash(floor(local*u_resolution/8.))-.5)*.018;if(!julia){vec2 m=markerLayers(local)*u_markerFade;color=mix(color,vec3(0.),m.y);color=mix(color,vec3(1.,.93,.62),m.x);}float split=smoothstep(.002,0.,abs(uv.x-.5));color=mix(color,vec3(.78,.68,.42),split*.45);out_color=vec4(color,1.);}
 `;
         const program = gl.createProgram();
         const v = shader(gl, gl.VERTEX_SHADER, vs);
