@@ -19,6 +19,14 @@ interface AntPatchOptions {
 
 const THROTTLED_MAX_DELTA = 1;
 const RESUME_MAX_DELTA = 30;
+// Returning to a tab the browser had throttled produces a large rawDelta, and
+// RESUME_MAX_DELTA then allows up to 30 simulated seconds of arrears. Running
+// those as 1,800 fixed steps inside a single frame blocks the main thread:
+// measured at 966ms with a 10-ant colony, 236x a normal frame, and it grows
+// with the colony. Catch-up is now spread across frames instead -- 12 steps a
+// frame is ~6x speed at 30fps, so 30s of arrears clears in about 5 seconds
+// while the page stays responsive throughout.
+const MAX_CATCHUP_STEPS = 12;
 const BACKGROUND_FRAME_MS = 125;
 // Draw at ~30Hz rather than the display's native rate. The model keeps its own
 // fixed 1/60s timestep (see FRAME_STEP), so this only skips redundant redraws;
@@ -255,11 +263,15 @@ export class AntPatchSimulation {
     if (this.reducedMotion) {
       this.update(FRAME_STEP * 0.2);
     } else {
-      this.accumulator += delta;
+      // Bound the arrears as well as the per-frame work, so a very long
+      // absence cannot queue more than RESUME_MAX_DELTA of simulated time.
+      this.accumulator = Math.min(this.accumulator + delta, RESUME_MAX_DELTA);
 
-      while (this.accumulator >= FRAME_STEP) {
+      let steps = 0;
+      while (this.accumulator >= FRAME_STEP && steps < MAX_CATCHUP_STEPS) {
         this.update(FRAME_STEP);
         this.accumulator -= FRAME_STEP;
+        steps += 1;
       }
     }
 

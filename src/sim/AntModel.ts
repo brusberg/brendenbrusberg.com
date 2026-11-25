@@ -2145,20 +2145,34 @@ export class AntModel {
   private rebalanceTasks(): void {
     const desired = this.desiredTaskCounts();
 
+    // One tally pass, kept up to date as donors move, instead of a filter per
+    // candidate per iteration. The original ran a `find` whose predicate
+    // filtered the whole colony, inside a `while` whose condition filtered it
+    // again -- quadratic in colony size. Measured at only 2-6% of model cost
+    // because it runs once per 1.5 simulated seconds, so this is hygiene
+    // rather than a hot-path fix. Behaviour is identical: the tally sees the
+    // same counts the filters would have computed at each step.
+    const counts: Record<AntTask, number> = { forage: 0, dig: 0, nurse: 0 };
+    for (const ant of this.ants) {
+      counts[ant.task] += 1;
+    }
+
     for (const task of this.taskOrder()) {
-      while (this.ants.filter((ant) => ant.task === task).length < desired[task]) {
+      while (counts[task] < desired[task]) {
         const donor = this.ants.find(
           (ant) =>
             !ant.carryingFood &&
             !ant.carryingCareFood &&
             ant.task !== task &&
-            this.ants.filter((candidate) => candidate.task === ant.task).length > desired[ant.task],
+            counts[ant.task] > desired[ant.task],
         );
 
         if (!donor) {
           break;
         }
 
+        counts[donor.task] -= 1;
+        counts[task] += 1;
         donor.task = task;
         donor.activity = task === 'forage' ? 'seekFood' : task === 'dig' ? (this.isOpenTunnel(donor.x, donor.y) ? 'seekDigSite' : 'enterNest') : 'nurseIdle';
         donor.state = task === 'forage' ? 'seekFood' : 'wander';
