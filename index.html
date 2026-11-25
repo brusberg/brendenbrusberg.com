@@ -9167,9 +9167,14 @@
         //          step reads as a deliberate pixel-art bloom instead of a
         //          stutter. Leans into the discreteness rather than hiding it.
         //   raw    no treatment, for comparison.
+        // creep is the chosen default, not an incidental one: it is the only
+        // treatment that smooths the motion without touching the plant, and
+        // its 82% of frames-that-move is the ceiling for a 3px grid rather
+        // than a shortfall. The others stay switchable for comparison.
+        const VINE_ANIM_DEFAULT = 'creep';
         const VINE_ANIM = (() => {
           const v = new URLSearchParams(location.search).get('vine');
-          return ['creep', 'fine', 'pop', 'raw'].includes(v) ? v : 'creep';
+          return ['creep', 'fine', 'pop', 'raw'].includes(v) ? v : VINE_ANIM_DEFAULT;
         })();
         const STEP_SCALE = VINE_ANIM === 'fine' ? 0.5 : 1;
         const POP_STEPS = 2.5;     // how long a new segment takes to settle in
