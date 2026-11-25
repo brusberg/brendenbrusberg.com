@@ -326,6 +326,29 @@
         min-width: 0;
       }
 
+      .info-main {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.55rem;
+      }
+
+      /* The left column runs ~89% empty on wide layouts (434x1509px holding
+         172px of content on the Projects panel). The canvas takes that slack
+         and grows something in it. It is decorative: aria-hidden, and it
+         collapses to nothing below the stacking breakpoint. */
+      .panel-flora {
+        display: block;
+        width: 100%;
+        flex: 1 1 auto;
+        min-height: 12rem;
+        margin-top: 0.4rem;
+      }
+
+      @media (max-width: 860px) {
+        .panel-flora { display: none; }
+      }
+
       .info-main h1,
       .info-main p,
       .info-story p {
@@ -1059,6 +1082,7 @@
             <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
             <a href="mailto:brenbrus@gmail.com">Email</a>
           </div>
+          <canvas class="panel-flora" id="panel-flora" aria-hidden="true"></canvas>
         </div>
         <article class="info-story" id="panel-story">
           <p>
@@ -8433,6 +8457,7 @@
           .join('');
         bindStoryPopouts();
         updateLiveStats();
+        panelFlora.plant(activeId || 'ants');
       }
 
       function renderStory(data) {
@@ -8848,6 +8873,181 @@
         };
       }
 
+
+      /* ---------------------------------------------------------------
+         Panel flora. The left info column runs mostly empty on wide
+         layouts, so it grows a vine. Deterministic: the seed is derived
+         from the panel id, so a given panel always grows the same plant
+         and the column reads as an illustration rather than as noise.
+         It ticks inside the existing capped frame loop rather than
+         opening a second animation loop, and it stops once it settles.
+         --------------------------------------------------------------- */
+      const prefersReducedMotion =
+        typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+      const panelFlora = (() => {
+        const el = document.getElementById('panel-flora');
+        if (!el) return { plant() {}, tick() {} };
+        const g = el.getContext('2d');
+        const PX = 3;
+        // Fill time is specified, not emergent: a short column and a tall one
+        // both finish in about FILL_SECONDS, because the per-step interval is
+        // derived from how many steps the column actually needs. Growth is
+        // driven by accumulated real time, so the frame rate does not change
+        // how fast the plant grows -- only how smoothly it is drawn.
+        const FILL_SECONDS = 14;
+        let growthMs = 90;
+
+        let rnd = null;
+        let segs = [], buds = [], leaves = [], flowers = [];
+        let settled = true, acc = 0, dirty = false, lastW = 0, lastH = 0;
+
+        const hash = (str) => {
+          let h = 0x811c9dc5;
+          for (let i = 0; i < str.length; i += 1) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 0x01000193);
+          }
+          return h >>> 0;
+        };
+
+        const makeRnd = (seedValue) => {
+          let a = seedValue >>> 0;
+          return () => {
+            a = (a + 0x6d2b79f5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        };
+
+        const visible = () => el.offsetParent !== null && el.clientWidth > 40 && el.clientHeight > 40;
+
+        // Segment length and lifespan scale with the column so the vine
+        // reaches the top of a 1300px panel and of a 300px one alike. They are
+        // read live rather than captured at plant time, because plant() runs
+        // inside renderInfo before layout has given the column its height.
+        let stemLen = 9, lifeCap = 54;
+
+        function measure() {
+          const h = el.clientHeight || 300;
+          stemLen = Math.max(7, Math.min(22, h / 72));
+          lifeCap = Math.ceil((h / (stemLen * 0.5)) * 0.95);
+          growthMs = Math.max(24, (FILL_SECONDS * 1000) / Math.max(1, lifeCap / 0.95));
+        }
+
+        function plant(panelId) {
+          rnd = makeRnd(hash(`flora:${panelId}`));
+          segs = []; leaves = []; flowers = [];
+          measure();
+          const w = el.clientWidth || 300;
+          buds = [{ x: w * (0.3 + rnd() * 0.4), y: 0, a: -Math.PI / 2, lenScale: 1, depth: 0, life: 0 }];
+          settled = false; acc = 0; dirty = true;
+        }
+
+        function grow() {
+          if (settled || !rnd) return;
+          measure();
+          const h = el.clientHeight || 300;
+          const next = [];
+          for (const b of buds) {
+            // A weak restoring force let the angle random-walk away from
+            // vertical, so the vine curled instead of climbing: it gained
+            // 0.7px of height per step where a step is 9px long. These values
+            // keep a visible sway while still reaching the top of the column.
+            const wander = (rnd() - 0.5) * 0.40;
+            const upBias = (-Math.PI / 2 - b.a) * 0.28;
+            const a = b.a + wander + upBias;
+            const len = stemLen * b.lenScale;
+            const nx = b.x + Math.cos(a) * len * 0.5;
+            const ny = b.y + Math.sin(a) * len * 0.5;
+            segs.push({ x1: b.x, y1: b.y, x2: nx, y2: ny, d: b.depth });
+            if (rnd() < 0.15) leaves.push({ x: nx, y: ny, s: 2 + Math.floor(rnd() * 2), d: b.depth, dir: rnd() < 0.5 ? -1 : 1 });
+            const life = b.life + 1;
+            if (-ny > h - 18 || life > lifeCap - b.depth * Math.round(lifeCap * 0.26)) {
+              flowers.push({ x: nx, y: ny, petals: 5 + Math.floor(rnd() * 2) });
+              continue;
+            }
+            next.push({ x: nx, y: ny, a, lenScale: b.lenScale, depth: b.depth, life });
+            if (b.depth < 2 && life > Math.max(8, lifeCap * 0.12) && rnd() < 0.055) {
+              next.push({ x: nx, y: ny, a: a + (rnd() < 0.5 ? 1 : -1) * (0.5 + rnd() * 0.4),
+                          lenScale: b.lenScale * 0.75, depth: b.depth + 1, life: 0 });
+            }
+          }
+          buds = next;
+          if (!buds.length) settled = true;
+          dirty = true;
+        }
+
+        function paint() {
+          const w = el.clientWidth, h = el.clientHeight;
+          const dprCapped = Math.min(dprCap, window.devicePixelRatio || 1);
+          const bw = Math.round(w * dprCapped), bh = Math.round(h * dprCapped);
+          if (el.width !== bw || el.height !== bh) { el.width = bw; el.height = bh; }
+          g.setTransform(dprCapped, 0, 0, dprCapped, 0, 0);
+          g.clearRect(0, 0, w, h);
+          // Decoration, not content: it should read as texture beside the
+          // column rather than compete with the words next to it.
+          g.globalAlpha = 0.72;
+          g.translate(0, h - 4);
+          const snap = (v) => Math.round(v / PX) * PX;
+
+          for (const sg of segs) {
+            g.fillStyle = sg.d === 0 ? '#3f5a2e' : sg.d === 1 ? '#4c6b36' : '#5a7a41';
+            const steps = Math.max(1, Math.ceil(Math.hypot(sg.x2 - sg.x1, sg.y2 - sg.y1) / PX));
+            for (let i = 0; i <= steps; i += 1) {
+              const x = snap(sg.x1 + (sg.x2 - sg.x1) * (i / steps));
+              const y = snap(sg.y1 + (sg.y2 - sg.y1) * (i / steps));
+              g.fillRect(x, y, PX, PX);
+              if (sg.d === 0) g.fillRect(x + PX, y, PX, PX);
+            }
+          }
+          for (const l of leaves) {
+            g.fillStyle = l.d === 0 ? '#6d8f4a' : '#7fa054';
+            const lx = snap(l.x), ly = snap(l.y);
+            g.fillRect(lx, ly, PX * l.s * l.dir, PX);
+            g.fillRect(lx, ly - PX, PX * (l.s - 1) * l.dir, PX);
+          }
+          for (const f of flowers) {
+            const fx = snap(f.x), fy = snap(f.y);
+            g.fillStyle = 'rgba(214, 189, 104, 0.92)';
+            for (let i = 0; i < f.petals; i += 1) {
+              const a = (i / f.petals) * Math.PI * 2;
+              g.fillRect(snap(fx + Math.cos(a) * PX * 1.7), snap(fy + Math.sin(a) * PX * 1.7), PX, PX);
+            }
+            g.fillStyle = '#fff8e8';
+            g.fillRect(fx, fy, PX, PX);
+          }
+          g.globalAlpha = 1;
+          g.setTransform(1, 0, 0, 1, 0, 0);
+          dirty = false;
+        }
+
+        function tick(dtMs) {
+          if (!visible()) return;
+          const w = el.clientWidth, h = el.clientHeight;
+          if (w !== lastW || Math.abs(h - lastH) > 24) {
+            const grewALot = lastH > 0 && Math.abs(h - lastH) > 24;
+            lastW = w; lastH = h; dirty = true;
+            if (grewALot) plant(activeId || 'ants');
+          } else if (h !== lastH) { lastH = h; dirty = true; }
+          if (settled) { if (dirty) paint(); return; }
+          if (prefersReducedMotion && prefersReducedMotion.matches) {
+            let guard = 0;
+            while (!settled && guard < 400) { grow(); guard += 1; }
+            paint();
+            return;
+          }
+          acc += dtMs;
+          let guard = 0;
+          while (acc >= growthMs && !settled && guard < 24) { grow(); acc -= growthMs; guard += 1; }
+          if (guard >= 24) acc = 0;
+          if (dirty) paint();
+        }
+
+        return { plant, tick };
+      })();
+
       function frame(t) {
         if (!running) return;
         const activeFrameMs = panelFrameMs[activeId] ?? defaultFrameMs;
@@ -8873,6 +9073,7 @@
           return;
         }
         activeScene.tick(dt, size, t);
+        panelFlora.tick(dt * 1000);
         rafId = requestAnimationFrame(frame);
       }
 
