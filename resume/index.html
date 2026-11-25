@@ -73,7 +73,13 @@
     .page { max-width: 66rem; margin: auto; padding: clamp(1.1rem, 5vw, 3.5rem); }
     .top-nav, .contact { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; align-items: center; }
     .top-nav { justify-content: space-between; margin-bottom: 2.5rem; }
-    .top-nav a, .contact a { display: inline-flex; align-items: center; min-height: 44px; }
+    .top-nav a, .contact a { display: inline-flex; align-items: center; gap: 0.42rem; min-height: 44px; }
+    /* Inline SVG rather than an icon font or three image requests: the whole
+       set is under 1.5KB, it inherits the link colour through currentColor so
+       hover and focus need no extra rules, and it costs no network round trip
+       on the page search sends people to. aria-hidden because the link text
+       already says what each one is. */
+    .ico { width: 1em; height: 1em; flex: none; fill: currentColor; }
     .download { padding: 0.5rem 1rem; border: 1px solid #655c38; border-radius: 0.25rem; text-decoration: none; }
     /* Search sends more people to this page than to the homepage, so this link
        is the way most visitors reach the rest of the site. It was plain text at
@@ -144,15 +150,15 @@
     <header>
       <h1>Brenden Brusberg</h1>
       <p class="role">Data Science Specialist · McKinsey &amp; Company</p>
-      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City</p>
       <nav class="contact" aria-label="Contact and profiles">
-        <a href="mailto:brenbrus@gmail.com">Email</a>
-        <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
-        <a href="https://github.com/brusberg">GitHub</a>
+        <a href="mailto:brenbrus@gmail.com"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h17A1.5 1.5 0 0 1 22 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5zM4.3 6l7.7 5.9L19.7 6zM20 7.9l-7.4 5.7a1 1 0 0 1-1.2 0L4 7.9V18h16z"/></svg>Email</a>
+        <a href="https://www.linkedin.com/in/brendends/"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.13 1.44-2.13 2.94v5.66H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13m1.78 13.02H3.56V9h3.56zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0"/></svg>LinkedIn</a>
+        <a href="https://github.com/brusberg"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.2 4.9 18.2 5.2 18.2 5.2c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>GitHub</a>
       </nav>
     </header>
     <section aria-labelledby="summary">
       <h2 id="summary">Summary</h2>
+      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City</p>
       <p>I operate at the crossroads of data science and software engineering, coordinating the development of Firmwide systems across multidisciplinary teams. With expertise in AI strategy, cloud infrastructure, and emerging technology, I leverage organizational data to inform strategic decisions that align leaders with their people to create a safer and more productive environment.</p>
     </section>
     <section aria-labelledby="experience">
