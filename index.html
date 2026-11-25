@@ -9114,16 +9114,28 @@
         // Candidate turns, tried in this order, first one under STEER_LO wins.
         // +-0.30 is a fine correction; +-0.62 is enough to see past a stem.
         const FAN = [0, 0.30, -0.30, 0.62, -0.62];
-        const STEER_LO = 7;         // below this, no steering at all
-        const BLOCK = 26;           // at or above this, the way is shut
-        const FORK_MAX = 15;        // a fork must find clearer air than a step
-        const LEAF_MAX = 7;         // raw occupancy allowed under a new leaf
+        // Thresholds are expressed in STEMS, not in raw occupancy, and
+        // multiplied by ONE -- the ink a single stem leaves in one cell -- at
+        // sow time. ONE is DEP * CELL / step, and that ratio is not constant:
+        // it is 4.29 on a 1509px column and 3.43 on a 420px one, because CELL
+        // and DEP both quantise. Fixed integers calibrated on the tall column
+        // are therefore ~25% too high on a short one, where a single stem
+        // ahead reads 3.4 against a STEER_LO of 7 and the fan fires late.
+        // These multipliers reproduce the old integers exactly at 434x1509.
+        const STEER_STEMS = 1.63;   // below this, no steering at all
+        const BLOCK_STEMS = 6.06;   // at or above this, the way is shut
+        const FORK_STEMS = 3.50;    // a fork must find clearer air than a step
+        const LEAF_STEMS = 1.63;    // occupancy allowed under a new leaf
+        let STEER_LO = 7, BLOCK = 26, FORK_MAX = 15, LEAF_MAX = 7;
         const STUCK_MAX = 2;        // short steps before a boxed-in bud blooms
         const SHORT = 0.45;         // short-step multiplier
         const LOOK = 1.35;          // probe distance, in steps
         const TRAIL_N = 3;          // own-trail cells a bud is allowed to ignore
         const OCC_CAP = 200;        // keeps occupancy in a Uint8
         const SPREAD_BIAS = 0.10;   // long-range lean away from the busy side
+        // Test hook only. Committing in reverse must produce the same garden;
+        // if it does not, a same-step read has crept back into phase B.
+        const REVERSE_COMMIT = false;
 
         // ---- the garden ----------------------------------------------------
         const VINE_WAIT = 6;        // steps of stagger between vines sprouting
@@ -9191,6 +9203,11 @@
           GX = Math.max(1, Math.ceil(boxW / CELL));
           GY = Math.max(1, Math.ceil(boxH / CELL));
           occ = new Uint8Array(GX * GY);
+          const ONE = (DEP * CELL) / step;
+          STEER_LO = Math.round(STEER_STEMS * ONE);
+          BLOCK = Math.round(BLOCK_STEMS * ONE);
+          FORK_MAX = Math.round(FORK_STEMS * ONE);
+          LEAF_MAX = Math.round(LEAF_STEMS * ONE);
         }
 
         const cellOf = (x, y) => {
@@ -9312,16 +9329,22 @@
         }
 
         // ---- one growth step for every live bud ------------------------------
+        // Two phases on purpose. Every bud READS the grid as it stood at the
+        // start of the step, and only then does anything get WRITTEN. With a
+        // single pass, bud n saw bud n-1's deposit from the same step, so the
+        // result depended on the order of the bud array and the first vine was
+        // systematically favoured. Splitting it makes order-independence a
+        // property that can be tested rather than hoped for.
         function grow() {
           if (settled || !rnd) return;
           const ceiling = boxH - 18;
-          const next = [];
+          const plans = [];
           for (const b of buds) {
             // Staggered sprouting: a vine with a negative life has not broken
             // the surface yet. Separating the vines in time as well as in space
             // keeps the crowded base region from deciding all of their fates at
             // once.
-            if (b.life < 0) { b.life += 1; next.push(b); continue; }
+            if (b.life < 0) { plans.push({ b, wait: true }); continue; }
 
             const vine = vines[b.v];
             const len = stemLen * b.lenScale;
@@ -9354,65 +9377,110 @@
               if (score < STEER_LO) break;
             }
 
-            let a = bestA;
+            const a = bestA;
             let advance = stepLen;
+            let blocked = false;
             if (bestScore >= BLOCK) {
               // Boxed in. Two shortened steps to squeeze through; if that fails
               // the bud resolves into a flower rather than drilling through its
               // neighbour. This is also the settling guarantee -- a blocked bud
               // always terminates.
-              b.stuck += 1;
-              if (b.stuck > STUCK_MAX) {
-                vine.flowers.push({ x: b.x, y: b.y, petals: 5 + Math.floor(rnd() * 2) });
-                deposit(vine.ax0 + b.x, b.y);
+              if (b.stuck + 1 > STUCK_MAX) {
+                plans.push({ b, vine, bloomInPlace: true, petals: 5 + Math.floor(rnd() * 2) });
                 continue;
               }
+              blocked = true;
               advance = stepLen * SHORT;
-            } else {
-              b.stuck = 0;
             }
 
             const nx = b.x + Math.cos(a) * advance;
             const ny = b.y + Math.sin(a) * advance;
-            vine.segs.push({ x1: b.x, y1: b.y, x2: nx, y2: ny, d: b.depth });
-            deposit(vine.ax0 + nx, ny);
-            const cell = cellOf(vine.ax0 + nx, ny);
-            if (cell !== b.t0) { b.t2 = b.t1; b.t1 = b.t0; b.t0 = cell; }
-
-            if (rnd() < 0.15 && occ[cell] <= LEAF_MAX) {
-              vine.leaves.push({
-                x: nx, y: ny, s: 2 + Math.floor(rnd() * 2), d: b.depth,
-                dir: rnd() < 0.5 ? -1 : 1
-              });
-            }
-
-            const life = b.life + 1;
-            if (-ny > ceiling * vine.topFrac || life > lifeCap - b.depth * Math.round(lifeCap * 0.26)) {
-              vine.flowers.push({ x: nx, y: ny, petals: 5 + Math.floor(rnd() * 2) });
-              deposit(vine.ax0 + nx, ny);
+            // When every candidate is blocked the bud takes the least-bad one,
+            // and the least-bad one can point out of the column. Two short
+            // steps of that is enough to put a stem outside the frame, which
+            // is where the last stray segment was coming from. A bud with
+            // nowhere to go that is not inside the column blooms instead.
+            const ax = vine.ax0 + nx;
+            if (blocked && (ax < 0 || ax > boxW)) {
+              plans.push({ b, vine, bloomInPlace: true, petals: 5 + Math.floor(rnd() * 2) });
               continue;
             }
+            const life = b.life + 1;
+            const tops = -ny > ceiling * vine.topFrac
+              || life > lifeCap - b.depth * Math.round(lifeCap * 0.26);
+            // Every PRNG draw happens here, in phase A, so the sequence does
+            // not depend on what the commit phase decides.
+            // The leaf gate reads the START-OF-STEP grid plus this bud's own
+            // imminent deposit, not the partially committed grid. Reading it
+            // during the commit would have left one order dependence behind
+            // after all the work of removing the others.
+            const leafCell = cellOf(vine.ax0 + nx, ny);
+            const leafOk = occ[leafCell] + DEP <= LEAF_MAX;
+            const wantsLeaf = rnd() < 0.15;
+            const leafSize = 2 + Math.floor(rnd() * 2);
+            const leafDir = rnd() < 0.5 ? -1 : 1;
+            const petals = 5 + Math.floor(rnd() * 2);
 
-            b.x = nx; b.y = ny; b.a = a; b.life = life; b.sinceFork += 1;
-            next.push(b);
-
-            // Apical dominance: a stem cannot fork again until it has put some
-            // distance behind it, which is what stops a bud from spraying four
-            // branches from one knuckle.
-            if (b.depth < 2 && life > Math.max(8, lifeCap * 0.10) && b.sinceFork >= INTERNODE && rnd() < FORK_P) {
+            let fork = null;
+            if (!tops && b.depth < 2 && life > Math.max(8, lifeCap * 0.10)
+                && b.sinceFork + 1 >= INTERNODE && rnd() < FORK_P) {
               const side = rnd() < 0.5 ? -1 : 1;
               const childA = a + side * (0.5 + rnd() * 0.4);
               const cx = vine.ax0 + nx + Math.cos(childA) * stepLen * LOOK;
               const cy = ny + Math.sin(childA) * stepLen * LOOK;
               // A fork is optional, so it is held to a stricter standard than a
               // step: it only happens into genuinely clear air.
-              if (crowd(cx, cy, b) < FORK_MAX) {
-                b.sinceFork = 0;
-                next.push(newBud(b.v, nx, ny, childA, b.lenScale * 0.75, b.depth + 1, 0, side));
-              }
+              if (crowd(cx, cy, b) < FORK_MAX) fork = { childA, side };
+            }
+
+            plans.push({ b, vine, a, nx, ny, life, blocked, tops, wantsLeaf, leafOk, leafSize, leafDir, petals, fork });
+          }
+
+          // Phase B -- commit. Nothing above this line wrote to occ.
+          // `survivors` is keyed by plan index so the bud list always comes
+          // back in plan order. Without that, reversing the commit would also
+          // reverse the bud array and change the PRNG draw order of the NEXT
+          // step -- the test would then be measuring two things at once and
+          // could never pass.
+          const survivors = [];
+          const order = REVERSE_COMMIT
+            ? plans.map((p, i) => [p, i]).reverse()
+            : plans.map((p, i) => [p, i]);
+          for (const [p, slot] of order) {
+            const b = p.b;
+            const keep = (bud) => { (survivors[slot] || (survivors[slot] = [])).push(bud); };
+            if (p.wait) { b.life += 1; keep(b); continue; }
+            if (p.bloomInPlace) {
+              p.vine.flowers.push({ x: b.x, y: b.y, petals: p.petals });
+              deposit(p.vine.ax0 + b.x, b.y);
+              continue;
+            }
+            b.stuck = p.blocked ? b.stuck + 1 : 0;
+            p.vine.segs.push({ x1: b.x, y1: b.y, x2: p.nx, y2: p.ny, d: b.depth });
+            deposit(p.vine.ax0 + p.nx, p.ny);
+            const cell = cellOf(p.vine.ax0 + p.nx, p.ny);
+            if (cell !== b.t0) { b.t2 = b.t1; b.t1 = b.t0; b.t0 = cell; }
+
+            if (p.wantsLeaf && p.leafOk) {
+              p.vine.leaves.push({ x: p.nx, y: p.ny, s: p.leafSize, d: b.depth, dir: p.leafDir });
+            }
+
+            if (p.tops) {
+              p.vine.flowers.push({ x: p.nx, y: p.ny, petals: p.petals });
+              deposit(p.vine.ax0 + p.nx, p.ny);
+              continue;
+            }
+
+            b.x = p.nx; b.y = p.ny; b.a = p.a; b.life = p.life; b.sinceFork += 1;
+            keep(b);
+
+            if (p.fork) {
+              b.sinceFork = 0;
+              keep(newBud(b.v, p.nx, p.ny, p.fork.childA, b.lenScale * 0.75, b.depth + 1, 0, p.fork.side));
             }
           }
-          buds = next;
+          buds = [];
+          for (const group of survivors) if (group) buds.push(...group);
           if (!buds.length) settled = true;
           dirty = true;
         }

@@ -41,6 +41,8 @@ const MODULE_SRC = SRC.slice(SRC.indexOf('const panelFlora', b), e);
 const WIDTH = 434;
 const HEIGHT = 1509;
 
+const countSegs = (st) => st.vines.reduce((n, v) => n + v.segs.length, 0);
+
 function makeCanvasStub(w, h) {
   const noop = () => {};
   const ctx = {
@@ -84,10 +86,19 @@ function run({ w = WIDTH, h = HEIGHT, panel = 'projects', rewrite = (s) => s, re
   // do/while, not while: `settled` starts true and only sow() clears it, so a
   // leading test skips the whole run. (It did, and reported a 12-segment
   // garden as if that were the design.)
+  // Count real growth steps, not ticks: a tick runs up to 24 of them. The
+  // module's fill time is growthMs per step, and FILL_SECONDS is a promise
+  // about the whole garden, so steps x growthMs is the number to check.
+  let growSteps = 0;
+  const seen = new Set();
   do {
+    const before = flora.debug();
     flora.tick(STEP_MS);
+    const after = flora.debug();
+    growSteps += Math.max(0, countSegs(after) - countSegs(before) ? 1 : 0);
     steps += 1;
     if (resizeTo && steps === 6) { el.clientWidth = resizeTo[0]; el.clientHeight = resizeTo[1]; }
+    seen.add(countSegs(after));
   } while (!flora.debug().settled && steps < 20000);
   return { flora, state: flora.debug(), ticks: steps, el };
 }
@@ -178,6 +189,18 @@ function offColumn(state) {
 }
 
 const round = (n) => Math.round(n * 100) / 100;
+// Order-insensitive: the same geometry, however it was appended. Used for the
+// commit-order check, where the arrays are deliberately built in a different
+// sequence. It would hide a reordering bug in the strict determinism check, so
+// that one still compares the sequences.
+const geometryFingerprint = (state) =>
+  JSON.stringify(state.vines.map((v) => [
+    round(v.ax01), round(v.topFrac),
+    v.segs.map((s) => `${Math.round(s.x2)},${Math.round(s.y2)}:${s.d}`).sort().join('|'),
+    v.leaves.map((l) => `${Math.round(l.x)},${Math.round(l.y)}`).sort().join('|'),
+    v.flowers.map((f) => `${Math.round(f.x)},${Math.round(f.y)}`).sort().join('|')
+  ]));
+
 const fingerprint = (state) =>
   JSON.stringify(state.vines.map((v) => [
     round(v.ax01), round(v.topFrac),
@@ -198,9 +221,14 @@ function setConst(src, name, value) {
 const setConsts = (pairs) => (src) => pairs.reduce((acc, [n, v]) => setConst(acc, n, v), src);
 
 const NO_DENSITY = setConsts([
-  ['STEER_LO', '1e9'], ['BLOCK', '1e9'], ['FORK_MAX', '1e9'],
-  ['LEAF_MAX', '1e9'], ['SPREAD_BIAS', '0']
+  ['STEER_STEMS', '1e9'], ['BLOCK_STEMS', '1e9'], ['FORK_STEMS', '1e9'],
+  ['LEAF_STEMS', '1e9'], ['SPREAD_BIAS', '0']
 ]);
+
+// Commit order must not matter: phase A reads a frozen grid, phase B only
+// writes. If reversing the commit changes the garden, a same-step read has
+// crept back in.
+const REVERSED = setConsts([['REVERSE_COMMIT', 'true']]);
 
 const NO_SPREAD = setConsts([['SPREAD_STEPS', '1'], ['SPREAD_PUSH', '0']]);
 
@@ -229,6 +257,7 @@ const withDensity = run({});
 const withoutDensity = run({ rewrite: NO_DENSITY });
 const withoutSpread = run({ rewrite: NO_SPREAD });
 const repeat = run({});
+const reversed = run({ rewrite: REVERSED });
 const resized = run({ resizeTo: [620, 900] });
 const short = run({ h: 420 });
 
@@ -244,6 +273,7 @@ const report = {
 
   determinism: {
     identicalAcrossTwoRuns: fingerprint(withDensity.state) === fingerprint(repeat.state),
+    sameGeometryWithCommitOrderReversed: geometryFingerprint(withDensity.state) === geometryFingerprint(reversed.state),
     note: 'plant() was also called three times per run; only the first may count'
   },
 
@@ -292,6 +322,7 @@ if (process.argv.includes('--json')) {
   console.log(`\nPanel flora — ${report.column}, ${report.vines} vines, ${report.cell}px cells (${report.grid})\n`);
   console.log('determinism');
   line('identical across two runs', report.determinism.identicalAcrossTwoRuns ? 'yes' : 'NO — not deterministic');
+  line('same geometry, commit reversed', report.determinism.sameGeometryWithCommitOrderReversed ? 'yes' : 'NO — a same-step read remains');
   console.log('\ndensity field                       on        off       change');
   const row = (k, f) => console.log(`  ${k.padEnd(34)}${String(f(a)).padEnd(10)}${String(f(b2)).padEnd(10)}${round(f(a) - f(b2))}`);
   row('heavily overlapped cells %', (m) => m.heavyOverlapPct);
@@ -322,6 +353,7 @@ if (process.argv.includes('--json')) {
 
 const failures = [];
 if (!report.determinism.identicalAcrossTwoRuns) failures.push('growth is not deterministic');
+if (!report.determinism.sameGeometryWithCommitOrderReversed) failures.push('growth geometry depends on bud commit order');
 if (!report.resize.vinesReanchoredToNewWidth) failures.push('a resize did not re-anchor the vines');
 if (report.staysInFrame.on.segmentsOffColumn > 0) failures.push('stems left the column');
 if (report.reach.tallestVinePct < 70) failures.push(`the garden only reached ${report.reach.tallestVinePct}% of the column`);
