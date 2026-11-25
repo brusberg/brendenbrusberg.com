@@ -53,6 +53,16 @@ a {
 .simulation-panel {
   position: relative;
   display: grid;
+  /* The canvas is the only in-flow child, so without an explicit row the
+     implicit one is sized by the canvas's own intrinsic height -- its width
+     and height ATTRIBUTES. #patch-canvas then resolves `height: 100%` against
+     that content-sized row, and `max-height: 100%` resolves against it too, so
+     neither constrains anything. The row latches at the tallest the stage has
+     ever been and never shrinks back: at 1440x620 that left the canvas 870px
+     tall inside a 326px panel, with 62% of every frame drawn and then clipped
+     away by the overflow: hidden below. minmax(0, 1fr) makes the row the panel
+     instead of the content, which is what it was always meant to be. */
+  grid-template-rows: minmax(0, 1fr);
   place-items: center;
   overflow: hidden;
   min-height: 0;
