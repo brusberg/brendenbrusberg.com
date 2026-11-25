@@ -337,16 +337,49 @@
          172px of content on the Projects panel). The canvas takes that slack
          and grows something in it. It is decorative: aria-hidden, and it
          collapses to nothing below the stacking breakpoint. */
-      .panel-flora {
-        display: block;
-        width: 100%;
+      /* The canvas is absolutely positioned inside a slot, and that is load
+         bearing rather than stylistic.
+
+         A canvas element's intrinsic size is its width/height ATTRIBUTES, and
+         paint() sets those from clientHeight. In normal flow with height:auto
+         and flex-basis:auto, that intrinsic height becomes the flex base size,
+         which feeds the grid row height, which feeds clientHeight -- a ratchet.
+         Every frame the column grew by the height of the text above it, and on
+         a display with devicePixelRatio > 1 it grew by a FACTOR of 1.5 each
+         paint, so the page ran away downwards. Observed here at 42652px.
+
+         Out of flow, the canvas contributes nothing to layout and the loop
+         cannot form: the slot's content height is zero whatever the canvas
+         does, so the slot is sized by the flex line alone. */
+      .panel-flora-slot {
+        position: relative;
         flex: 1 1 auto;
         min-height: 12rem;
         margin-top: 0.4rem;
+        /* Last line of defence: even a wrongly sized canvas cannot then push
+           the page open, it is simply clipped. */
+        overflow: hidden;
+      }
+
+      /* width/height 100% is doing the work here, not inset.
+         A canvas is a REPLACED element, and for an absolutely positioned
+         replaced box `height: auto` resolves to the INTRINSIC height -- the
+         height attribute -- after which `bottom` is ignored as over-constrained
+         (CSS 2.1 10.6.5). So `inset: 0` alone left the canvas at its attribute
+         height and it overflowed the slot instead of filling it. Percentages
+         override the intrinsic size, which pins the box to the slot whatever
+         the attributes say. */
+      .panel-flora {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
       }
 
       @media (max-width: 860px) {
-        .panel-flora { display: none; }
+        .panel-flora-slot { display: none; }
       }
 
       .info-main h1,
@@ -1082,7 +1115,9 @@
             <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
             <a href="mailto:brenbrus@gmail.com">Email</a>
           </div>
-          <canvas class="panel-flora" id="panel-flora" aria-hidden="true"></canvas>
+          <div class="panel-flora-slot">
+            <canvas class="panel-flora" id="panel-flora" aria-hidden="true"></canvas>
+          </div>
         </div>
         <article class="info-story" id="panel-story">
           <p>
@@ -9093,10 +9128,17 @@
           dirty = true;
         }
 
+        // No column is taller than this. A cap here is belt and braces against
+        // the layout feedback the slot above is there to prevent: if anything
+        // ever hands this a runaway clientHeight again, it costs one clamped
+        // allocation and a wrong-looking column, not 170MB of canvas.
+        const MAX_BACKING_PX = 4096;
+
         function paint() {
           const w = el.clientWidth, h = el.clientHeight;
           const dprCapped = Math.min(dprCap, window.devicePixelRatio || 1);
-          const bw = Math.round(w * dprCapped), bh = Math.round(h * dprCapped);
+          const bw = Math.min(MAX_BACKING_PX, Math.round(w * dprCapped));
+          const bh = Math.min(MAX_BACKING_PX, Math.round(h * dprCapped));
           if (el.width !== bw || el.height !== bh) { el.width = bw; el.height = bh; }
           g.setTransform(dprCapped, 0, 0, dprCapped, 0, 0);
           g.clearRect(0, 0, w, h);
