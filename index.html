@@ -2209,7 +2209,8 @@
           // Dev-only counters so the cache can be measured rather than argued
           // about. `blits` is a frame that reused the bitmap; `renders` is a
           // frame that had to redraw it.
-          this.staticMapStats = { renders: 0, blits: 0, lastMs: 0, totalMs: 0, marginCss: 0 };
+          this.staticMapStats = { renders: 0, blits: 0, outOfRange: 0, staleDrops: 0, lastMs: 0, totalMs: 0, marginCss: 0 };
+          this.lastStaticTickT = 0;
           this.buildNetwork();
           this.stateMachine = new RailStateMachine(this);
         }
@@ -3081,7 +3082,7 @@
           const w = size.w;
           const h = size.h;
           const view = this.view(size);
-          this.drawStaticMap(g, size, view);
+          this.drawStaticMap(g, size, view, t);
           this.signals
             .filter((signal) => this.shouldDrawSignal(signal, view))
             .forEach((signal) => this.drawSignal(g, view, signal));
@@ -3102,6 +3103,8 @@
               staticMap: {
                 renders: this.staticMapStats.renders,
                 blits: this.staticMapStats.blits,
+                outOfRange: this.staticMapStats.outOfRange,
+                staleDrops: this.staticMapStats.staleDrops,
                 lastMs: Number(this.staticMapStats.lastMs.toFixed(2)),
                 totalMs: Number(this.staticMapStats.totalMs.toFixed(1)),
                 marginCss: this.staticMapStats.marginCss
@@ -4416,10 +4419,23 @@
         //
         // The old key included ox/oy to 0.1px, so every pan was a miss --
         // measured at 22 misses in 24 pan moves, 7.3ms each.
-        drawStaticMap(g, size, view) {
+        drawStaticMap(g, size, view, t) {
           const dpr = Number(size.dpr) || 1;
-          const wDev = Math.max(1, Math.round(size.w * dpr));
-          const hDev = Math.max(1, Math.round(size.h * dpr));
+          // floor, not round, to match resize() (index.html, `pixelWidth`):
+          // the visible canvas is Math.floor(rect.width * dpr) device pixels
+          // wide, and a cache a pixel wider than the canvas it is blitted onto
+          // would be resampled rather than copied.
+          const wDev = Math.max(1, Math.floor(size.w * dpr));
+          const hDev = Math.max(1, Math.floor(size.h * dpr));
+          // A long gap since the last frame means the tab was hidden or the
+          // machine slept. Safari is entitled to discard a large canvas's
+          // backing store while a tab is in the background, and no key derived
+          // from our own state can detect that, so drop the cache and redraw.
+          if (t && this.lastStaticTickT && t - this.lastStaticTickT > 2000) {
+            this.releaseStaticMapCache();
+            this.staticMapStats.staleDrops += 1;
+          }
+          if (t) this.lastStaticTickT = t;
           const marginCss = this.staticMapMargin(size);
           // The margin is held in device pixels so the sub-rect offset is
           // always a whole number of source pixels and the blit can never
@@ -4458,10 +4474,32 @@
           }
           this.staticMapStats.marginCss = marginCss;
 
+          // Never let drawImage be the bounds check. Out of range it does not
+          // throw -- it silently clips and stretches what is left, which is
+          // exactly the kind of fault that ships unnoticed. By construction the
+          // reuse test above keeps |dx|,|dy| within the margin, so this should
+          // never fire; it is counted rather than asserted so that if the
+          // invariant is ever broken the counter says so.
+          let sx = cache.marginDev - dx;
+          let sy = cache.marginDev - dy;
+          const maxSx = cache.canvas.width - wDev;
+          const maxSy = cache.canvas.height - hDev;
+          if (sx < 0 || sy < 0 || sx > maxSx || sy > maxSy) {
+            this.staticMapStats.outOfRange += 1;
+            sx = Math.max(0, Math.min(maxSx, sx));
+            sy = Math.max(0, Math.min(maxSy, sy));
+          }
+
+          // Destination sized from the device-pixel count, not from size.w.
+          // g carries a dpr transform, so a destination of wDev/dpr CSS px is
+          // exactly wDev device px: source and destination are the same integer
+          // number of pixels and the blit is a copy. Passing size.w here instead
+          // made it a 1.0001x resample, because size.w is fractional
+          // (1171.125 against a 1171px backing store) while the source is not.
           g.drawImage(
             cache.canvas,
-            cache.marginDev - dx, cache.marginDev - dy, wDev, hDev,
-            0, 0, size.w, size.h
+            sx, sy, wDev, hDev,
+            0, 0, wDev / dpr, hDev / dpr
           );
         }
 
