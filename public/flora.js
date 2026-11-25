@@ -69,6 +69,15 @@
             const VINE_SPACING_MIN_FRAC = 0.55;
             const RAGGED_MIN = 0.24;   // skyline spread on a tall column
             const RAGGED_MAX = 0.58;   // ...and on a short one
+            // How much lower than its parent a branch tops out. Without this the
+            // top-out height belongs to the VINE, so every branch of a vine ends at
+            // the same height and the garden resolves into as many horizontal lines
+            // as there are vines -- two, in a 156px margin, which is exactly what it
+            // looked like. A branch ending below its parent is also what a plant
+            // actually does.
+            const BRANCH_DROP = 0.40;
+            const BRANCH_DROP_MIN = 0.08;
+            const TOP_FRAC_FLOOR = 0.22;
 
             // A bud that has topped out is PARKED, not discarded. The column's
             // height changes on every panel switch -- 192px on Stats against
@@ -429,7 +438,9 @@
                 });
                 const v = vines[vines.length - 1];
                 v.forkBoost = Math.max(1, Math.min(2.2, 1 / Math.max(0.35, v.topFrac)));
-                buds.push(newBud(i, 0, 0, -Math.PI / 2, 1 - i * 0.07, 0, -i * VINE_WAIT, 0));
+                const trunk = newBud(i, 0, 0, -Math.PI / 2, 1 - i * 0.07, 0, -i * VINE_WAIT, 0);
+                trunk.topFrac = v.topFrac;
+                buds.push(trunk);
               }
               sown = true;
               settled = false;
@@ -440,6 +451,7 @@
             function newBud(v, x, y, a, lenScale, depth, life, spread) {
               return {
                 v, x, y, a, lenScale, depth, life, spread,
+                topFrac: 1,
                 stuck: 0, sinceFork: 0, revivals: 0, prog: 0, tipSeg: null, t0: -1, t1: -1, t2: -1
               };
             }
@@ -526,7 +538,7 @@
                   continue;
                 }
                 const life = b.life + 1;
-                const tops = -ny > ceiling * vine.topFrac
+                const tops = -ny > ceiling * b.topFrac
                   || life > lifeCap - b.depth * Math.round(lifeCap * 0.26);
                 // Every PRNG draw happens here, in phase A, so the sequence does
                 // not depend on what the commit phase decides.
@@ -555,7 +567,8 @@
                   const cy = ny + Math.sin(childA) * stepLen * LOOK;
                   // A fork is optional, so it is held to a stricter standard than a
                   // step: it only happens into genuinely clear air.
-                  if (crowd(cx, cy, b) < FORK_MAX) fork = { childA, side };
+                  const drop = rnd();
+                  if (crowd(cx, cy, b) < FORK_MAX) fork = { childA, side, drop };
                 }
 
                 plans.push({ b, vine, a, nx, ny, life, blocked, tops, wantsLeaf, leafOk, leafSize, leafDir, petals, fork });
@@ -616,6 +629,11 @@
                   b.sinceFork = 0;
                   const child = newBud(b.v, p.nx, p.ny, p.fork.childA, b.lenScale * 0.75, b.depth + 1, 0, p.fork.side);
                   child.prog = b.prog;
+                  // Each branch gets its own ceiling, below its parent's.
+                  child.topFrac = Math.max(
+                    TOP_FRAC_FLOOR,
+                    b.topFrac - (BRANCH_DROP_MIN + p.fork.drop * BRANCH_DROP),
+                  );
                   keep(child);
                 }
               }
@@ -636,7 +654,7 @@
               for (let i = parked.length - 1; i >= 0; i -= 1) {
                 const entry = parked[i];
                 const b = entry.bud;
-                const stillDone = -b.y > ceiling * entry.vine.topFrac
+                const stillDone = -b.y > ceiling * b.topFrac
                   || b.life > lifeCap - b.depth * Math.round(lifeCap * 0.26);
                 if (stillDone) continue;
                 const at = entry.vine.flowers.indexOf(entry.flower);

@@ -276,6 +276,43 @@ if (process.argv.includes('--sizes')) {
   process.exit(0);
 }
 
+// --- where the growth ENDS -------------------------------------------------
+// The complaint this answers: "still not varying the ends, 2 distinct lines
+// emerging". Flower positions are where buds stopped, so bucket them by height
+// and look at the shape. Piled into one or two buckets means the endings are
+// lines; spread across many means a skyline.
+if (process.argv.includes('--endings')) {
+  const BUCKETS = 16;
+  const shape = (opts) => {
+    const r = run(opts);
+    const d = r.state;
+    const ys = d.vines.flatMap((v) => v.flowers.map((f) => -f.y));
+    if (!ys.length) return { flowers: 0 };
+    const hist = new Array(BUCKETS).fill(0);
+    for (const y of ys) hist[Math.min(BUCKETS - 1, Math.max(0, Math.floor(y / d.boxH * BUCKETS)))] += 1;
+    const occupied = hist.filter((n) => n > 0).length;
+    const biggest = Math.max(...hist);
+    return { flowers: ys.length, bucketsUsed: occupied, ofBuckets: BUCKETS,
+             largestBucketShare: round(biggest / ys.length * 100), hist };
+  };
+  const LANDSCAPES = [
+    ['resume margin 156x1267', { w: 156, h: 1267 }],
+    ['panel column 413x1315', { w: 413, h: 1315 }],
+    ['short column 413x192', { w: 413, h: 192 }],
+  ];
+  const FLAT = setConsts([['BRANCH_DROP', '0'], ['BRANCH_DROP_MIN', '0']]);
+  console.log('\n  landscape                  flowers  buckets used  largest bucket');
+  for (const [name, opts] of LANDSCAPES) {
+    const on = shape(opts);
+    const off = shape({ ...opts, rewrite: FLAT });
+    console.log(`  ${name.padEnd(26)}${String(on.flowers).padEnd(9)}${String(on.bucketsUsed + '/' + on.ofBuckets).padEnd(14)}${on.largestBucketShare}%`);
+    console.log(`  ${'  (per-vine only, as before)'.padEnd(26)}${String(off.flowers).padEnd(9)}${String(off.bucketsUsed + '/' + off.ofBuckets).padEnd(14)}${off.largestBucketShare}%`);
+    console.log(`  ${''.padEnd(26)}histogram ${on.hist.join(' ')}`);
+    console.log('');
+  }
+  process.exit(0);
+}
+
 // --- when each vine finishes ----------------------------------------------
 // The garden should not stop all at once. Each vine grows at its own rate, so
 // some are still climbing well after others have flowered.
