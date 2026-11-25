@@ -173,14 +173,16 @@
   <span class="kicker">Proposal catalogue &middot; brendenbrusberg.com</span>
   <h1>Polish Review</h1>
   <p class="lede">
-    Seven proposals, each measured before it was argued for, and each one built on a branch so you
+    Eleven proposals, each measured before it was argued for, and most of them built on a branch so you
     can see it rather than imagine it. Pick an option per entry and the plan at the bottom writes
     itself. Nothing is applied to <code>main</code>.
+    <strong style="color:var(--gold)">P10 is a second freeze bug, found and fixed tonight</strong> &mdash;
+    a measured 966&nbsp;ms of blocked page every time you return to a backgrounded tab.
   </p>
   <div class="runbar">
-    <span><b>9</b> proposals</span>
-    <span><b>33</b> options</span>
-    <span><b>6</b> built on the branch</span>
+    <span><b>11</b> proposals</span>
+    <span><b>39</b> options</span>
+    <span><b>8</b> built on the branch</span>
     <span><b>5</b> corrections to my own earlier claims</span>
     <span>branch <b>proto/polish</b></span>
   </div>
@@ -811,7 +813,7 @@
       <label class="opt"><input type="radio" name="P8" value="cap" data-effort="2">
         <span class="body"><span class="row"><h4>Cap the catch-up</h4></span>
           <span class="why">Bound how many fixed steps one frame may run. Stops the death spiral: when the model falls behind, the colony slows down smoothly instead of the page locking up. A safety net rather than a fix, and it works without knowing the cause.</span>
-          <span class="meta">~5 lines in AntPatchSimulation &middot; bounded, testable</span></span></label>
+          <span class="meta">built &amp; measured &mdash; see P10</span></span></label>
       <label class="opt"><input type="radio" name="P8" value="colony" data-effort="3">
         <span class="body"><span class="row"><h4>Cap the colony</h4></span>
           <span class="why">Put a ceiling on ant count, or retire old workers as new ones hatch. Keeps cost bounded forever and is arguably truer to a real colony. It does change the simulation's behaviour, which is a design decision rather than an optimisation.</span>
@@ -819,7 +821,7 @@
       <label class="opt"><input type="radio" name="P8" value="tidy" data-effort="2">
         <span class="body"><span class="row"><h4>Tidy rebalanceTasks anyway</h4></span>
           <span class="why">Replace the nested filters with a single tally pass. Provably equivalent, a few lines, and removes a quadratic that will bite later even though it is not biting now.</span>
-          <span class="meta">~12 lines &middot; not the cause &middot; cheap hygiene</span></span></label>
+          <span class="meta">built &middot; proven identical across 5 seeds &times; 14 samples</span></span></label>
     </div>
   </div>
 
@@ -904,6 +906,180 @@
   </div>
 </section>
 
+
+<!-- ======================================================= P10 -->
+<section class="entry" data-proposal="P10" data-title="Resume freeze">
+  <div class="entry-head">
+    <span class="id">P10</span>
+    <div class="t">
+      <h2>A second freeze, and this one is not hypothetical</h2>
+      <div class="chips"><span class="chip warn">freeze bug</span><span class="chip ok">measured</span>
+        <span class="chip built">built &amp; fixed</span><span class="chip">effort: XS</span><span class="chip warn">impact: high</span></div>
+    </div>
+  </div>
+
+  <p class="col">
+    Leave the page open in a background tab, come back, and the ant simulation runs
+    <strong>1,800 model steps inside a single frame</strong> to catch up &mdash; synchronously, on the
+    main thread. I measured <strong>966&nbsp;ms</strong> of blocked page with a ten-ant colony. That is
+    <strong>236&times; a normal frame</strong>, and it grows with the colony.
+  </p>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="label">how it happens</span>
+      <pre><span class="c">// src/sim/AntPatchSimulation.ts</span>
+const maxDelta = rawDelta &gt; THROTTLED_MAX_DELTA
+  ? <span class="d">RESUME_MAX_DELTA</span>        <span class="c">// 30 seconds</span>
+  : document.hidden ? THROTTLED_MAX_DELTA : MAX_DELTA;
+
+this.accumulator += delta;
+<span class="d">while (this.accumulator &gt;= FRAME_STEP) {   // 30 / (1/60) = 1800 steps</span>
+<span class="d">  this.update(FRAME_STEP);</span>
+<span class="d">}</span></pre>
+      <p class="note" style="margin-top:0.6rem">
+        The browser throttles background timers, so the simulation falls behind while hidden. On
+        return, <code>rawDelta</code> exceeds a second, the clamp jumps to 30&nbsp;s, and the whole
+        debt is paid in one frame.
+      </p>
+    </div>
+    <div class="panel">
+      <span class="label">measured, same colony, before and after</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th>&nbsp;</th><th class="n">before</th><th class="n">after</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td>first frame after a 30s resume</td><td class="n">966 ms</td><td class="n">13.7 ms</td></tr>
+          <tr><td>worst frame during catch-up</td><td class="n">&mdash;</td><td class="n">17.2 ms</td></tr>
+          <tr><td>time to clear 30s of arrears</td><td class="n">1 frozen frame</td><td class="n">~6.3 s, smooth</td></tr>
+          <tr><td>on a phone ~10&times; slower</td><td class="n">~9.7 s frozen</td><td class="n">~140 ms</td></tr>
+        </tbody></table></div>
+      <p class="note" style="margin-top:0.6rem">
+        <strong>70&times;</strong> reduction in the worst frame. The colony still catches up &mdash; it
+        just fast-forwards visibly instead of stopping the page to do it.
+      </p>
+    </div>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P10" value="spread" data-effort="1" data-rec="1">
+        <span class="body"><span class="row"><h4>Spread the catch-up across frames</h4><span class="rec">recommended</span></span>
+          <span class="why">Bound the arrears at <code>RESUME_MAX_DELTA</code> and run at most 12 steps per frame &mdash; about 6&times; speed at 30&nbsp;fps. No freeze, and the colony still arrives where it would have been.</span>
+          <span class="meta">~6 lines &middot; built &amp; measured &middot; 966ms &rarr; 13.7ms</span></span></label>
+      <label class="opt"><input type="radio" name="P10" value="drop" data-effort="1">
+        <span class="body"><span class="row"><h4>Drop the arrears entirely</h4></span>
+          <span class="why">Cap the steps and zero the accumulator: the colony simply continues from where it was, as though it had been paused. Simplest, and no catch-up period at all. The cost is that time away no longer advances the colony.</span>
+          <span class="meta">~4 lines &middot; changes what "leaving it running" means</span></span></label>
+      <label class="opt"><input type="radio" name="P10" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span>
+          <span class="why">Worth knowing you are keeping a measured ~1&nbsp;second freeze on desktop and several seconds on a phone, every time someone returns to the tab.</span>
+          <span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>src/sim/AntPatchSimulation.ts</b> &mdash; <code>MAX_CATCHUP_STEPS</code>, bounded accumulator in <code>advanceFrame</code></div>
+    <pre><span class="a">const MAX_CATCHUP_STEPS = 12;</span>
+
+<span class="c">// bound the arrears as well as the per-frame work</span>
+<span class="a">this.accumulator = Math.min(this.accumulator + delta, RESUME_MAX_DELTA);</span>
+<span class="a">let steps = 0;</span>
+while (this.accumulator &gt;= FRAME_STEP<span class="a"> &amp;&amp; steps &lt; MAX_CATCHUP_STEPS</span>) {
+  this.update(FRAME_STEP);
+  this.accumulator -= FRAME_STEP;
+<span class="a">  steps += 1;</span>
+}</pre>
+    <p class="note">
+      Verified by setting <code>lastTime</code> 30&nbsp;s into the past on a grown colony and timing the
+      next <code>advanceFrame</code>, then draining the remaining arrears frame by frame and recording
+      the worst one.
+    </p>
+  </div></details>
+</section>
+
+
+<!-- ======================================================= P11 -->
+<section class="entry" data-proposal="P11" data-title="Static map cache on pan">
+  <div class="entry-head">
+    <span class="id">P11</span>
+    <div class="t"><h2>Panning the train map rebuilds all of it, every frame</h2>
+      <div class="chips"><span class="chip ok">measured</span><span class="chip judge">not built</span>
+        <span class="chip">effort: M</span><span class="chip">impact: mobile</span></div></div>
+  </div>
+
+  <p class="col">
+    The train scene caches its terrain, rails and trackside details to an offscreen canvas, which is
+    exactly right. But the cache key includes the pan offset rounded to a tenth of a pixel, so the
+    moment you drag the map the key changes and the whole thing re-renders.
+  </p>
+
+  <div class="grid2">
+    <div class="panel"><span class="label">measured during a real drag</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th>&nbsp;</th><th class="n">calls</th><th class="n">median</th><th class="n">worst</th></tr></thead>
+        <tbody>
+          <tr><td>idle (cache hit)</td><td class="n">30</td><td class="n">0 ms</td><td class="n">—</td></tr>
+          <tr class="hl"><td>dragging (cache miss)</td><td class="n">22 of 24 moves</td><td class="n">7.3 ms</td><td class="n">10.2 ms</td></tr>
+        </tbody></table></div>
+      <p class="note" style="margin-top:0.6rem">
+        The cache is perfect when the map is still &mdash; 30 consecutive hits, zero cost. It simply
+        never survives a pan.
+      </p></div>
+    <div class="panel"><span class="label">does it matter?</span>
+      <p style="font-size:0.93rem">
+        On this Mac, no: the stats panel runs on a 50&nbsp;ms budget and 7.3&nbsp;ms is 15% of it.
+        On a phone roughly 10&times; slower it is <strong>~73&nbsp;ms &mdash; over the whole frame
+        budget by itself</strong>, which would make dragging the map visibly stutter.
+      </p>
+      <p class="note" style="margin-top:0.6rem">
+        I have not confirmed that on a device. Filed as "measured cause, unconfirmed symptom".
+      </p></div>
+  </div>
+
+  <div class="stack-sm"><span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P11" value="margin" data-effort="5" data-rec="1">
+        <span class="body"><span class="row"><h4>Cache with a margin, blit a sub-rect</h4><span class="rec">recommended</span></span>
+          <span class="why">Render the static map onto a canvas ~25% larger than the viewport and key it on size and zoom only. While panning, <code>drawImage</code> a different sub-rect of it &mdash; which is free. Re-render only when the pan walks past the margin, or the zoom changes.</span>
+          <span class="meta">~40 lines &middot; the standard tile-map approach &middot; not built</span></span></label>
+      <label class="opt"><input type="radio" name="P11" value="defer" data-effort="2">
+        <span class="body"><span class="row"><h4>Re-render after the drag ends</h4></span>
+          <span class="why">During a drag, blit the stale cache at an offset and accept slightly wrong edges; re-render once on pointerup. Much simpler, and the artefact only shows at the two trailing edges while your finger is down.</span>
+          <span class="meta">~15 lines &middot; visible edge artefact during drag</span></span></label>
+      <label class="opt"><input type="radio" name="P11" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span>
+          <span class="why">It is 15% of the frame budget on a desktop and the panel is already throttled to 20&nbsp;fps. Reasonable to wait until someone reports stutter on a phone.</span>
+          <span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation sketch</summary><div class="inner">
+    <div class="files"><b>index.html</b> &mdash; <code>drawStaticMap</code> in the OpenTTD scene (around line 4190)</div>
+    <pre><span class="c">// today: pan offsets are in the key, so every drag frame is a miss</span>
+<span class="d">const key = [size.w, size.h, size.dpr, view.tileW, view.ox, view.oy].join(':');</span>
+
+<span class="c">// proposed: key on what actually changes the pixels...</span>
+<span class="a">const key = [size.w, size.h, size.dpr, view.tileW].join(':');</span>
+<span class="a">const MARGIN = 0.25;                       // render 25% beyond the viewport</span>
+
+<span class="c">// ...and move within the cached canvas instead of rebuilding it</span>
+<span class="a">const dx = view.ox - this.staticMapCache.ox;</span>
+<span class="a">const dy = view.oy - this.staticMapCache.oy;</span>
+<span class="a">if (Math.abs(dx) &lt; marginPx &amp;&amp; Math.abs(dy) &lt; marginPx) {</span>
+<span class="a">  g.drawImage(this.staticMapCache.canvas,</span>
+<span class="a">    marginPx - dx, marginPx - dy, size.w * dpr, size.h * dpr,</span>
+<span class="a">    0, 0, size.w, size.h);</span>
+<span class="a">  return;</span>
+<span class="a">}</span>
+<span class="c">// otherwise fall through to a full re-render, recentred</span></pre>
+    <p class="note">
+      Not built. It touches the scene's view maths and I would want to watch a real drag before and
+      after rather than trust a measurement taken through a throttled pane.
+    </p>
+  </div></details>
+</section>
+
 <!-- ======================================================= PLAN -->
 <section class="entry" id="plan-section">
   <div class="entry-head"><span class="id">&#9633;</span>
@@ -945,6 +1121,8 @@
       <div class="leaf"><b>5,803 lines / 90 helpers</b> in the train scene</div>
       <div class="leaf"><b>4.1 &rarr; 58.6 ms/s</b> model cost as the colony grows from 3 to 21 ants; draw flat at ~14</div>
       <div class="leaf"><b>72 ms</b> first contentful paint, <b>97</b> DOM nodes, <b>376 KB</b> decoded HTML</div>
+      <div class="leaf"><b>966 ms</b> blocked in one frame on tab resume, 236&times; a normal frame &mdash; now 13.7 ms</div>
+      <div class="leaf"><b>5 seeds &times; 14 samples</b> identical before and after the rebalanceTasks refactor</div>
     </details>
     <details><summary>branches I deliberately did not take</summary>
       <div class="leaf q">splitting the 8,900-line index.html into modules &mdash; real, but not "a small change"</div>
@@ -963,10 +1141,10 @@
     <div class="panel"><span class="label">what I would explore next, in order</span>
       <ol class="tight" style="padding-left:1.2rem">
         <li><b>A real flame chart of the ant model</b> under CPU throttling. I measured that it grows and roughly how much, but not what inside it is hot &mdash; see P8. This is the one that matters.</li>
-        <li><b>Static map cache churn.</b> It re-renders on a key change; I did not check how often that key moves during normal panning. The only one of my original four still untouched.</li>
+        <li><b>Confirm P11 on a real phone.</b> I measured the cause (7.3&nbsp;ms per pan frame) but not the symptom.</li>
         <li><b>The P7 clamp</b>, with your eyes rather than my arithmetic.</li>
         <li><b>Real-visitor data.</b> Device and connection mix from Vercel Analytics would settle P9 and tell you whether the phone numbers in P8 matter.</li>
-        <li class="q" style="color:var(--dim)">Done tonight: cold-load timing (P9) and model-vs-draw cost (P8), both of which were on this list.</li>
+        <li class="q" style="color:var(--dim)">Done tonight: cold-load timing (P9), model-vs-draw cost (P8) and static map cache churn (P11) &mdash; all three were on this list, plus a freeze bug I was not looking for (P10).</li>
       </ol></div>
     <div class="panel"><span class="label">how to look at any of this</span>
       <pre><span class="c"># the prototypes live on a worktree branch</span>
