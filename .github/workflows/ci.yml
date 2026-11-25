@@ -50,3 +50,24 @@ jobs:
 
       - name: Build project
         run: pnpm build
+
+      - name: Run unit tests
+        run: pnpm test
+
+      - name: Measure panel flora
+        run: pnpm flora
+
+      - name: Measure flora gardens
+        run: pnpm flora:gardens
+
+      - name: Check palette lock
+        run: pnpm palette:check
+
+      - name: Check portrait asset
+        run: pnpm portrait:check
+
+      # Informational until the design budgets are settled: the colour and
+      # font-size budgets are mid-change, so this reports drift without
+      # gating the build. Drop the `|| true` once the budgets are agreed.
+      - name: Audit design drift (informational)
+        run: pnpm audit:design --strict || true
