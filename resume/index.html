@@ -105,11 +105,33 @@
     li { margin: 0.5rem 0; padding-left: 0.1rem; }
     li::marker { color: #e1c978; }
     footer { margin-top: 3rem; font-size: 0.85rem; color: #cec8b9; }
+    /* The vine lives in the page's own left and right margins. .page is capped
+       at 66rem and centred, so above ~1200px there is real empty gutter either
+       side -- a tall narrow strip, which is the shape the vine was built for.
+       Fixed rather than absolute, so it stays alongside you as you scroll.
+       pointer-events: none because it must never eat a click on the text. */
+    .vine-margin {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: min(calc((100vw - 66rem) / 2 - 0.9rem), 13rem);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .vine-margin.left { left: 0.3rem; }
+    .vine-margin.right { right: 0.3rem; }
+    .vine-margin canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .page { position: relative; z-index: 1; }
+    /* Below this there is no gutter to grow in. */
+    @media (max-width: 1200px) { .vine-margin { display: none; } }
+
     @media (max-width: 480px) { .top-nav { gap: 0.8rem; margin-bottom: 2rem; } .entry-heading { display: block; } .dates { margin-top: 0.35rem; } }
-    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, footer { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
+    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, footer, .vine-margin { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
   </style>
 </head>
 <body>
+  <div class="vine-margin left" aria-hidden="true"><canvas id="vine-left"></canvas></div>
+  <div class="vine-margin right" aria-hidden="true"><canvas id="vine-right"></canvas></div>
   <main class="page">
     <nav class="top-nav" aria-label="Resume navigation">
       <a class="back" href="/">← Back to my website</a>
@@ -187,5 +209,27 @@
     </section>
     <footer>All opinions are my own and do not represent my employer.</footer>
   </main>
+  <!-- Deferred and external on purpose. This page is the one search sends
+       people to, and it is 11KB; inlining 40KB of growth algorithm into it
+       would make the decoration three times the weight of the document.
+       Deferred, it arrives after paint and is cached across visits. -->
+  <script src="/flora.js" defer></script>
+  <script defer>
+    addEventListener('DOMContentLoaded', function () {
+      // Nothing to grow into below the gutter breakpoint, and nothing to grow
+      // for someone who asked not to see motion.
+      if (!window.createFlora) return;
+      if (!matchMedia('(min-width: 1201px)').matches) return;
+      var vines = [];
+      ['vine-left', 'vine-right'].forEach(function (id) {
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var flora = window.createFlora(canvas);
+        flora.plant(id);          // the id is the seed, so the two differ
+        vines.push(flora);
+      });
+      if (vines.length) window.runFlora(vines);
+    });
+  </script>
 </body>
 </html>

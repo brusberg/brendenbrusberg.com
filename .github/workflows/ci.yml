@@ -63,6 +63,9 @@ jobs:
       - name: Check palette lock
         run: pnpm palette:check
 
+      - name: Check flora bundle is in step with index.html
+        run: pnpm flora:bundle:check
+
       - name: Check portrait asset
         run: pnpm portrait:check
 

@@ -22,7 +22,9 @@
     "portrait:check": "node scripts/build-portrait.mjs --check",
     "soak": "node scripts/soak-webgl.mjs",
     "soak:long": "node scripts/soak-webgl.mjs --minutes 60 --headful",
-    "verify": "pnpm test && pnpm flora && pnpm flora:gardens && pnpm palette:check && pnpm portrait:check && (pnpm audit:design --strict || true)"
+    "verify": "pnpm test && pnpm flora && pnpm flora:gardens && pnpm palette:check && pnpm portrait:check && pnpm flora:bundle:check && (pnpm audit:design --strict || true)",
+    "flora:bundle": "node scripts/build-flora-bundle.mjs",
+    "flora:bundle:check": "node scripts/build-flora-bundle.mjs --check"
   },
   "devDependencies": {
     "postcss": "^8.5.15",
