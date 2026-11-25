@@ -9144,7 +9144,12 @@
         // a tall column, well under 1 on a short wide one.
         const SLIMNESS = () => Math.min(1, boxH / Math.max(1, boxW * 2.2));
         // Stems are packed closer when there is no height to climb into.
-        const VINE_SPACING = 118;
+        // Stems are spaced in proportion to how big they are, not at a fixed
+        // pixel gap. A fixed 118px was tuned against the panel column's 20.6px
+        // stem; once the resume margin's stem dropped to 12.5px the same gap
+        // left room for only two stems in a 208px strip, which read as too few.
+        // 4.6 stem lengths keeps the panel column at the four it already had.
+        const VINE_SPACING_STEMS = 4.6;
         const VINE_SPACING_MIN_FRAC = 0.55;
         const RAGGED_MIN = 0.24;   // skyline spread on a tall column
         const RAGGED_MAX = 0.58;   // ...and on a short one
@@ -9202,6 +9207,15 @@
         })();
         const STEP_SCALE = VINE_ANIM === 'fine' ? 0.5 : 1;
         const POP_STEPS = 2.5;     // how long a new segment takes to settle in
+
+        // Flowers and leaves open over REAL TIME, not over growth steps.
+        // growthMs is FILL_SECONDS divided by lifeCap, so a step lasts 30ms in
+        // the resume margin and 424ms on the stats column -- fourteen times
+        // longer. Tied to steps, a bud on the short column materialised in a
+        // single frame and popped; tied to the clock, it opens at the same rate
+        // everywhere regardless of how fast the stem is climbing.
+        const BLOOM_MS = 420;
+        let clockMs = 0;
 
         // ---- density -------------------------------------------------------
         // Candidate turns, tried in this order, first one under STEER_LO wins.
@@ -9262,6 +9276,7 @@
         const gardens = new Map();
         let currentPanel = null;
 
+        let lastPlacedAt = -1e9;
         let seed = 0, rnd = null, sown = false;
         let vines = [], buds = [], parked = [];
         let stepNo = 0;
@@ -9468,7 +9483,21 @@
           //
           // Width is stable, so the garden is the same size whatever panel it
           // is shown in, and the height only decides how far up it gets.
-          stemLen = Math.max(7, Math.min(22, boxW / 20));
+          // Scale from the width, with a floor set by the height for boxes that
+          // are extremely tall and narrow.
+          //
+          // Width alone is right for the site's own column, where the width is
+          // the same on every panel and only the height moves -- that is what
+          // keeps the garden the same size whichever panel you land on. But the
+          // resume's margin is 156x1267, and width/20 gives a 7.8px stem in a
+          // box 1267px tall: 162 stem lengths from root to ceiling, against 64
+          // in the panel column. Long wiry single strands, which is exactly how
+          // it looked.
+          //
+          // The height term only ever wins when the box is taller than about
+          // 1.44x what the width implies, so for every column on the site --
+          // 342 to 413px wide, at most 1315px tall -- this changes nothing.
+          stemLen = Math.max(7, Math.min(22, Math.max(boxW / 20, boxH / 72)));
           step = stemLen * STEP_FRAC * STEP_SCALE;
           rebudget();
           sizeGrid();
@@ -9477,7 +9506,7 @@
           // always at least half a slot apart: a real hedge rather than a clump.
           const slim = SLIMNESS();
           const ragged = RAGGED_MIN + (RAGGED_MAX - RAGGED_MIN) * (1 - slim);
-          const spacing = VINE_SPACING * (VINE_SPACING_MIN_FRAC + (1 - VINE_SPACING_MIN_FRAC) * slim);
+          const spacing = stemLen * VINE_SPACING_STEMS * (VINE_SPACING_MIN_FRAC + (1 - VINE_SPACING_MIN_FRAC) * slim);
           const count = Math.max(2, Math.min(6, Math.round(boxW / spacing)));
 
           // Top-out heights are STRATIFIED rather than drawn independently.
@@ -9679,7 +9708,8 @@
             if (p.idle) { keep(b); continue; }
             if (p.bloomInPlace) {
               b.prog -= 1;
-              p.vine.flowers.push({ x: b.x, y: b.y, petals: p.petals });
+              p.vine.flowers.push({ x: b.x, y: b.y, petals: p.petals, at: clockMs });
+              lastPlacedAt = clockMs;
               deposit(p.vine.ax0 + b.x, b.y);
               continue;
             }
@@ -9690,11 +9720,12 @@
             if (cell !== b.t0) { b.t2 = b.t1; b.t1 = b.t0; b.t0 = cell; }
 
             if (p.wantsLeaf && p.leafOk) {
-              p.vine.leaves.push({ x: p.nx, y: p.ny, s: p.leafSize, d: b.depth, dir: p.leafDir });
+              p.vine.leaves.push({ x: p.nx, y: p.ny, s: p.leafSize, d: b.depth, dir: p.leafDir, at: clockMs });
             }
 
             if (p.tops) {
-              const flower = { x: p.nx, y: p.ny, petals: p.petals };
+              const flower = { x: p.nx, y: p.ny, petals: p.petals, at: clockMs };
+              lastPlacedAt = clockMs;
               p.vine.flowers.push(flower);
               deposit(p.vine.ax0 + p.nx, p.ny);
               b.prog -= 1;
@@ -9839,6 +9870,8 @@
           // exactly the sub-step phase -- which is what lets a 15Hz model be
           // drawn smoothly at 30fps without touching the model.
           const phase = settled ? 1 : Math.min(1, acc / growthMs);
+        // 0 to 1 over BLOOM_MS from the moment a flower or leaf was placed.
+        const bloom = (at) => (at === undefined ? 1 : Math.min(1, (clockMs - at) / BLOOM_MS));
 
           // creep draws each live bud's NEWEST segment at `phase` rather than
           // extrapolating a tip along the angle the bud is currently facing.
@@ -9870,20 +9903,37 @@
               drawStem(ox, sg, tips && tips.has(sg) ? phase : 1);
             }
             for (const l of v.leaves) {
+              const t = bloom(l.at);
+              if (t <= 0) continue;
               g.fillStyle = l.d === 0 ? '#6d8f4a' : '#7fa054';
+              g.globalAlpha = BASE_ALPHA * t;
               const lx = snap(ox + l.x), ly = snap(l.y);
-              g.fillRect(lx, ly, PX * l.s * l.dir, PX);
-              g.fillRect(lx, ly - PX, PX * (l.s - 1) * l.dir, PX);
+              // The leaf unfurls: one block, then its full span.
+              const span = Math.max(1, Math.round(l.s * t));
+              g.fillRect(lx, ly, PX * span * l.dir, PX);
+              if (t > 0.6) g.fillRect(lx, ly - PX, PX * (span - 1) * l.dir, PX);
+              g.globalAlpha = BASE_ALPHA;
             }
             for (const f of v.flowers) {
+              const t = bloom(f.at);
+              if (t <= 0) continue;
               const fx = snap(ox + f.x), fy = snap(f.y);
-              g.fillStyle = 'rgba(214, 189, 104, 0.92)';
-              for (let i = 0; i < f.petals; i += 1) {
-                const a = (i / f.petals) * Math.PI * 2;
-                g.fillRect(snap(fx + Math.cos(a) * PX * 1.7), snap(fy + Math.sin(a) * PX * 1.7), PX, PX);
+              g.globalAlpha = BASE_ALPHA * (0.35 + 0.65 * t);
+              // A bud, then petals pushed out to their full radius. Two
+              // discrete radii, because everything here snaps to a 3px grid and
+              // a continuous one would only ever land on these two anyway.
+              if (t > 0.3) {
+                g.fillStyle = 'rgba(214, 189, 104, 0.92)';
+                const radius = PX * (t < 0.7 ? 1 : 1.7);
+                const petals = t < 0.55 ? Math.max(3, f.petals - 2) : f.petals;
+                for (let i = 0; i < petals; i += 1) {
+                  const a = (i / petals) * Math.PI * 2;
+                  g.fillRect(snap(fx + Math.cos(a) * radius), snap(fy + Math.sin(a) * radius), PX, PX);
+                }
               }
               g.fillStyle = '#fff8e8';
               g.fillRect(fx, fy, PX, PX);
+              g.globalAlpha = BASE_ALPHA;
             }
           }
           g.globalAlpha = 1;
@@ -9893,6 +9943,7 @@
 
         // ---- the frame hook ---------------------------------------------------
         function tick(dtMs) {
+          clockMs += dtMs;
           boxW = el.clientWidth;
           boxH = el.clientHeight;
           if (!visible() || !seed) return;
@@ -9918,7 +9969,10 @@
           const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
           if (dpr !== lastDpr) { lastDpr = dpr; dirty = true; }
 
-          if (settled) { if (dirty) paint(); return; }
+          // A bud placed on the last growth step is still opening after the
+          // garden has settled, so settling alone is not a reason to stop
+          // painting.
+          if (settled) { if (dirty || clockMs - lastPlacedAt < BLOOM_MS) paint(); return; }
 
           if (prefersReducedMotion && prefersReducedMotion.matches) {
             let guard = 0;
