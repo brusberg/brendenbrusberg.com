@@ -23,12 +23,17 @@
   'use strict';
 
   const params = new URLSearchParams(location.search);
+  // Clear the sticky flag BEFORE the early return, or ?watchdog=0 only
+  // silences this one page load and the next plain visit turns it back on --
+  // the off switch stopped working the moment it was most wanted, on a host
+  // where the only other way off is the devtools console.
+  if (params.get('watchdog') === '0') localStorage.removeItem('watchdog');
+  if (params.get('watchdog') === '1') localStorage.setItem('watchdog', '1');
+
   const enabled =
     params.get('watchdog') === '1' ||
     (params.get('watchdog') !== '0' && localStorage.getItem('watchdog') === '1');
   if (!enabled) return;
-  if (params.get('watchdog') === '1') localStorage.setItem('watchdog', '1');
-  if (params.get('watchdog') === '0') localStorage.removeItem('watchdog');
 
   // --- config ------------------------------------------------------------
   const STALL_MS = 250;        // a gap this long between frames counts as a hitch
