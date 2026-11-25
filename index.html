@@ -2683,12 +2683,12 @@
 
           this.trains = [
             this.makeTrain('coal-1', 'No. 1 coal', 'coal', ['mine', 'plant'], '#d6bd68', { x: 3, y: 12 }, 0.0122, 5),
-            this.makeTrain('coal-2', 'No. 2 coal', 'coal', ['mine', 'plant'], '#fff0a3', { x: 12, y: 19 }, 0.0108, 6),
-            this.makeTrain('wood-1', 'Forest run', 'lumber', ['forest', 'town'], '#91b682', { x: 18, y: 8 }, 0.0108, 5),
-            this.makeTrain('wood-2', 'Forest extra', 'lumber', ['town', 'forest'], '#b7c98b', { x: 18, y: 15 }, 0.0102, 4),
-            this.makeTrain('ore-1', 'Quarry ore', 'ore', ['quarry', 'factory'], '#b08345', { x: 51, y: 23 }, 0.0114, 5),
+            this.makeTrain('coal-2', 'No. 2 coal', 'coal', ['mine', 'plant'], '#fff8e8', { x: 12, y: 19 }, 0.0108, 6),
+            this.makeTrain('wood-1', 'Forest run', 'lumber', ['forest', 'town'], '#a8c77d', { x: 18, y: 8 }, 0.0108, 5),
+            this.makeTrain('wood-2', 'Forest extra', 'lumber', ['town', 'forest'], '#6c7e45', { x: 18, y: 15 }, 0.0102, 4),
+            this.makeTrain('ore-1', 'Quarry ore', 'ore', ['quarry', 'factory'], '#8b7f5e', { x: 51, y: 23 }, 0.0114, 5),
             this.makeTrain('ore-2', 'Ore extra', 'ore', ['quarry', 'factory'], '#d6bd68', { x: 34, y: 32 }, 0.0102, 6),
-            this.makeTrain('ore-3', 'Ore local', 'ore', ['quarry', 'factory'], '#9cb1a7', { x: 32, y: 15 }, 0.0098, 5)
+            this.makeTrain('ore-3', 'Ore local', 'ore', ['quarry', 'factory'], '#8fa9aa', { x: 32, y: 15 }, 0.0098, 5)
           ];
           this.enterStation(this.trains[0], 'mine', this.trains[0].tile);
           this.finishStationWork(this.trains[0]);
@@ -5033,12 +5033,12 @@
           const hw = view.tileW * 0.5;
           const hh = view.tileH * 0.5;
           const palettes = {
-            grass: ['#15301d', '#1b3a22', '#102817', '#203d24', '#182f1b'],
-            forest: ['#102816', '#17341d', '#0b1f11', '#1e3a20', '#14301a'],
-            forestHill: ['#18351d', '#1f4224', '#102717', '#29472b', '#19351d'],
-            hill: ['#1d3a22', '#254328', '#17311c', '#2f4b2d', '#203923'],
-            field: ['#233a22', '#2d4527', '#1d321e', '#384f2c', '#263b20'],
-            water: ['#0e2b39', '#123443', '#0a2330', '#173d4e', '#102f3d']
+            grass: ['#15301d', '#203923', '#102817', '#203d24', '#15301d'],
+            forest: ['#102817', '#15301d', '#102817', '#203923', '#15301d'],
+            forestHill: ['#15301d', '#203d24', '#102817', '#203d24', '#203923'],
+            hill: ['#203923', '#203d24', '#15301d', '#295a31', '#203923'],
+            field: ['#203923', '#203d24', '#15301d', '#295a31', '#203d24'],
+            water: ['#24251e', '#203923', '#24251e', '#203923', '#24251e']
           };
           const colors = palettes[kind] || palettes.grass;
           const base = colors[Math.floor(grain * colors.length) % colors.length];
@@ -5058,24 +5058,24 @@
             const ry = p.y - hh * 0.72 + this.hash01(x, y, i + 30) * hh * 1.44;
             const bright = this.hash01(x, y, i + 50);
             if (kind === 'water') {
-              g.fillStyle = bright > 0.66 ? '#2f6072' : bright > 0.35 ? '#173f50' : '#0b1e29';
+              g.fillStyle = bright > 0.66 ? '#295a31' : bright > 0.35 ? '#203d24' : '#24251e';
               g.fillRect(Math.round(rx), Math.round(ry), Math.max(2, Math.round(view.tileH * 0.13)), Math.max(1, Math.round(view.tileH * 0.03)));
             } else {
-              g.fillStyle = bright > 0.72 ? '#31572f' : bright > 0.46 ? '#0d2414' : '#213520';
-              if (kind === 'field') g.fillStyle = bright > 0.58 ? '#586942' : bright > 0.32 ? '#314226' : '#1f2f1b';
-              if (kind === 'forest') g.fillStyle = bright > 0.58 ? '#2a5a31' : bright > 0.28 ? '#102717' : '#09190f';
-              if (kind === 'forestHill') g.fillStyle = bright > 0.58 ? '#315d34' : bright > 0.28 ? '#142d18' : '#0b1b10';
-              if (kind === 'hill') g.fillStyle = bright > 0.7 ? '#405f36' : bright > 0.38 ? '#1a351d' : '#102616';
+              g.fillStyle = bright > 0.72 ? '#295a31' : bright > 0.46 ? '#102817' : '#203923';
+              if (kind === 'field') g.fillStyle = bright > 0.58 ? '#2d6a35' : bright > 0.32 ? '#203d24' : '#15301d';
+              if (kind === 'forest') g.fillStyle = bright > 0.58 ? '#295a31' : bright > 0.28 ? '#102817' : '#07120d';
+              if (kind === 'forestHill') g.fillStyle = bright > 0.58 ? '#295a31' : bright > 0.28 ? '#15301d' : '#07120d';
+              if (kind === 'hill') g.fillStyle = bright > 0.7 ? '#295a31' : bright > 0.38 ? '#203923' : '#102817';
               const dot = bright > 0.82 ? view.tileH * (overview ? 0.07 : 0.095) : view.tileH * (overview ? 0.036 : 0.048);
               g.fillRect(Math.round(rx), Math.round(ry), Math.max(1, Math.round(dot)), Math.max(1, Math.round(dot)));
               if (!overview && bright > 0.88) {
-                g.fillStyle = kind === 'field' ? '#6d7445' : '#44633a';
+                g.fillStyle = kind === 'field' ? '#6c7e45' : '#2d6a35';
                 g.fillRect(Math.round(rx + dot * 1.4), Math.round(ry - dot * 0.5), Math.max(1, Math.round(dot * 0.75)), Math.max(1, Math.round(dot * 0.45)));
               }
             }
           }
           if (kind !== 'water' && !overview) {
-            g.strokeStyle = kind === 'field' ? '#455331' : kind === 'hill' || kind === 'forestHill' ? '#314f2e' : '#18311c';
+            g.strokeStyle = kind === 'field' ? '#295a31' : kind === 'hill' || kind === 'forestHill' ? '#295a31' : '#15301d';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.015));
             if (this.hash01(x, y, 143) > 0.62) {
               g.beginPath();
@@ -5084,7 +5084,7 @@
               g.stroke();
             }
             if (this.hash01(x, y, 197) > 0.74) {
-              g.strokeStyle = kind === 'forest' ? '#0b1d10' : '#274327';
+              g.strokeStyle = kind === 'forest' ? '#102817' : '#203d24';
               g.beginPath();
               g.moveTo(Math.round(p.x - hw * 0.36), Math.round(p.y - hh * 0.1));
               g.lineTo(Math.round(p.x + hw * 0.36), Math.round(p.y + hh * 0.12));
@@ -5093,7 +5093,7 @@
           }
           if (kind === 'hill' || kind === 'forestHill') {
             const elevation = this.terrainHeight(x, y);
-            g.strokeStyle = elevation > 0.16 ? '#667548' : '#49623d';
+            g.strokeStyle = elevation > 0.16 ? '#6c7e45' : '#2d6a35';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.02));
             for (let i = 0; i < 3; i++) {
               const lift = i * hh * 0.18;
@@ -5102,7 +5102,7 @@
               g.lineTo(Math.round(p.x + hw * (0.12 + i * 0.1)), Math.round(p.y - hh * 0.15 - lift));
               g.stroke();
             }
-            g.fillStyle = 'rgba(9, 17, 10, 0.24)';
+            g.fillStyle = 'rgba(7, 18, 13, 0.24)';
             g.beginPath();
             g.moveTo(Math.round(p.x - hw), Math.round(p.y));
             g.lineTo(Math.round(p.x), Math.round(p.y + hh));
@@ -5112,7 +5112,7 @@
             g.fill();
           }
           if (kind === 'field' && !overview) {
-            g.strokeStyle = '#3d4f2c';
+            g.strokeStyle = '#295a31';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.025));
             for (let i = -1; i <= 1; i++) {
               g.beginPath();
@@ -5124,15 +5124,15 @@
           this.drawTileMicroTexture(g, view, x, y, kind, p, hw, hh);
           g.restore();
           g.strokeStyle = kind === 'water'
-            ? (overview ? 'rgba(23, 61, 75, 0.48)' : '#173d4b')
-            : (overview ? 'rgba(33, 58, 33, 0.34)' : '#213a21');
+            ? (overview ? 'rgba(32, 57, 35, 0.48)' : '#203923')
+            : (overview ? 'rgba(32, 57, 35, 0.34)' : '#203923');
           g.lineWidth = 1;
           g.stroke();
           g.beginPath();
           g.moveTo(p.x - hw, p.y);
           g.lineTo(p.x, p.y + hh);
           g.lineTo(p.x + hw, p.y);
-          g.strokeStyle = overview ? 'rgba(12, 25, 15, 0.22)' : '#0c190f';
+          g.strokeStyle = overview ? 'rgba(7, 18, 13, 0.22)' : '#07120d';
           g.lineWidth = 1;
           g.stroke();
         }
@@ -5143,7 +5143,7 @@
           const centerX = p.x - hw * 0.72;
           const centerY = p.y - hh * 0.58;
           if (kind === 'water') {
-            const colors = ['#1e4f62', '#2f6072', '#0a2330', '#153846'];
+            const colors = ['#295a31', '#295a31', '#24251e', '#203923'];
             for (let i = 0; i < (overview ? 2 : 8); i++) {
               const t = this.hash01(x, y, 210 + i);
               const rx = centerX + this.hash01(x, y, 230 + i) * hw * 1.44;
@@ -5158,9 +5158,9 @@
 
           const isForestLike = kind === 'forest' || kind === 'forestHill';
           const clumps = isForestLike ? 11 : kind === 'field' ? 7 : 8;
-          const dark = isForestLike ? '#08170d' : kind === 'field' ? '#1b2b18' : '#0d2314';
-          const mid = isForestLike ? '#1f4b28' : kind === 'field' ? '#455a33' : '#284528';
-          const light = isForestLike ? '#3b6a38' : kind === 'field' ? '#687445' : '#385c34';
+          const dark = isForestLike ? '#07120d' : kind === 'field' ? '#15301d' : '#102817';
+          const mid = isForestLike ? '#203d24' : kind === 'field' ? '#295a31' : '#203d24';
+          const light = isForestLike ? '#2d6a35' : kind === 'field' ? '#6c7e45' : '#295a31';
           for (let i = 0; i < clumps; i++) {
             const rx = centerX + this.hash01(x, y, 310 + i) * hw * 1.44;
             const ry = centerY + this.hash01(x, y, 340 + i) * hh * 1.16;
@@ -5172,7 +5172,7 @@
           }
 
           if (!overview && (kind === 'grass' || kind === 'forest')) {
-            g.fillStyle = kind === 'forest' ? '#0a1f10' : '#102a16';
+            g.fillStyle = kind === 'forest' ? '#102817' : '#102817';
             for (let i = 0; i < 5; i++) {
               const rx = centerX + this.hash01(x, y, 430 + i) * hw * 1.44;
               const ry = centerY + this.hash01(x, y, 460 + i) * hh * 1.16;
@@ -5184,7 +5184,7 @@
           if (overview) return;
 
           if (kind === 'field' && !overview) {
-            g.fillStyle = '#6d7445';
+            g.fillStyle = '#6c7e45';
             for (let i = 0; i < 4; i++) {
               const offset = (i - 1.5) * hh * 0.18;
               g.fillRect(Math.round(p.x - hw * 0.38), Math.round(p.y + offset), Math.round(hw * 0.42), unit);
@@ -5370,32 +5370,32 @@
         drawGrassTuft(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.035);
           const s = view.tileH;
-          g.fillStyle = '#0b170e';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y + s * 0.04), Math.round(s * 0.36), Math.max(1, Math.round(s * 0.04)));
-          g.fillStyle = prop.seed > 0.5 ? '#315d30' : '#274d2a';
+          g.fillStyle = prop.seed > 0.5 ? '#295a31' : '#295a31';
           g.fillRect(Math.round(p.x - s * 0.11), Math.round(p.y - s * 0.05), Math.max(1, Math.round(s * 0.06)), Math.max(2, Math.round(s * 0.15)));
           g.fillRect(Math.round(p.x + s * 0.02), Math.round(p.y - s * 0.08), Math.max(1, Math.round(s * 0.05)), Math.max(2, Math.round(s * 0.18)));
-          g.fillStyle = '#537348';
+          g.fillStyle = '#6c7e45';
           g.fillRect(Math.round(p.x + s * 0.09), Math.round(p.y - s * 0.02), Math.max(1, Math.round(s * 0.05)), Math.max(1, Math.round(s * 0.08)));
         }
 
         drawBrushPatch(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.035);
           const s = view.tileH;
-          g.fillStyle = '#061009';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.24), Math.round(p.y + s * 0.04), Math.round(s * 0.5), Math.max(1, Math.round(s * 0.06)));
-          g.fillStyle = '#172c18';
+          g.fillStyle = '#15301d';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y - s * 0.12), Math.round(s * 0.22), Math.round(s * 0.14));
-          g.fillStyle = '#2b5430';
+          g.fillStyle = '#295a31';
           g.fillRect(Math.round(p.x - s * 0.03), Math.round(p.y - s * 0.18), Math.round(s * 0.24), Math.round(s * 0.18));
-          g.fillStyle = '#486337';
+          g.fillStyle = '#2d6a35';
           g.fillRect(Math.round(p.x + s * 0.12), Math.round(p.y - s * 0.05), Math.max(1, Math.round(s * 0.07)), Math.max(1, Math.round(s * 0.07)));
         }
 
         drawFieldStubble(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.035);
           const s = view.tileH;
-          g.strokeStyle = prop.seed > 0.5 ? '#536239' : '#344628';
+          g.strokeStyle = prop.seed > 0.5 ? '#2d6a35' : '#203d24';
           g.lineWidth = Math.max(1, Math.round(s * 0.025));
           for (let i = -2; i <= 2; i++) {
             g.beginPath();
@@ -5408,11 +5408,11 @@
         drawSmallPine(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.035);
           const s = view.tileH;
-          g.fillStyle = '#061009';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y + s * 0.08), Math.round(s * 0.34), Math.max(1, Math.round(s * 0.06)));
-          g.fillStyle = '#5d3e22';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x - s * 0.025), Math.round(p.y - s * 0.02), Math.max(1, Math.round(s * 0.05)), Math.round(s * 0.2));
-          g.fillStyle = '#1a4b25';
+          g.fillStyle = '#203d24';
           g.fillRect(Math.round(p.x - s * 0.14), Math.round(p.y - s * 0.27), Math.round(s * 0.28), Math.round(s * 0.13));
           g.fillStyle = '#2d6a35';
           g.fillRect(Math.round(p.x - s * 0.1), Math.round(p.y - s * 0.37), Math.round(s * 0.2), Math.round(s * 0.12));
@@ -5421,7 +5421,7 @@
         drawWaterRipple(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.02);
           const s = view.tileH;
-          g.strokeStyle = prop.seed > 0.55 ? '#2b5f72' : '#173e4d';
+          g.strokeStyle = prop.seed > 0.55 ? '#295a31' : '#203923';
           g.lineWidth = Math.max(1, Math.round(s * 0.02));
           for (let i = -1; i <= 1; i++) {
             g.beginPath();
@@ -5434,32 +5434,32 @@
         drawReedClump(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.03);
           const s = view.tileH;
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y + s * 0.08), Math.round(s * 0.4), Math.max(1, Math.round(s * 0.05)));
-          g.fillStyle = '#405a32';
+          g.fillStyle = '#295a31';
           for (let i = -2; i <= 2; i++) {
             const h = 0.15 + this.hash01(prop.x * 10, prop.y * 10, 310 + i) * 0.18;
             g.fillRect(Math.round(p.x + i * s * 0.055), Math.round(p.y - s * h), Math.max(1, Math.round(s * 0.028)), Math.round(s * (h + 0.08)));
           }
-          g.fillStyle = '#8d7e3e';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(p.x + s * 0.08), Math.round(p.y - s * 0.24), Math.max(1, Math.round(s * 0.035)), Math.max(1, Math.round(s * 0.09)));
         }
 
         drawCityShrub(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.2), Math.round(p.y + s * 0.05), Math.round(s * 0.42), Math.max(1, Math.round(s * 0.05)));
           g.fillStyle = '#295a31';
           g.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y - s * 0.13), Math.round(s * 0.18), Math.round(s * 0.15));
-          g.fillStyle = '#3f733f';
+          g.fillStyle = '#2d6a35';
           g.fillRect(Math.round(p.x + s * 0.0), Math.round(p.y - s * 0.16), Math.round(s * 0.18), Math.round(s * 0.16));
         }
 
         drawCityLamp(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.02), Math.round(p.y - s * 0.34), Math.max(1, Math.round(s * 0.04)), Math.round(s * 0.36));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.07), Math.round(p.y - s * 0.42), Math.round(s * 0.14), Math.max(1, Math.round(s * 0.06)));
@@ -5468,9 +5468,9 @@
         drawStreetSpeck(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.045);
           const s = view.tileH;
-          g.fillStyle = 'rgba(2, 4, 3, 0.45)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.45)';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y + s * 0.08), Math.round(s * 0.36), Math.max(1, Math.round(s * 0.05)));
-          g.fillStyle = prop.seed > 0.5 ? '#83734b' : '#506357';
+          g.fillStyle = prop.seed > 0.5 ? '#8b7f5e' : '#2d6a35';
           g.fillRect(Math.round(p.x - s * 0.11), Math.round(p.y - s * 0.06), Math.round(s * 0.22), Math.max(1, Math.round(s * 0.08)));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x + s * 0.05), Math.round(p.y - s * 0.04), Math.max(1, Math.round(s * 0.035)), Math.max(1, Math.round(s * 0.035)));
@@ -5479,11 +5479,11 @@
         drawWildflower(g, view, prop) {
           const p = this.iso(view, prop.x, prop.y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#102315';
+          g.fillStyle = '#102817';
           g.fillRect(Math.round(p.x - s * 0.12), Math.round(p.y + s * 0.05), Math.round(s * 0.26), Math.max(1, Math.round(s * 0.04)));
-          g.fillStyle = '#477238';
+          g.fillStyle = '#2d6a35';
           g.fillRect(Math.round(p.x - s * 0.05), Math.round(p.y - s * 0.13), Math.max(1, Math.round(s * 0.04)), Math.round(s * 0.18));
-          g.fillStyle = prop.seed > 0.52 ? '#d6bd68' : '#b7c98b';
+          g.fillStyle = prop.seed > 0.52 ? '#d6bd68' : '#6c7e45';
           g.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y - s * 0.18), Math.max(1, Math.round(s * 0.08)), Math.max(1, Math.round(s * 0.06)));
         }
 
@@ -5494,9 +5494,9 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.34), Math.round(-s * 0.025), Math.round(s * 0.68), Math.max(1, Math.round(s * 0.05)));
-          g.fillStyle = '#293b24';
+          g.fillStyle = '#203d24';
           g.fillRect(Math.round(-s * 0.28), Math.round(-s * 0.065), Math.round(s * 0.56), Math.max(1, Math.round(s * 0.025)));
           g.restore();
         }
@@ -5533,19 +5533,19 @@
 
         drawMicroBuilding(g, view, block) {
           const palette = block.h > 0.8
-            ? ['#5c665f', '#9fa9aa']
+            ? ['#5d4b2c', '#8fa9aa']
             : block.h > 0.62
-              ? ['#7a4935', '#b08345']
-              : ['#a06a4c', '#d0b06a'];
+              ? ['#5d4b2c', '#8b7f5e']
+              : ['#8b7f5e', '#d6bd68'];
           const height = block.h > 0.82 ? 0.36 : block.h > 0.64 ? 0.26 : 0.18;
           const width = block.h > 0.75 ? 0.22 : 0.16;
           this.drawIsoBox(g, view, block.x, block.y, width, height, palette[0], palette[1]);
           const p = this.iso(view, block.x, block.y, 0.035);
           const s = view.tileH;
           const storyCount = block.h > 0.82 ? 3 : block.h > 0.64 ? 2 : 1;
-          g.fillStyle = 'rgba(2, 4, 3, 0.46)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.46)';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y + s * 0.08), Math.round(s * 0.46), Math.max(1, Math.round(s * 0.05)));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * (width + 0.08)), Math.round(p.y - s * (height + 0.08)), Math.round(s * (width * 2 + 0.12)), Math.max(1, Math.round(s * 0.06)));
           g.fillStyle = palette[1];
           g.fillRect(Math.round(p.x - s * (width + 0.04)), Math.round(p.y - s * (height + 0.14)), Math.round(s * (width * 2 + 0.08)), Math.max(1, Math.round(s * 0.06)));
@@ -5553,7 +5553,7 @@
             const yy = p.y - s * (height * 0.78 - row * 0.1);
             for (let col = -1; col <= 1; col++) {
               const lit = this.hash01(Math.round(block.x * 19 + col), Math.round(block.y * 23 + row), 920) > 0.45;
-              g.fillStyle = lit ? '#d6bd68' : '#172022';
+              g.fillStyle = lit ? '#d6bd68' : '#24251e';
               g.fillRect(
                 Math.round(p.x + col * s * 0.075 - s * 0.022),
                 Math.round(yy),
@@ -5562,9 +5562,9 @@
               );
             }
           }
-          g.fillStyle = '#2a1d12';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(p.x + s * 0.09), Math.round(p.y - s * (height + 0.28)), Math.max(1, Math.round(s * 0.045)), Math.round(s * 0.18));
-          g.fillStyle = '#8d6a3c';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(p.x + s * 0.08), Math.round(p.y - s * (height + 0.31)), Math.max(1, Math.round(s * 0.07)), Math.max(1, Math.round(s * 0.04)));
         }
 
@@ -5577,11 +5577,11 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = 'rgba(3, 5, 4, 0.45)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.45)';
           g.fillRect(Math.round(-s * 0.14), Math.round(s * 0.035), Math.round(s * 0.3), Math.max(1, Math.round(s * 0.045)));
-          g.fillStyle = index % 3 === 0 ? '#9fc4c8' : index % 3 === 1 ? '#d6bd68' : '#a64435';
+          g.fillStyle = index % 3 === 0 ? '#8fa9aa' : index % 3 === 1 ? '#d6bd68' : '#a64435';
           g.fillRect(Math.round(-s * 0.1), Math.round(-s * 0.035), Math.round(s * 0.2), Math.max(2, Math.round(s * 0.075)));
-          g.fillStyle = '#d8d0af';
+          g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(s * 0.035), Math.round(-s * 0.025), Math.max(1, Math.round(s * 0.04)), Math.max(1, Math.round(s * 0.03)));
           g.restore();
         }
@@ -5864,13 +5864,13 @@
             const next = { x: current.x + sx, y: current.y + sy, layer: current.layer || 'ground' };
             const a = this.iso(view, current.x, current.y, this.terrainHeight(current.x, current.y) + 0.08);
             const b = this.iso(view, next.x, next.y, this.terrainHeight(next.x, next.y) + 0.08);
-            g.strokeStyle = '#111512';
+            g.strokeStyle = '#07120d';
             g.lineWidth = Math.max(3, Math.round(view.tileH * 0.3));
             g.beginPath();
             g.moveTo(a.x, a.y);
             g.lineTo(b.x, b.y);
             g.stroke();
-            g.strokeStyle = '#80877a';
+            g.strokeStyle = '#8b7f5e';
             g.lineWidth = Math.max(1, view.tileH * 0.038);
             g.setLineDash([view.tileH * 0.22, view.tileH * 0.2]);
             g.beginPath();
@@ -5894,14 +5894,14 @@
           const roadWidth = Math.max(2, Math.round(view.tileH * 0.16));
 
           g.lineCap = 'butt';
-          g.strokeStyle = 'rgba(3, 5, 4, 0.34)';
+          g.strokeStyle = 'rgba(7, 18, 13, 0.34)';
           g.lineWidth = roadWidth + Math.max(1, Math.round(view.tileH * 0.06));
           g.beginPath();
           g.moveTo(Math.round(a.x), Math.round(a.y + view.tileH * 0.025));
           g.lineTo(Math.round(b.x), Math.round(b.y + view.tileH * 0.025));
           g.stroke();
 
-          g.strokeStyle = '#202826';
+          g.strokeStyle = '#24251e';
           g.lineWidth = roadWidth;
           g.beginPath();
           g.moveTo(Math.round(a.x), Math.round(a.y));
@@ -5909,7 +5909,7 @@
           g.stroke();
 
           if (close) {
-            g.strokeStyle = 'rgba(84, 94, 86, 0.58)';
+            g.strokeStyle = 'rgba(93, 75, 44, 0.58)';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.018));
             for (const side of [-1, 1]) {
               const off = roadWidth * 0.48 * side;
@@ -5919,7 +5919,7 @@
               g.stroke();
             }
 
-            g.strokeStyle = 'rgba(148, 137, 103, 0.28)';
+            g.strokeStyle = 'rgba(139, 127, 94, 0.28)';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.018));
             g.setLineDash([Math.max(1, view.tileH * 0.07), Math.max(4, view.tileH * 0.42)]);
             g.beginPath();
@@ -5939,7 +5939,7 @@
             { x: p.x + hw, y: p.y },
             { x: p.x, y: p.y + hh },
             { x: p.x - hw, y: p.y }
-          ], count > 3 ? '#2c352f' : '#28312c');
+          ], count > 3 ? '#203923' : '#203923');
         }
 
         propPx(g, view, x, y, z = 0.04) {
@@ -5963,28 +5963,28 @@
             g.fillStyle = color;
             g.fillRect(Math.round(p.x + dx * s), Math.round(p.y + dy * s), Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
           };
-          px(-0.24, 0.15, 0.52, 0.12, 'rgba(2, 4, 3, 0.58)');
-          px(-0.06, -0.08, 0.12, 0.39, '#4b321e');
-          px(-0.1, 0.11, 0.2, 0.12, '#2b1d12');
-          px(-0.02, -0.13, 0.08, 0.19, '#6d4a28');
+          px(-0.24, 0.15, 0.52, 0.12, 'rgba(7, 18, 13, 0.58)');
+          px(-0.06, -0.08, 0.12, 0.39, '#203923');
+          px(-0.1, 0.11, 0.2, 0.12, '#24251e');
+          px(-0.02, -0.13, 0.08, 0.19, '#5d4b2c');
           if (variant === 'round') {
-            px(-0.32, -0.46, 0.26, 0.22, '#11351d');
-            px(-0.16, -0.58, 0.34, 0.25, '#1f572c');
-            px(0.08, -0.48, 0.25, 0.24, '#2b6534');
-            px(-0.38, -0.3, 0.36, 0.27, '#0d2716');
-            px(-0.07, -0.32, 0.43, 0.27, '#235d30');
-            px(-0.25, -0.63, 0.14, 0.08, '#4a8344');
-            px(0.05, -0.61, 0.12, 0.07, '#5a8c4b');
-            px(-0.3, -0.13, 0.16, 0.08, '#173f24');
+            px(-0.32, -0.46, 0.26, 0.22, '#15301d');
+            px(-0.16, -0.58, 0.34, 0.25, '#295a31');
+            px(0.08, -0.48, 0.25, 0.24, '#2d6a35');
+            px(-0.38, -0.3, 0.36, 0.27, '#102817');
+            px(-0.07, -0.32, 0.43, 0.27, '#295a31');
+            px(-0.25, -0.63, 0.14, 0.08, '#6c7e45');
+            px(0.05, -0.61, 0.12, 0.07, '#6c7e45');
+            px(-0.3, -0.13, 0.16, 0.08, '#203d24');
             return;
           }
-          px(-0.1, -0.7, 0.2, 0.13, '#2b6b35');
-          px(-0.18, -0.58, 0.36, 0.15, '#184823');
-          px(-0.26, -0.43, 0.52, 0.18, '#245f30');
-          px(-0.34, -0.27, 0.68, 0.22, '#11351d');
-          px(-0.23, -0.21, 0.45, 0.12, '#34723b');
-          px(-0.05, -0.78, 0.1, 0.07, '#5b8f4c');
-          px(0.18, -0.31, 0.12, 0.08, '#4c7d3f');
+          px(-0.1, -0.7, 0.2, 0.13, '#2d6a35');
+          px(-0.18, -0.58, 0.36, 0.15, '#203d24');
+          px(-0.26, -0.43, 0.52, 0.18, '#295a31');
+          px(-0.34, -0.27, 0.68, 0.22, '#15301d');
+          px(-0.23, -0.21, 0.45, 0.12, '#2d6a35');
+          px(-0.05, -0.78, 0.1, 0.07, '#6c7e45');
+          px(0.18, -0.31, 0.12, 0.08, '#6c7e45');
         }
 
         drawBush(g, view, x, y) {
@@ -5994,36 +5994,36 @@
             g.fillStyle = color;
             g.fillRect(Math.round(p.x + dx * s), Math.round(p.y + dy * s), Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s)));
           };
-          px(-0.18, 0.08, 0.34, 0.08, '#07100b');
-          px(-0.18, -0.11, 0.18, 0.16, '#1b5528');
-          px(-0.03, -0.16, 0.21, 0.2, '#2c6a35');
-          px(0.11, -0.06, 0.16, 0.12, '#173f24');
+          px(-0.18, 0.08, 0.34, 0.08, '#07120d');
+          px(-0.18, -0.11, 0.18, 0.16, '#295a31');
+          px(-0.03, -0.16, 0.21, 0.2, '#2d6a35');
+          px(0.11, -0.06, 0.16, 0.12, '#203d24');
         }
 
         drawTownHouse(g, view, x, y, variant = 'brick') {
           const palettes = {
-            brick: ['#6f3b2d', '#a05e48', '#2a2017', '#d6bd68'],
-            cream: ['#6b5a40', '#c7ad62', '#30271b', '#f0d98b'],
-            blue: ['#304a51', '#739aa2', '#172326', '#d8d0af']
+            brick: ['#5d4b2c', '#a64435', '#24251e', '#d6bd68'],
+            cream: ['#5d4b2c', '#d6bd68', '#24251e', '#d6bd68'],
+            blue: ['#203d24', '#8fa9aa', '#24251e', '#d6bd68']
           };
           const [wall, roof, side, light] = palettes[variant] || palettes.brick;
           this.drawIsoBox(g, view, x, y, 0.38, 0.32, wall, roof);
           const p = this.iso(view, x, y);
           const s = view.tileH;
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.32), Math.round(p.y + s * 0.2), Math.round(s * 0.68), Math.round(s * 0.08));
           g.fillStyle = roof;
           g.fillRect(Math.round(p.x - s * 0.3), Math.round(p.y - s * 0.38), Math.round(s * 0.58), Math.round(s * 0.06));
-          g.fillStyle = '#120e09';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x + s * 0.1), Math.round(p.y - s * 0.55), Math.round(s * 0.07), Math.round(s * 0.17));
           g.fillStyle = side;
           g.fillRect(Math.round(p.x + s * 0.05), Math.round(p.y - s * 0.2), Math.max(1, Math.round(s * 0.11)), Math.max(1, Math.round(s * 0.18)));
           g.fillStyle = light;
           g.fillRect(Math.round(p.x - s * 0.17), Math.round(p.y - s * 0.19), Math.max(1, Math.round(s * 0.08)), Math.max(1, Math.round(s * 0.08)));
           g.fillRect(Math.round(p.x + s * 0.03), Math.round(p.y - s * 0.12), Math.max(1, Math.round(s * 0.06)), Math.max(1, Math.round(s * 0.07)));
-          g.fillStyle = '#15120e';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.04), Math.round(p.y - s * 0.02), Math.max(1, Math.round(s * 0.08)), Math.max(1, Math.round(s * 0.13)));
-          g.fillStyle = '#8a6335';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(p.x - s * 0.24), Math.round(p.y + s * 0.04), Math.round(s * 0.16), Math.max(1, Math.round(s * 0.035)));
         }
 
@@ -6032,48 +6032,48 @@
           const s = view.tileH;
           const palettes = {
             cottage: {
-              wall: '#8ea8ad',
-              side: '#526b6f',
-              roof: '#26323a',
-              roofHi: '#c9d6d0',
-              trim: '#d8d0af',
-              door: '#171d1c',
-              yard: '#1b331d',
+              wall: '#8fa9aa',
+              side: '#2d6a35',
+              roof: '#203923',
+              roofHi: '#fff8e8',
+              trim: '#d6bd68',
+              door: '#24251e',
+              yard: '#15301d',
               garden: '#6c7e45',
-              shed: '#7b5f39'
+              shed: '#5d4b2c'
             },
             tin: {
-              wall: '#b5c1bb',
-              side: '#657270',
-              roof: '#405053',
-              roofHi: '#d7e0dc',
-              trim: '#e2d78e',
-              door: '#17201e',
-              yard: '#20371f',
-              garden: '#7b8550',
-              shed: '#566e67'
+              wall: '#8fa9aa',
+              side: '#8b7f5e',
+              roof: '#5d4b2c',
+              roofHi: '#fff8e8',
+              trim: '#d6bd68',
+              door: '#24251e',
+              yard: '#203923',
+              garden: '#6c7e45',
+              shed: '#6c7e45'
             },
             porch: {
-              wall: '#9b6a4d',
-              side: '#62412f',
-              roof: '#5b2e24',
-              roofHi: '#cf9c69',
-              trim: '#e4d291',
-              door: '#1d1711',
-              yard: '#25371f',
-              garden: '#748348',
-              shed: '#6a4d2f'
+              wall: '#8b7f5e',
+              side: '#5d4b2c',
+              roof: '#5d4b2c',
+              roofHi: '#d6bd68',
+              trim: '#d6bd68',
+              door: '#07120d',
+              yard: '#203923',
+              garden: '#6c7e45',
+              shed: '#5d4b2c'
             },
             barn: {
-              wall: '#80613b',
-              side: '#4b3422',
-              roof: '#3b271b',
-              roofHi: '#d0a35d',
-              trim: '#d2bd68',
-              door: '#19120c',
-              yard: '#26351e',
-              garden: '#817847',
-              shed: '#73452e'
+              wall: '#6c7e45',
+              side: '#203923',
+              roof: '#24251e',
+              roofHi: '#d6bd68',
+              trim: '#d6bd68',
+              door: '#07120d',
+              yard: '#203923',
+              garden: '#6c7e45',
+              shed: '#5d4b2c'
             }
           };
           const c = palettes[variant] || palettes.cottage;
@@ -6094,15 +6094,15 @@
             { x: p.x + s * 0.22, y: p.y + s * 0.3 },
             { x: p.x - s * 0.44, y: p.y + s * 0.29 }
           ], c.yard);
-          px(-0.48, 0.26, 0.86, 0.08, 'rgba(2, 4, 3, 0.58)');
+          px(-0.48, 0.26, 0.86, 0.08, 'rgba(7, 18, 13, 0.58)');
 
           const gardenSide = variant === 'barn' || variant === 'porch' ? -1 : 1;
           for (let i = 0; i < 3; i++) {
             px(gardenSide * (0.34 + i * 0.03), 0.02 + i * 0.08, 0.24, 0.025, c.garden);
-            px(gardenSide * (0.33 + i * 0.03), 0.055 + i * 0.08, 0.18, 0.02, '#364728');
+            px(gardenSide * (0.33 + i * 0.03), 0.055 + i * 0.08, 0.18, 0.02, '#203d24');
           }
           for (let i = 0; i < 3; i++) {
-            px(-0.54 + i * 0.16, 0.12 + i * 0.03, 0.06, 0.035, '#8a6335');
+            px(-0.54 + i * 0.16, 0.12 + i * 0.03, 0.06, 0.035, '#8b7f5e');
           }
 
           this.drawPoly(g, [
@@ -6125,41 +6125,41 @@
             { x: p.x - s * 0.48, y: p.y - s * 0.25 }
           ], c.roof);
           px(-0.35, -0.42, 0.23, 0.045, c.roofHi);
-          px(0.04, -0.34, 0.19, 0.04, '#14120e');
+          px(0.04, -0.34, 0.19, 0.04, '#07120d');
           px(-0.22, -0.17, 0.1, 0.1, c.trim);
           px(0.07, -0.14, 0.085, 0.09, c.trim);
           px(-0.02, -0.02, 0.09, 0.16, c.door);
-          px(-0.39, -0.62, 0.07, 0.16, '#17110c');
-          px(-0.38, -0.66, 0.09, 0.04, '#6b4e32');
+          px(-0.39, -0.62, 0.07, 0.16, '#07120d');
+          px(-0.38, -0.66, 0.09, 0.04, '#5d4b2c');
 
           if (variant === 'porch') {
-            px(-0.34, 0.04, 0.56, 0.055, '#8a6335');
-            px(-0.31, -0.03, 0.5, 0.055, '#c09b56');
-            px(-0.3, 0.03, 0.035, 0.18, '#18130e');
-            px(0.17, 0.03, 0.035, 0.15, '#18130e');
+            px(-0.34, 0.04, 0.56, 0.055, '#8b7f5e');
+            px(-0.31, -0.03, 0.5, 0.055, '#d6bd68');
+            px(-0.3, 0.03, 0.035, 0.18, '#07120d');
+            px(0.17, 0.03, 0.035, 0.15, '#07120d');
           } else if (variant === 'barn') {
             px(0.23, -0.02, 0.22, 0.21, c.shed);
-            px(0.19, -0.13, 0.3, 0.08, '#3a2518');
-            px(0.29, 0.06, 0.07, 0.12, '#140f0b');
-            px(0.38, -0.33, 0.06, 0.13, '#1b120b');
+            px(0.19, -0.13, 0.3, 0.08, '#24251e');
+            px(0.29, 0.06, 0.07, 0.12, '#07120d');
+            px(0.38, -0.33, 0.06, 0.13, '#07120d');
           } else {
             px(-0.56, -0.02, 0.2, 0.18, c.shed);
             px(-0.6, -0.13, 0.28, 0.065, c.roof);
             px(-0.51, 0.04, 0.06, 0.09, c.door);
           }
 
-          px(-0.53, 0.3, 0.92, 0.045, '#15190f');
+          px(-0.53, 0.3, 0.92, 0.045, '#07120d');
         }
 
         drawApartmentBlock(g, view, x, y, variant = 'blue') {
           const palettes = {
-            blue: ['#243c43', '#8fa9aa', '#101a1d', '#d6bd68'],
-            glass: ['#2e3f43', '#aebcc0', '#12191a', '#a8d0d3']
+            blue: ['#203923', '#8fa9aa', '#07120d', '#d6bd68'],
+            glass: ['#203d24', '#8fa9aa', '#07120d', '#8fa9aa']
           };
           const [wall, roof, dark, light] = palettes[variant] || palettes.blue;
           this.drawIsoBox(g, view, x, y, 0.5, variant === 'glass' ? 0.78 : 0.62, wall, roof);
           const px = this.propPx(g, view, x, y, 0.07);
-          px(-0.31, -0.72, 0.62, 0.08, '#050705');
+          px(-0.31, -0.72, 0.62, 0.08, '#07120d');
           px(-0.26, -0.79, 0.5, 0.05, roof);
           for (let row = 0; row < 3; row++) {
             for (let col = 0; col < 3; col++) {
@@ -6167,8 +6167,8 @@
               px(-0.22 + col * 0.16, -0.54 + row * 0.14, 0.07, 0.07, lit ? light : dark);
             }
           }
-          px(0.13, -0.08, 0.08, 0.18, '#090b08');
-          px(-0.27, -0.02, 0.16, 0.04, '#8a6335');
+          px(0.13, -0.08, 0.08, 0.18, '#07120d');
+          px(-0.27, -0.02, 0.16, 0.04, '#8b7f5e');
         }
 
         drawRowHouse(g, view, x, y) {
@@ -6176,40 +6176,40 @@
           const s = view.tileH;
           for (let i = -1; i <= 1; i++) {
             const dx = i * 0.23;
-            this.drawIsoBox(g, view, x + dx * 0.42, y + dx * 0.1, 0.25, 0.28, i === 0 ? '#7a4935' : '#5b3a2a', '#b08345');
+            this.drawIsoBox(g, view, x + dx * 0.42, y + dx * 0.1, 0.25, 0.28, i === 0 ? '#5d4b2c' : '#5d4b2c', '#8b7f5e');
           }
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.44), Math.round(p.y + s * 0.12), Math.round(s * 0.9), Math.round(s * 0.08));
-          g.fillStyle = '#d8d0af';
+          g.fillStyle = '#d6bd68';
           for (let i = -2; i <= 2; i += 2) {
             g.fillRect(Math.round(p.x + i * s * 0.09), Math.round(p.y - s * 0.18), Math.max(1, Math.round(s * 0.055)), Math.max(1, Math.round(s * 0.055)));
           }
         }
 
         drawIndustryBuilding(g, view, x, y) {
-          this.drawIsoBox(g, view, x, y, 0.62, 0.48, '#51483a', '#9d865b');
+          this.drawIsoBox(g, view, x, y, 0.62, 0.48, '#5d4b2c', '#8b7f5e');
           const p = this.iso(view, x, y);
           const s = view.tileH;
-          g.fillStyle = '#090b08';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x + s * 0.22), Math.round(p.y - s * 0.82), Math.max(2, Math.round(s * 0.14)), Math.round(s * 0.72));
-          g.fillStyle = '#3b3527';
+          g.fillStyle = '#203923';
           g.fillRect(Math.round(p.x + s * 0.24), Math.round(p.y - s * 0.9), Math.max(2, Math.round(s * 0.1)), Math.max(1, Math.round(s * 0.08)));
-          g.fillStyle = '#b7c98b';
+          g.fillStyle = '#6c7e45';
           g.fillRect(Math.round(p.x - s * 0.32), Math.round(p.y - s * 0.42), Math.max(1, Math.round(s * 0.12)), Math.max(1, Math.round(s * 0.1)));
         }
 
         drawShed(g, view, x, y) {
-          this.drawIsoBox(g, view, x, y, 0.34, 0.23, '#3a3023', '#6e5934');
+          this.drawIsoBox(g, view, x, y, 0.34, 0.23, '#203923', '#5d4b2c');
         }
 
         drawCrate(g, view, x, y) {
           const p = this.iso(view, x, y);
           const s = view.tileH;
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y + s * 0.08), Math.round(s * 0.32), Math.round(s * 0.08));
-          g.fillStyle = '#b08345';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(p.x - s * 0.12), Math.round(p.y - s * 0.08), Math.round(s * 0.24), Math.round(s * 0.18));
-          g.fillStyle = '#6d4a28';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x + s * 0.04), Math.round(p.y - s * 0.03), Math.round(s * 0.08), Math.round(s * 0.13));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y - s * 0.05), Math.max(1, Math.round(s * 0.04)), Math.max(1, Math.round(s * 0.04)));
@@ -6219,7 +6219,7 @@
           const p = this.iso(view, x + 0.5, y + 0.5);
           const hw = view.tileW * 0.38;
           const hh = view.tileH * 0.38;
-          g.strokeStyle = '#485731';
+          g.strokeStyle = '#295a31';
           g.lineWidth = Math.max(1, Math.round(view.tileH * 0.025));
           for (let i = -2; i <= 2; i++) {
             g.beginPath();
@@ -6236,15 +6236,15 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.42), Math.round(s * 0.08), Math.round(s * 0.84), Math.max(1, Math.round(s * 0.06)));
-          g.fillStyle = '#5e5031';
+          g.fillStyle = '#5d4b2c';
           for (let i = -2; i <= 2; i++) {
             g.fillRect(Math.round(i * s * 0.18), Math.round(-s * 0.16), Math.max(1, Math.round(s * 0.035)), Math.round(s * 0.28));
           }
-          g.fillStyle = '#9d865b';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(-s * 0.4), Math.round(-s * 0.06), Math.round(s * 0.82), Math.max(1, Math.round(s * 0.045)));
-          g.fillStyle = '#2a1d12';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(-s * 0.4), Math.round(s * 0.03), Math.round(s * 0.82), Math.max(1, Math.round(s * 0.04)));
           g.restore();
         }
@@ -6252,20 +6252,20 @@
         drawRock(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y + s * 0.06), Math.round(s * 0.34), Math.max(1, Math.round(s * 0.08)));
-          g.fillStyle = '#4a5048';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x - s * 0.12), Math.round(p.y - s * 0.08), Math.round(s * 0.22), Math.round(s * 0.14));
-          g.fillStyle = '#778073';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y - s * 0.12), Math.round(s * 0.12), Math.round(s * 0.06));
-          g.fillStyle = '#252a25';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(p.x + s * 0.04), Math.round(p.y - s * 0.04), Math.round(s * 0.08), Math.round(s * 0.08));
         }
 
         drawYardLamp(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.025), Math.round(p.y - s * 0.58), Math.max(1, Math.round(s * 0.05)), Math.round(s * 0.56));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.09), Math.round(p.y - s * 0.68), Math.round(s * 0.18), Math.round(s * 0.08));
@@ -6276,13 +6276,13 @@
         drawCoalPile(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.36), Math.round(p.y + s * 0.07), Math.round(s * 0.72), Math.round(s * 0.12));
-          g.fillStyle = '#151718';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.3), Math.round(p.y - s * 0.08), Math.round(s * 0.52), Math.round(s * 0.18));
-          g.fillStyle = '#262b2c';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(p.x - s * 0.19), Math.round(p.y - s * 0.15), Math.round(s * 0.32), Math.round(s * 0.1));
-          g.fillStyle = '#4a5351';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y - s * 0.18), Math.round(s * 0.08), Math.max(1, Math.round(s * 0.035)));
           g.fillRect(Math.round(p.x + s * 0.08), Math.round(p.y - s * 0.08), Math.round(s * 0.07), Math.max(1, Math.round(s * 0.03)));
         }
@@ -6290,13 +6290,13 @@
         drawLogPile(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.4), Math.round(p.y + s * 0.08), Math.round(s * 0.82), Math.round(s * 0.11));
           for (let i = 0; i < 4; i++) {
             const yy = p.y - s * 0.18 + i * s * 0.08;
-            g.fillStyle = i % 2 ? '#8a6335' : '#b08345';
+            g.fillStyle = i % 2 ? '#8b7f5e' : '#8b7f5e';
             g.fillRect(Math.round(p.x - s * 0.36), Math.round(yy), Math.round(s * 0.72), Math.max(1, Math.round(s * 0.045)));
-            g.fillStyle = '#2a1d12';
+            g.fillStyle = '#24251e';
             g.fillRect(Math.round(p.x - s * 0.38), Math.round(yy), Math.max(1, Math.round(s * 0.055)), Math.max(1, Math.round(s * 0.045)));
             g.fillRect(Math.round(p.x + s * 0.33), Math.round(yy), Math.max(1, Math.round(s * 0.055)), Math.max(1, Math.round(s * 0.045)));
           }
@@ -6305,15 +6305,15 @@
         drawMailVan(g, view, x, y) {
           const p = this.iso(view, x, y, 0.06);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.35), Math.round(p.y + s * 0.1), Math.round(s * 0.72), Math.round(s * 0.1));
-          g.fillStyle = '#233c4b';
+          g.fillStyle = '#203923';
           g.fillRect(Math.round(p.x - s * 0.28), Math.round(p.y - s * 0.17), Math.round(s * 0.56), Math.round(s * 0.26));
-          g.fillStyle = '#e4d37d';
+          g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x + s * 0.15), Math.round(p.y - s * 0.16), Math.round(s * 0.12), Math.round(s * 0.1));
-          g.fillStyle = '#9fc4c8';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y - s * 0.13), Math.round(s * 0.12), Math.round(s * 0.08));
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.24), Math.round(p.y + s * 0.03), Math.round(s * 0.12), Math.round(s * 0.08));
           g.fillRect(Math.round(p.x + s * 0.13), Math.round(p.y + s * 0.03), Math.round(s * 0.12), Math.round(s * 0.08));
         }
@@ -6321,7 +6321,7 @@
         drawWaterTower(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.strokeStyle = '#090b08';
+          g.strokeStyle = '#07120d';
           g.lineWidth = Math.max(1, Math.round(s * 0.035));
           for (const dx of [-0.16, 0.16]) {
             g.beginPath();
@@ -6329,21 +6329,21 @@
             g.lineTo(Math.round(p.x + dx * s * 0.6), Math.round(p.y - s * 0.55));
             g.stroke();
           }
-          g.fillStyle = '#253233';
+          g.fillStyle = '#203923';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y - s * 0.78), Math.round(s * 0.44), Math.round(s * 0.25));
-          g.fillStyle = '#8cb0b4';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y - s * 0.83), Math.round(s * 0.36), Math.round(s * 0.07));
-          g.fillStyle = '#060807';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.2), Math.round(p.y - s * 0.56), Math.round(s * 0.4), Math.max(1, Math.round(s * 0.04)));
         }
 
         drawSignalBox(g, view, x, y) {
-          this.drawIsoBox(g, view, x, y, 0.34, 0.28, '#403824', '#d2bd68');
+          this.drawIsoBox(g, view, x, y, 0.34, 0.28, '#5d4b2c', '#d6bd68');
           const p = this.iso(view, x, y);
           const s = view.tileH;
-          g.fillStyle = '#10120d';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y - s * 0.24), Math.round(s * 0.44), Math.round(s * 0.09));
-          g.fillStyle = '#9fc4c8';
+          g.fillStyle = '#8fa9aa';
           for (let i = -2; i <= 2; i++) {
             g.fillRect(Math.round(p.x + i * s * 0.08), Math.round(p.y - s * 0.23), Math.max(1, Math.round(s * 0.045)), Math.max(1, Math.round(s * 0.065)));
           }
@@ -6352,13 +6352,13 @@
         drawPlatformCanopy(g, view, x, y) {
           const p = this.iso(view, x, y, 0.12);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.54), Math.round(p.y + s * 0.1), Math.round(s * 1.08), Math.round(s * 0.09));
-          g.fillStyle = '#2b322a';
+          g.fillStyle = '#203923';
           g.fillRect(Math.round(p.x - s * 0.46), Math.round(p.y - s * 0.22), Math.round(s * 0.92), Math.round(s * 0.18));
-          g.fillStyle = '#9cb1a7';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(p.x - s * 0.38), Math.round(p.y - s * 0.3), Math.round(s * 0.76), Math.round(s * 0.07));
-          g.fillStyle = '#070908';
+          g.fillStyle = '#07120d';
           for (let i = -2; i <= 2; i++) {
             g.fillRect(Math.round(p.x + i * s * 0.2), Math.round(p.y - s * 0.04), Math.max(1, Math.round(s * 0.035)), Math.round(s * 0.25));
           }
@@ -6367,12 +6367,12 @@
         drawYardPipes(g, view, x, y) {
           const p = this.iso(view, x, y, 0.05);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.44), Math.round(p.y + s * 0.08), Math.round(s * 0.9), Math.round(s * 0.08));
           for (let i = 0; i < 4; i++) {
-            g.fillStyle = i % 2 ? '#50656a' : '#303b3e';
+            g.fillStyle = i % 2 ? '#5d4b2c' : '#203923';
             g.fillRect(Math.round(p.x - s * 0.42 + i * s * 0.22), Math.round(p.y - s * 0.09), Math.round(s * 0.18), Math.round(s * 0.07));
-            g.fillStyle = '#95a9a6';
+            g.fillStyle = '#8fa9aa';
             g.fillRect(Math.round(p.x - s * 0.4 + i * s * 0.22), Math.round(p.y - s * 0.11), Math.round(s * 0.11), Math.max(1, Math.round(s * 0.02)));
           }
         }
@@ -6380,11 +6380,11 @@
         drawHedge(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#061009';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.38), Math.round(p.y + s * 0.08), Math.round(s * 0.76), Math.round(s * 0.08));
-          g.fillStyle = '#204925';
+          g.fillStyle = '#203d24';
           g.fillRect(Math.round(p.x - s * 0.36), Math.round(p.y - s * 0.1), Math.round(s * 0.72), Math.round(s * 0.16));
-          g.fillStyle = '#3d7a3d';
+          g.fillStyle = '#2d6a35';
           g.fillRect(Math.round(p.x - s * 0.25), Math.round(p.y - s * 0.16), Math.round(s * 0.16), Math.round(s * 0.07));
           g.fillRect(Math.round(p.x + s * 0.08), Math.round(p.y - s * 0.13), Math.round(s * 0.19), Math.round(s * 0.07));
         }
@@ -6392,13 +6392,13 @@
         drawTelegraph(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#050605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.035), Math.round(p.y - s * 0.62), Math.max(1, Math.round(s * 0.07)), Math.round(s * 0.65));
-          g.fillStyle = '#7b5b32';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x - s * 0.025), Math.round(p.y - s * 0.58), Math.max(1, Math.round(s * 0.05)), Math.round(s * 0.58));
-          g.fillStyle = '#0b0d08';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y - s * 0.5), Math.round(s * 0.44), Math.max(1, Math.round(s * 0.035)));
-          g.fillStyle = '#b7c98b';
+          g.fillStyle = '#6c7e45';
           g.fillRect(Math.round(p.x - s * 0.24), Math.round(p.y - s * 0.53), Math.max(1, Math.round(s * 0.055)), Math.max(1, Math.round(s * 0.055)));
           g.fillRect(Math.round(p.x + s * 0.19), Math.round(p.y - s * 0.53), Math.max(1, Math.round(s * 0.055)), Math.max(1, Math.round(s * 0.055)));
         }
@@ -6412,8 +6412,8 @@
             { x: p.x + hw, y: p.y },
             { x: p.x, y: p.y + hh },
             { x: p.x - hw, y: p.y }
-          ], 'rgba(88, 104, 48, 0.36)');
-          g.strokeStyle = '#485731';
+          ], 'rgba(45, 106, 53, 0.36)');
+          g.strokeStyle = '#295a31';
           g.lineWidth = Math.max(1, Math.round(view.tileH * 0.025));
           for (let i = -3; i <= 3; i++) {
             g.beginPath();
@@ -6426,24 +6426,24 @@
         drawPlatformPost(g, view, x, y) {
           const p = this.iso(view, x, y, 0.08);
           const s = view.tileH;
-          g.fillStyle = '#040605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.04), Math.round(p.y - s * 0.6), Math.max(1, Math.round(s * 0.08)), Math.round(s * 0.64));
           g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(p.x - s * 0.025), Math.round(p.y - s * 0.56), Math.max(1, Math.round(s * 0.05)), Math.round(s * 0.56));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.22), Math.round(p.y - s * 0.72), Math.round(s * 0.44), Math.round(s * 0.12));
-          g.fillStyle = '#1a221a';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(p.x - s * 0.18), Math.round(p.y - s * 0.68), Math.round(s * 0.36), Math.max(1, Math.round(s * 0.045)));
         }
 
         drawLineBox(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#040605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.2), Math.round(p.y + s * 0.08), Math.round(s * 0.42), Math.round(s * 0.08));
-          g.fillStyle = '#252c28';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y - s * 0.18), Math.round(s * 0.32), Math.round(s * 0.26));
-          g.fillStyle = '#5f6c66';
+          g.fillStyle = '#6c7e45';
           g.fillRect(Math.round(p.x - s * 0.13), Math.round(p.y - s * 0.24), Math.round(s * 0.26), Math.round(s * 0.06));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x + s * 0.06), Math.round(p.y - s * 0.12), Math.max(1, Math.round(s * 0.045)), Math.max(1, Math.round(s * 0.045)));
@@ -6456,12 +6456,12 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.32), Math.round(s * 0.08), Math.round(s * 0.64), Math.max(1, Math.round(s * 0.06)));
-          g.fillStyle = '#8a6335';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(-s * 0.28), Math.round(-s * 0.08), Math.round(s * 0.56), Math.max(1, Math.round(s * 0.055)));
           g.fillRect(Math.round(-s * 0.28), Math.round(s * 0.01), Math.round(s * 0.56), Math.max(1, Math.round(s * 0.055)));
-          g.fillStyle = '#25190f';
+          g.fillStyle = '#24251e';
           g.fillRect(Math.round(-s * 0.22), Math.round(-s * 0.02), Math.max(1, Math.round(s * 0.035)), Math.round(s * 0.15));
           g.fillRect(Math.round(s * 0.18), Math.round(-s * 0.02), Math.max(1, Math.round(s * 0.035)), Math.round(s * 0.15));
           g.restore();
@@ -6474,11 +6474,11 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.5), Math.round(s * 0.04), Math.round(s), Math.max(1, Math.round(s * 0.08)));
-          g.fillStyle = '#4a3c24';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(-s * 0.48), Math.round(-s * 0.1), Math.round(s * 0.96), Math.round(s * 0.14));
-          g.fillStyle = '#8a6335';
+          g.fillStyle = '#8b7f5e';
           for (let i = -3; i <= 3; i++) {
             g.fillRect(Math.round(i * s * 0.14), Math.round(-s * 0.1), Math.max(1, Math.round(s * 0.035)), Math.round(s * 0.14));
           }
@@ -6492,9 +6492,9 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#040605';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.05), Math.round(-s * 0.58), Math.max(1, Math.round(s * 0.1)), Math.round(s * 0.62));
-          g.fillStyle = '#c6d3bc';
+          g.fillStyle = '#a8c77d';
           g.fillRect(Math.round(-s * 0.48), Math.round(-s * 0.48), Math.round(s * 0.96), Math.max(1, Math.round(s * 0.06)));
           g.fillStyle = '#a64435';
           for (let i = -2; i <= 2; i += 2) {
@@ -6506,12 +6506,12 @@
         drawTrackCrate(g, view, x, y) {
           const p = this.iso(view, x, y, 0.04);
           const s = view.tileH;
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.26), Math.round(p.y + s * 0.06), Math.round(s * 0.52), Math.round(s * 0.08));
-          g.fillStyle = '#4a3821';
+          g.fillStyle = '#203d24';
           g.fillRect(Math.round(p.x - s * 0.2), Math.round(p.y - s * 0.12), Math.round(s * 0.18), Math.round(s * 0.18));
           g.fillRect(Math.round(p.x + s * 0.04), Math.round(p.y - s * 0.1), Math.round(s * 0.18), Math.round(s * 0.16));
-          g.fillStyle = '#c0a45d';
+          g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.17), Math.round(p.y - s * 0.14), Math.max(1, Math.round(s * 0.05)), Math.max(1, Math.round(s * 0.04)));
           g.fillRect(Math.round(p.x + s * 0.08), Math.round(p.y - s * 0.12), Math.max(1, Math.round(s * 0.04)), Math.max(1, Math.round(s * 0.04)));
         }
@@ -6519,18 +6519,18 @@
         drawNameBoard(g, view, x, y) {
           const p = this.iso(view, x, y, 0.08);
           const s = view.tileH;
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.04), Math.round(p.y - s * 0.48), Math.max(1, Math.round(s * 0.08)), Math.round(s * 0.5));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x - s * 0.32), Math.round(p.y - s * 0.62), Math.round(s * 0.64), Math.round(s * 0.12));
-          g.fillStyle = '#07100b';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.28), Math.round(p.y - s * 0.59), Math.round(s * 0.56), Math.max(1, Math.round(s * 0.045)));
         }
 
         drawSignalRepeater(g, view, x, y) {
           const p = this.iso(view, x, y, 0.08);
           const s = view.tileH;
-          g.fillStyle = '#030504';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.03), Math.round(p.y - s * 0.54), Math.max(1, Math.round(s * 0.06)), Math.round(s * 0.56));
           g.fillRect(Math.round(p.x - s * 0.13), Math.round(p.y - s * 0.56), Math.round(s * 0.26), Math.round(s * 0.16));
           g.fillStyle = '#a8c77d';
@@ -6541,36 +6541,36 @@
 
         drawStationLamp(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.08);
-          px(-0.025, -0.66, 0.05, 0.68, '#040605');
+          px(-0.025, -0.66, 0.05, 0.68, '#07120d');
           px(-0.018, -0.61, 0.036, 0.6, '#5d4b2c');
-          px(-0.15, -0.74, 0.3, 0.09, '#d8d0af');
-          px(-0.1, -0.72, 0.2, 0.05, '#fff0a3');
+          px(-0.15, -0.74, 0.3, 0.09, '#d6bd68');
+          px(-0.1, -0.72, 0.2, 0.05, '#fff8e8');
         }
 
         drawPlatformSign(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.08);
-          px(-0.035, -0.55, 0.07, 0.56, '#050705');
-          px(-0.28, -0.68, 0.56, 0.15, '#0e1714');
+          px(-0.035, -0.55, 0.07, 0.56, '#07120d');
+          px(-0.28, -0.68, 0.56, 0.15, '#07120d');
           px(-0.24, -0.64, 0.48, 0.055, '#d6bd68');
-          px(-0.22, -0.56, 0.18, 0.035, '#9fc4c8');
+          px(-0.22, -0.56, 0.18, 0.035, '#8fa9aa');
         }
 
         drawStationClock(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.12);
-          px(-0.035, -0.58, 0.07, 0.6, '#050705');
-          px(-0.18, -0.82, 0.36, 0.28, '#050705');
-          px(-0.13, -0.77, 0.26, 0.18, '#d8d0af');
-          px(-0.02, -0.73, 0.04, 0.1, '#263232');
-          px(0.0, -0.69, 0.09, 0.035, '#263232');
+          px(-0.035, -0.58, 0.07, 0.6, '#07120d');
+          px(-0.18, -0.82, 0.36, 0.28, '#07120d');
+          px(-0.13, -0.77, 0.26, 0.18, '#d6bd68');
+          px(-0.02, -0.73, 0.04, 0.1, '#203923');
+          px(0.0, -0.69, 0.09, 0.035, '#203923');
         }
 
         drawSignalGantry(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.1);
-          px(-0.44, -0.8, 0.07, 0.86, '#050705');
-          px(0.37, -0.8, 0.07, 0.86, '#050705');
-          px(-0.48, -0.88, 0.96, 0.09, '#1a221a');
-          px(-0.34, -0.82, 0.16, 0.14, '#060806');
-          px(0.14, -0.82, 0.16, 0.14, '#060806');
+          px(-0.44, -0.8, 0.07, 0.86, '#07120d');
+          px(0.37, -0.8, 0.07, 0.86, '#07120d');
+          px(-0.48, -0.88, 0.96, 0.09, '#24251e');
+          px(-0.34, -0.82, 0.16, 0.14, '#07120d');
+          px(0.14, -0.82, 0.16, 0.14, '#07120d');
           px(-0.29, -0.78, 0.06, 0.06, '#a8c77d');
           px(0.19, -0.78, 0.06, 0.06, '#a64435');
         }
@@ -6582,12 +6582,12 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.5), Math.round(s * 0.08), Math.round(s), Math.max(1, Math.round(s * 0.07)));
-          g.fillStyle = '#9aa095';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(-s * 0.48), Math.round(-s * 0.12), Math.round(s * 0.96), Math.max(1, Math.round(s * 0.035)));
           g.fillRect(Math.round(-s * 0.48), Math.round(-s * 0.02), Math.round(s * 0.96), Math.max(1, Math.round(s * 0.03)));
-          g.fillStyle = '#303832';
+          g.fillStyle = '#203923';
           for (let i = -3; i <= 3; i++) {
             g.fillRect(Math.round(i * s * 0.15), Math.round(-s * 0.17), Math.max(1, Math.round(s * 0.026)), Math.round(s * 0.27));
           }
@@ -6596,24 +6596,24 @@
 
         drawBallastPile(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.04);
-          px(-0.28, 0.04, 0.58, 0.08, '#050705');
-          px(-0.22, -0.08, 0.42, 0.16, '#343a36');
-          px(-0.12, -0.15, 0.24, 0.08, '#6e756d');
-          px(0.08, -0.04, 0.08, 0.05, '#9aa095');
-          px(-0.18, 0.0, 0.07, 0.04, '#222722');
+          px(-0.28, 0.04, 0.58, 0.08, '#07120d');
+          px(-0.22, -0.08, 0.42, 0.16, '#203923');
+          px(-0.12, -0.15, 0.24, 0.08, '#8b7f5e');
+          px(0.08, -0.04, 0.08, 0.05, '#8fa9aa');
+          px(-0.18, 0.0, 0.07, 0.04, '#24251e');
         }
 
         drawCableBox(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.05);
-          px(-0.18, 0.06, 0.38, 0.08, '#050705');
-          px(-0.14, -0.2, 0.28, 0.26, '#253233');
-          px(-0.11, -0.25, 0.22, 0.06, '#80928d');
+          px(-0.18, 0.06, 0.38, 0.08, '#07120d');
+          px(-0.14, -0.2, 0.28, 0.26, '#203923');
+          px(-0.11, -0.25, 0.22, 0.06, '#8b7f5e');
           px(0.07, -0.13, 0.045, 0.05, '#d6bd68');
         }
 
         drawSwitchStand(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.08);
-          px(-0.025, -0.52, 0.05, 0.55, '#050705');
+          px(-0.025, -0.52, 0.05, 0.55, '#07120d');
           px(-0.15, -0.58, 0.3, 0.08, '#5d4b2c');
           px(-0.12, -0.68, 0.12, 0.1, '#a64435');
           px(0.02, -0.66, 0.1, 0.08, '#a8c77d');
@@ -6625,11 +6625,11 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(this.modelAngleToScreen(view, Math.PI / 4));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.35), Math.round(s * 0.05), Math.round(s * 0.72), Math.max(1, Math.round(s * 0.05)));
-          g.fillStyle = '#b08345';
+          g.fillStyle = '#8b7f5e';
           g.fillRect(Math.round(-s * 0.32), Math.round(-s * 0.04), Math.round(s * 0.56), Math.max(1, Math.round(s * 0.04)));
-          g.fillStyle = '#9aa095';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(s * 0.2), Math.round(-s * 0.09), Math.round(s * 0.18), Math.max(1, Math.round(s * 0.08)));
           g.restore();
         }
@@ -6637,11 +6637,11 @@
         drawRailWorker(g, view, x, y) {
           const px = this.propPx(g, view, x, y, 0.07);
           px(-0.08, -0.42, 0.16, 0.16, '#d6bd68');
-          px(-0.07, -0.25, 0.14, 0.24, '#263232');
-          px(-0.12, -0.02, 0.08, 0.12, '#050705');
-          px(0.04, -0.02, 0.08, 0.12, '#050705');
-          px(-0.16, -0.2, 0.12, 0.05, '#d8d0af');
-          px(0.05, -0.2, 0.12, 0.05, '#d8d0af');
+          px(-0.07, -0.25, 0.14, 0.24, '#203923');
+          px(-0.12, -0.02, 0.08, 0.12, '#07120d');
+          px(0.04, -0.02, 0.08, 0.12, '#07120d');
+          px(-0.16, -0.2, 0.12, 0.05, '#d6bd68');
+          px(0.05, -0.2, 0.12, 0.05, '#d6bd68');
         }
 
         drawPlatformEdge(g, view, x, y) {
@@ -6651,9 +6651,9 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(angle);
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.55), Math.round(s * 0.04), Math.round(s * 1.1), Math.max(1, Math.round(s * 0.06)));
-          g.fillStyle = '#d8d0af';
+          g.fillStyle = '#d6bd68';
           for (let i = -4; i <= 4; i += 2) {
             g.fillRect(Math.round(i * s * 0.12), Math.round(-s * 0.05), Math.round(s * 0.08), Math.max(1, Math.round(s * 0.04)));
           }
@@ -6666,11 +6666,11 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(this.modelAngleToScreen(view, this.hash01(x, y, 1710) > 0.5 ? 0 : Math.PI / 4));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.48), Math.round(s * 0.05), Math.round(s * 0.96), Math.max(1, Math.round(s * 0.08)));
-          g.fillStyle = '#4b5c5d';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(Math.round(-s * 0.46), Math.round(-s * 0.07), Math.round(s * 0.92), Math.max(1, Math.round(s * 0.08)));
-          g.fillStyle = '#9aa095';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(-s * 0.42), Math.round(-s * 0.095), Math.round(s * 0.25), Math.max(1, Math.round(s * 0.025)));
           g.fillRect(Math.round(s * 0.12), Math.round(-s * 0.095), Math.round(s * 0.25), Math.max(1, Math.round(s * 0.025)));
           g.restore();
@@ -6682,13 +6682,13 @@
           g.save();
           g.translate(p.x, p.y);
           g.rotate(this.modelAngleToScreen(view, this.hash01(x, y, 1810) > 0.5 ? 0 : Math.PI / 4));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.32), Math.round(s * 0.08), Math.round(s * 0.66), Math.max(1, Math.round(s * 0.09)));
-          g.fillStyle = this.hash01(x, y, 1811) > 0.5 ? '#a64435' : '#2f5a75';
+          g.fillStyle = this.hash01(x, y, 1811) > 0.5 ? '#a64435' : '#295a31';
           g.fillRect(Math.round(-s * 0.26), Math.round(-s * 0.12), Math.round(s * 0.52), Math.round(s * 0.2));
-          g.fillStyle = '#d8d0af';
+          g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(s * 0.08), Math.round(-s * 0.1), Math.round(s * 0.1), Math.round(s * 0.08));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(-s * 0.22), Math.round(s * 0.03), Math.round(s * 0.11), Math.round(s * 0.07));
           g.fillRect(Math.round(s * 0.12), Math.round(s * 0.03), Math.round(s * 0.11), Math.round(s * 0.07));
           g.restore();
@@ -6704,7 +6704,7 @@
             { x: p.x + w * 0.9, y: p.y + h * 0.96 },
             { x: p.x + w * 1.1, y: p.y + h * 1.15 },
             { x: p.x - w * 0.45, y: p.y + h * 1.15 }
-          ], '#07100b');
+          ], '#07120d');
           this.drawPoly(g, [
             { x: p.x - w, y: p.y },
             { x: p.x, y: p.y + h },
@@ -6723,7 +6723,7 @@
             { x: p.x, y: p.y + h - z },
             { x: p.x - w, y: p.y - z }
           ], roofColor);
-          g.strokeStyle = '#090d09';
+          g.strokeStyle = '#07120d';
           g.lineWidth = Math.max(1, Math.round(view.tileH * 0.035));
           g.strokeRect(Math.round(p.x - w * 0.32), Math.round(p.y - z * 0.58), Math.max(1, Math.round(w * 0.16)), Math.max(1, Math.round(z * 0.2)));
           g.fillStyle = '#d6bd68';
@@ -6819,13 +6819,13 @@
           const z = detail.layer === 'bridge' ? 0.64 : 0.05;
           const p = this.iso(view, detail.x, detail.y, z);
           const s = view.tileH;
-          g.fillStyle = 'rgba(1, 3, 2, 0.42)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.42)';
           g.fillRect(Math.round(p.x - s * 0.21), Math.round(p.y + s * 0.08), Math.round(s * 0.46), Math.max(2, Math.round(s * 0.08)));
-          g.fillStyle = '#070a08';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.17), Math.round(p.y - s * 0.28), Math.round(s * 0.34), Math.round(s * 0.34));
-          g.fillStyle = '#263232';
+          g.fillStyle = '#203923';
           g.fillRect(Math.round(p.x - s * 0.13), Math.round(p.y - s * 0.24), Math.round(s * 0.26), Math.round(s * 0.25));
-          g.fillStyle = '#8fa59c';
+          g.fillStyle = '#8fa9aa';
           g.fillRect(Math.round(p.x - s * 0.1), Math.round(p.y - s * 0.3), Math.round(s * 0.2), Math.max(1, Math.round(s * 0.06)));
           g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(p.x + s * 0.06), Math.round(p.y - s * 0.14), Math.max(1, Math.round(s * 0.045)), Math.max(1, Math.round(s * 0.045)));
@@ -6835,11 +6835,11 @@
           const z = detail.layer === 'bridge' ? 0.66 : 0.08;
           const p = this.iso(view, detail.x, detail.y, z);
           const s = view.tileH;
-          g.fillStyle = 'rgba(1, 3, 2, 0.36)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.36)';
           g.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y + s * 0.06), Math.round(s * 0.22), Math.max(2, Math.round(s * 0.06)));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(p.x - s * 0.025), Math.round(p.y - s * 0.42), Math.max(1, Math.round(s * 0.05)), Math.round(s * 0.46));
-          g.fillStyle = detail.seed > 0.5 ? '#d8d0af' : '#a8c77d';
+          g.fillStyle = detail.seed > 0.5 ? '#d6bd68' : '#a8c77d';
           g.fillRect(Math.round(p.x - s * 0.12), Math.round(p.y - s * 0.51), Math.round(s * 0.24), Math.round(s * 0.11));
         }
 
@@ -6880,35 +6880,35 @@
         }
 
         drawGroundRail(g, view, aTile, bTile) {
-          this.drawRailEdge(g, view, aTile, bTile, '#020302', view.tileH * 0.4, 0.58);
-          this.drawRailEdge(g, view, aTile, bTile, '#1b1a15', view.tileH * 0.3, 0.96);
-          this.drawRailEdge(g, view, aTile, bTile, '#5a5135', view.tileH * 0.21, 0.66);
+          this.drawRailEdge(g, view, aTile, bTile, '#07120d', view.tileH * 0.4, 0.58);
+          this.drawRailEdge(g, view, aTile, bTile, '#24251e', view.tileH * 0.3, 0.96);
+          this.drawRailEdge(g, view, aTile, bTile, '#5d4b2c', view.tileH * 0.21, 0.66);
           this.drawRailBallast(g, view, aTile, bTile);
-          this.drawRailEdge(g, view, aTile, bTile, '#070a07', view.tileH * 0.075, 0.98);
+          this.drawRailEdge(g, view, aTile, bTile, '#07120d', view.tileH * 0.075, 0.98);
           this.drawSleepers(g, view, aTile, bTile, 0.92);
           this.drawRailPair(g, view, aTile, bTile, 0.98);
         }
 
         drawBridgeRail(g, view, aTile, bTile) {
-          this.drawRailEdge(g, view, aTile, bTile, '#020302', view.tileH * 0.52, 0.2, 0, view.tileH * 0.28, true);
+          this.drawRailEdge(g, view, aTile, bTile, '#07120d', view.tileH * 0.52, 0.2, 0, view.tileH * 0.28, true);
           this.drawBridgeGirders(g, view, aTile, bTile);
-          this.drawRailEdge(g, view, aTile, bTile, '#050604', view.tileH * 0.32, 0.98);
-          this.drawRailEdge(g, view, aTile, bTile, '#26261e', view.tileH * 0.23, 0.96);
-          this.drawRailEdge(g, view, aTile, bTile, '#8c7448', view.tileH * 0.13, 0.82);
+          this.drawRailEdge(g, view, aTile, bTile, '#07120d', view.tileH * 0.32, 0.98);
+          this.drawRailEdge(g, view, aTile, bTile, '#24251e', view.tileH * 0.23, 0.96);
+          this.drawRailEdge(g, view, aTile, bTile, '#8b7f5e', view.tileH * 0.13, 0.82);
           this.drawSleepers(g, view, aTile, bTile, 0.9);
           this.drawRailPair(g, view, aTile, bTile, 0.94);
         }
 
         drawTunnelRail(g, view, aTile, bTile) {
-          this.drawRailEdge(g, view, aTile, bTile, '#020302', view.tileH * 0.42, 0.92);
-          this.drawRailEdge(g, view, aTile, bTile, '#2c2418', view.tileH * 0.24, 0.78);
+          this.drawRailEdge(g, view, aTile, bTile, '#07120d', view.tileH * 0.42, 0.92);
+          this.drawRailEdge(g, view, aTile, bTile, '#24251e', view.tileH * 0.24, 0.78);
           this.drawRailPair(g, view, aTile, bTile, 0.72);
           for (const tile of [aTile, bTile]) {
             const p = this.screenPointForTile(view, tile);
             const s = view.tileH;
-            g.fillStyle = '#020302';
+            g.fillStyle = '#07120d';
             g.fillRect(Math.round(p.x - s * 0.36), Math.round(p.y - s * 0.08), Math.round(s * 0.72), Math.round(s * 0.26));
-            g.fillStyle = '#1c1711';
+            g.fillStyle = '#07120d';
             g.fillRect(Math.round(p.x - s * 0.26), Math.round(p.y - s * 0.14), Math.round(s * 0.52), Math.round(s * 0.16));
           }
         }
@@ -6925,21 +6925,21 @@
           const ny = (dx / len) * view.tileH * 0.18;
           g.save();
           g.lineCap = 'square';
-          g.strokeStyle = 'rgba(1, 3, 2, 0.45)';
+          g.strokeStyle = 'rgba(7, 18, 13, 0.45)';
           g.lineWidth = Math.max(2, Math.round(view.tileH * 0.16));
           g.beginPath();
           g.moveTo(ga.x, ga.y + view.tileH * 0.08);
           g.lineTo(gb.x, gb.y + view.tileH * 0.08);
           g.stroke();
 
-          g.strokeStyle = '#050705';
+          g.strokeStyle = '#07120d';
           g.lineWidth = Math.max(3, Math.round(view.tileH * 0.16));
           g.beginPath();
           g.moveTo(a.x, a.y + view.tileH * 0.03);
           g.lineTo(b.x, b.y + view.tileH * 0.03);
           g.stroke();
 
-          g.strokeStyle = '#6f5a34';
+          g.strokeStyle = '#5d4b2c';
           g.lineWidth = Math.max(2, Math.round(view.tileH * 0.1));
           g.beginPath();
           g.moveTo(a.x, a.y);
@@ -6947,13 +6947,13 @@
           g.stroke();
 
           for (const sign of [-1, 1]) {
-            g.strokeStyle = '#050705';
+            g.strokeStyle = '#07120d';
             g.lineWidth = Math.max(2, Math.round(view.tileH * 0.045));
             g.beginPath();
             g.moveTo(a.x + nx * sign, a.y + ny * sign);
             g.lineTo(b.x + nx * sign, b.y + ny * sign);
             g.stroke();
-            g.strokeStyle = '#b09155';
+            g.strokeStyle = '#8b7f5e';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.028));
             g.beginPath();
             g.moveTo(a.x + nx * sign, a.y + ny * sign - view.tileH * 0.02);
@@ -6968,12 +6968,12 @@
             const y = a.y + dy * k;
             const gx = ga.x + (gb.x - ga.x) * k;
             const gy = ga.y + (gb.y - ga.y) * k;
-            g.strokeStyle = '#040504';
+            g.strokeStyle = '#07120d';
             g.beginPath();
             g.moveTo(x, y + view.tileH * 0.08);
             g.lineTo(gx, gy + view.tileH * 0.18);
             g.stroke();
-            g.strokeStyle = '#7a6138';
+            g.strokeStyle = '#6c7e45';
             g.beginPath();
             g.moveTo(x, y + view.tileH * 0.06);
             g.lineTo(gx, gy + view.tileH * 0.08);
@@ -6999,7 +6999,7 @@
             const baseX = a.x + dx * k;
             const baseY = a.y + dy * k;
             const jitter = this.hash01(Math.round(baseX), Math.round(baseY), 331) - 0.5;
-            g.fillStyle = jitter > 0 ? '#6a6f64' : '#303630';
+            g.fillStyle = jitter > 0 ? '#6c7e45' : '#203923';
             const side = jitter > 0.15 ? 1 : -1;
             g.fillRect(
               Math.round(baseX + nx * side * (0.7 + Math.abs(jitter)) - view.tileH * 0.035),
@@ -7022,13 +7022,13 @@
           g.save();
           g.globalAlpha = alpha;
           for (const sign of [-1, 1]) {
-            g.strokeStyle = '#0a0c09';
+            g.strokeStyle = '#07120d';
             g.lineWidth = Math.max(2, Math.round(view.tileH * 0.048));
             g.beginPath();
             g.moveTo(a.x + nx * sign, a.y + ny * sign);
             g.lineTo(b.x + nx * sign, b.y + ny * sign);
             g.stroke();
-            g.strokeStyle = '#a1a79c';
+            g.strokeStyle = '#8fa9aa';
             g.lineWidth = Math.max(1, Math.round(view.tileH * 0.018));
             g.beginPath();
             g.moveTo(a.x + nx * sign, a.y + ny * sign - 0.5);
@@ -7043,7 +7043,7 @@
             if (!edge.includes('|')) continue;
             const [aKey, bKey] = edge.split('|');
             const train = this.trains.find((item) => item.id === owner);
-            this.drawRailEdge(g, view, this.parseTile(aKey), this.parseTile(bKey), train?.color || '#fff0a3', view.tileH * 0.12, 0.7);
+            this.drawRailEdge(g, view, this.parseTile(aKey), this.parseTile(bKey), train?.color || '#fff8e8', view.tileH * 0.12, 0.7);
           }
         }
 
@@ -7072,7 +7072,7 @@
           const ny = (dx / len) * view.tileH * 0.145;
           g.save();
           g.globalAlpha = alpha;
-          g.strokeStyle = '#5f462a';
+          g.strokeStyle = '#5d4b2c';
           g.lineWidth = Math.max(1, Math.round(view.tileH * 0.032));
           g.lineCap = 'square';
           for (let d = view.tileH * 0.32; d < len; d += view.tileH * 0.3) {
@@ -7098,7 +7098,7 @@
           g.rotate(angle);
           const overview = this.isOverviewView(view);
           g.globalAlpha = overview ? 0.22 : 0.38;
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.beginPath();
           g.moveTo(view.tileH * 0.24, 0);
           g.lineTo(-view.tileH * 0.16, -view.tileH * 0.15);
@@ -7148,26 +7148,26 @@
           g.save();
           if (signal.compact || signal.kind === 'path block') {
             const marker = Math.max(2, view.tileH * 0.095);
-            g.fillStyle = 'rgba(1, 3, 2, 0.38)';
+            g.fillStyle = 'rgba(7, 18, 13, 0.38)';
             g.fillRect(Math.round(x - marker * 1.1), Math.round(y + marker * 0.28), Math.round(marker * 2.2), Math.max(1, Math.round(marker * 0.34)));
-            g.fillStyle = '#050705';
+            g.fillStyle = '#07120d';
             g.fillRect(Math.round(x - marker * 0.42), Math.round(y - marker * 0.36), Math.max(2, Math.round(marker * 0.84)), Math.max(2, Math.round(marker * 0.84)));
             g.fillStyle = red ? '#a64435' : '#a8c77d';
             g.fillRect(Math.round(x - marker * 0.2), Math.round(y - marker * 0.14), Math.max(2, Math.round(marker * 0.4)), Math.max(2, Math.round(marker * 0.4)));
-            g.fillStyle = '#d8d0af';
+            g.fillStyle = '#d6bd68';
             g.fillRect(Math.round(x + marker * 0.05), Math.round(y - marker * 0.08), Math.max(1, Math.round(marker * 0.14)), Math.max(1, Math.round(marker * 0.14)));
             g.restore();
             return;
           }
-          g.fillStyle = 'rgba(1, 3, 2, 0.42)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.42)';
           g.fillRect(Math.round(x - face * 0.8), Math.round(y + face * 0.34), Math.round(face * 1.6), Math.max(1, Math.round(face * 0.28)));
-          g.fillStyle = '#050705';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(x - face * 0.12), Math.round(y - mast), Math.max(1, Math.round(face * 0.24)), Math.round(mast));
-          g.fillStyle = '#111711';
+          g.fillStyle = '#07120d';
           g.fillRect(Math.round(x - face * 0.44), Math.round(y - mast - face * 0.58), Math.round(face * 0.88), Math.round(face * 0.74));
           g.fillStyle = red ? '#a64435' : '#a8c77d';
           g.fillRect(Math.round(x - face * 0.2), Math.round(y - mast - face * 0.4), Math.max(2, Math.round(face * 0.36)), Math.max(2, Math.round(face * 0.36)));
-          g.fillStyle = '#d8d0af';
+          g.fillStyle = '#d6bd68';
           g.fillRect(Math.round(x + face * 0.08), Math.round(y - mast - face * 0.36), Math.max(1, Math.round(face * 0.18)), Math.max(1, Math.round(face * 0.18)));
           g.restore();
         }
@@ -7261,35 +7261,35 @@
           g.translate(p.x, p.y);
           g.rotate(angle);
 
-          g.fillStyle = 'rgba(1, 3, 2, 0.64)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.64)';
           g.fillRect(
             Math.round(-platformLenPx * 0.52),
             Math.round(platformY + side * platformH * 0.2),
             Math.round(platformLenPx * 1.04),
             Math.round(platformH * 0.64)
           );
-          g.fillStyle = '#1d1b14';
+          g.fillStyle = '#24251e';
           g.fillRect(
             Math.round(-platformLenPx * 0.5),
             Math.round(platformY - platformH * 0.55),
             Math.round(platformLenPx),
             Math.round(platformH * 1.1)
           );
-          g.fillStyle = '#4a422f';
+          g.fillStyle = '#5d4b2c';
           g.fillRect(
             Math.round(-platformLenPx * 0.47),
             Math.round(platformY - platformH * 0.4),
             Math.round(platformLenPx * 0.94),
             Math.round(platformH * 0.76)
           );
-          g.fillStyle = '#776846';
+          g.fillStyle = '#6c7e45';
           g.fillRect(
             Math.round(-platformLenPx * 0.45),
             Math.round(platformY - platformH * 0.3),
             Math.round(platformLenPx * 0.9),
             Math.max(2, Math.round(platformH * 0.22))
           );
-          g.fillStyle = '#d0bd71';
+          g.fillStyle = '#d6bd68';
           g.fillRect(
             Math.round(-platformLenPx * 0.48),
             Math.round(trackEdgeY),
@@ -7297,7 +7297,7 @@
             Math.max(1, Math.round(platformH * 0.11))
           );
 
-          g.fillStyle = '#c8b46a';
+          g.fillStyle = '#d6bd68';
           for (let i = 0; i <= postCount; i++) {
             const x = -platformLenPx * 0.43 + (platformLenPx * 0.86 * i) / Math.max(1, postCount);
             g.fillRect(
@@ -7310,9 +7310,9 @@
           if (station.kind === 'town' || station.kind === 'factory') {
             const canopyW = platformLenPx * 0.58;
             const canopyH = Math.max(2, size * 0.12);
-            g.fillStyle = '#070a08';
+            g.fillStyle = '#07120d';
             g.fillRect(Math.round(-canopyW * 0.5), Math.round(platformY - side * platformH * 1.12), Math.round(canopyW), Math.round(canopyH));
-            g.fillStyle = station.kind === 'town' ? '#d6bd68' : '#8fa59c';
+            g.fillStyle = station.kind === 'town' ? '#d6bd68' : '#8fa9aa';
             g.fillRect(Math.round(-canopyW * 0.46), Math.round(platformY - side * platformH * 1.08), Math.round(canopyW * 0.92), Math.max(1, Math.round(canopyH * 0.34)));
           }
           g.restore();
@@ -7367,16 +7367,16 @@
           const width = Math.max(...visibleLines.map((line) => g.measureText(line).width)) + fontSize * 1.05;
           const height = fontSize * visibleLines.length * 1.02 + fontSize * 0.5;
           g.globalAlpha = overview ? 0.86 : 1;
-          g.fillStyle = overview ? 'rgba(2, 5, 4, 0.72)' : 'rgba(2, 5, 4, 0.86)';
+          g.fillStyle = overview ? 'rgba(7, 18, 13, 0.72)' : 'rgba(7, 18, 13, 0.86)';
           g.fillRect(Math.round(x - width / 2), Math.round(y - height / 2), Math.round(width), Math.round(height));
-          g.strokeStyle = overview ? 'rgba(136, 156, 120, 0.38)' : 'rgba(136, 156, 120, 0.6)';
+          g.strokeStyle = overview ? 'rgba(108, 126, 69, 0.38)' : 'rgba(108, 126, 69, 0.6)';
           g.lineWidth = Math.max(1, Math.round(fontSize * 0.08));
           g.strokeRect(Math.round(x - width / 2), Math.round(y - height / 2), Math.round(width), Math.round(height));
-          g.fillStyle = '#b8c9a8';
+          g.fillStyle = '#a8c77d';
           g.fillRect(Math.round(x - width / 2), Math.round(y - height / 2), Math.round(width), Math.max(1, Math.round(fontSize * 0.16)));
-          g.strokeStyle = '#020302';
+          g.strokeStyle = '#07120d';
           g.lineWidth = Math.max(2, Math.round(fontSize * 0.16));
-          g.fillStyle = '#f8f1de';
+          g.fillStyle = '#fff8e8';
           const firstY = overview ? y : y - fontSize * 0.34;
           g.strokeText(visibleLines[0], Math.round(x), Math.round(firstY));
           g.fillText(visibleLines[0], Math.round(x), Math.round(firstY));
@@ -7400,123 +7400,123 @@
             );
           };
           if (station.id === 'mine') {
-            px(-0.9, 0.24, 1.78, 0.28, '#030504');
-            px(-0.72, -0.06, 0.62, 0.32, '#1a1c19');
-            px(-0.64, -0.14, 0.42, 0.11, '#343a36');
-            px(-0.58, -0.18, 0.18, 0.055, '#5d6560');
-            px(0.13, -0.56, 0.09, 0.5, '#090b08');
-            px(0.38, -0.56, 0.09, 0.5, '#090b08');
-            px(0.07, -0.63, 0.48, 0.08, '#423720');
-            px(0.16, -0.5, 0.33, 0.06, '#8a6335');
-            px(0.2, -0.42, 0.24, 0.06, '#8a6335');
-            px(0.1, -0.34, 0.42, 0.045, '#4a321e');
-            px(0.25, -0.51, 0.06, 0.38, '#5f4325');
-            px(-0.72, 0.01, 0.22, 0.075, '#3c4443');
-            px(-0.5, -0.03, 0.2, 0.075, '#202629');
-            px(-0.35, -0.09, 0.15, 0.045, '#4c5555');
+            px(-0.9, 0.24, 1.78, 0.28, '#07120d');
+            px(-0.72, -0.06, 0.62, 0.32, '#24251e');
+            px(-0.64, -0.14, 0.42, 0.11, '#203923');
+            px(-0.58, -0.18, 0.18, 0.055, '#5d4b2c');
+            px(0.13, -0.56, 0.09, 0.5, '#07120d');
+            px(0.38, -0.56, 0.09, 0.5, '#07120d');
+            px(0.07, -0.63, 0.48, 0.08, '#5d4b2c');
+            px(0.16, -0.5, 0.33, 0.06, '#8b7f5e');
+            px(0.2, -0.42, 0.24, 0.06, '#8b7f5e');
+            px(0.1, -0.34, 0.42, 0.045, '#203923');
+            px(0.25, -0.51, 0.06, 0.38, '#5d4b2c');
+            px(-0.72, 0.01, 0.22, 0.075, '#203d24');
+            px(-0.5, -0.03, 0.2, 0.075, '#24251e');
+            px(-0.35, -0.09, 0.15, 0.045, '#5d4b2c');
             return;
           }
 
           if (station.id === 'forest') {
-            px(-0.86, 0.2, 1.72, 0.28, '#030504');
-            px(-0.5, -0.5, 0.86, 0.46, '#342a1c');
-            px(-0.62, -0.64, 1.0, 0.14, '#7a5b32');
-            px(-0.44, -0.48, 0.14, 0.18, '#b7c98b');
-            px(-0.16, -0.48, 0.14, 0.18, '#b7c98b');
-            px(0.3, -0.14, 0.78, 0.045, '#b08345');
-            px(0.28, -0.06, 0.82, 0.045, '#8a6335');
-            px(0.3, 0.02, 0.78, 0.045, '#b08345');
-            px(0.25, -0.18, 0.045, 0.24, '#2a1d12');
-            px(1.05, -0.18, 0.045, 0.24, '#2a1d12');
-            px(-0.78, -0.1, 0.24, 0.28, '#6d4a28');
+            px(-0.86, 0.2, 1.72, 0.28, '#07120d');
+            px(-0.5, -0.5, 0.86, 0.46, '#24251e');
+            px(-0.62, -0.64, 1.0, 0.14, '#5d4b2c');
+            px(-0.44, -0.48, 0.14, 0.18, '#6c7e45');
+            px(-0.16, -0.48, 0.14, 0.18, '#6c7e45');
+            px(0.3, -0.14, 0.78, 0.045, '#8b7f5e');
+            px(0.28, -0.06, 0.82, 0.045, '#8b7f5e');
+            px(0.3, 0.02, 0.78, 0.045, '#8b7f5e');
+            px(0.25, -0.18, 0.045, 0.24, '#24251e');
+            px(1.05, -0.18, 0.045, 0.24, '#24251e');
+            px(-0.78, -0.1, 0.24, 0.28, '#5d4b2c');
             px(-0.72, -0.18, 0.16, 0.07, '#d6bd68');
             return;
           }
 
           if (station.id === 'town') {
-            px(-1.15, 0.2, 2.3, 0.26, '#030504');
-            px(-0.92, -0.16, 1.84, 0.17, '#8b713d');
-            px(-0.9, -0.36, 1.8, 0.16, '#303d36');
-            px(-0.78, -0.45, 1.56, 0.08, '#9cb1a7');
-            for (let i = -4; i <= 4; i++) px(i * 0.18, -0.18, 0.035, 0.34, '#070908');
-            px(-0.38, -0.82, 0.74, 0.54, '#5a3f2a');
+            px(-1.15, 0.2, 2.3, 0.26, '#07120d');
+            px(-0.92, -0.16, 1.84, 0.17, '#8b7f5e');
+            px(-0.9, -0.36, 1.8, 0.16, '#203d24');
+            px(-0.78, -0.45, 1.56, 0.08, '#8fa9aa');
+            for (let i = -4; i <= 4; i++) px(i * 0.18, -0.18, 0.035, 0.34, '#07120d');
+            px(-0.38, -0.82, 0.74, 0.54, '#5d4b2c');
             px(-0.48, -0.98, 0.92, 0.2, '#d6bd68');
-            px(-0.26, -0.62, 0.12, 0.14, '#d8d0af');
-            px(0.12, -0.62, 0.12, 0.14, '#d8d0af');
-            px(-0.04, -0.38, 0.1, 0.18, '#110d09');
-            px(0.5, -0.7, 0.14, 0.52, '#2a1d12');
-            px(0.48, -0.82, 0.2, 0.09, '#a05e48');
+            px(-0.26, -0.62, 0.12, 0.14, '#d6bd68');
+            px(0.12, -0.62, 0.12, 0.14, '#d6bd68');
+            px(-0.04, -0.38, 0.1, 0.18, '#07120d');
+            px(0.5, -0.7, 0.14, 0.52, '#24251e');
+            px(0.48, -0.82, 0.2, 0.09, '#a64435');
             return;
           }
 
           if (station.id === 'plant') {
-            px(-0.96, 0.22, 1.9, 0.28, '#030504');
-            px(-0.52, -0.52, 0.74, 0.5, '#463824');
-            px(-0.6, -0.66, 0.9, 0.14, '#9d865b');
-            px(0.32, -0.68, 0.13, 0.58, '#0a0d09');
-            px(0.34, -0.75, 0.09, 0.06, '#825044');
-            px(0.56, -0.52, 0.09, 0.42, '#151817');
+            px(-0.96, 0.22, 1.9, 0.28, '#07120d');
+            px(-0.52, -0.52, 0.74, 0.5, '#203d24');
+            px(-0.6, -0.66, 0.9, 0.14, '#8b7f5e');
+            px(0.32, -0.68, 0.13, 0.58, '#07120d');
+            px(0.34, -0.75, 0.09, 0.06, '#a64435');
+            px(0.56, -0.52, 0.09, 0.42, '#07120d');
             px(0.58, -0.58, 0.06, 0.055, '#a8c77d');
-            px(-0.92, -0.08, 0.48, 0.14, '#141718');
-            px(-0.78, -0.16, 0.26, 0.08, '#303738');
-            px(-0.16, -0.42, 0.12, 0.18, '#d8d0af');
+            px(-0.92, -0.08, 0.48, 0.14, '#07120d');
+            px(-0.78, -0.16, 0.26, 0.08, '#203923');
+            px(-0.16, -0.42, 0.12, 0.18, '#d6bd68');
             return;
           }
 
           if (station.id === 'depot') {
-            px(-0.9, 0.22, 1.8, 0.28, '#030504');
-            px(-0.58, -0.58, 1.04, 0.58, '#172022');
-            px(-0.7, -0.74, 1.18, 0.16, '#82aeb8');
-            px(-0.42, -0.46, 0.26, 0.44, '#050605');
-            px(0.08, -0.46, 0.26, 0.44, '#050605');
-            px(-0.36, -0.39, 0.12, 0.34, '#6f939b');
-            px(0.14, -0.39, 0.12, 0.34, '#6f939b');
-            px(0.5, -0.42, 0.1, 0.55, '#2b2519');
+            px(-0.9, 0.22, 1.8, 0.28, '#07120d');
+            px(-0.58, -0.58, 1.04, 0.58, '#24251e');
+            px(-0.7, -0.74, 1.18, 0.16, '#8fa9aa');
+            px(-0.42, -0.46, 0.26, 0.44, '#07120d');
+            px(0.08, -0.46, 0.26, 0.44, '#07120d');
+            px(-0.36, -0.39, 0.12, 0.34, '#8fa9aa');
+            px(0.14, -0.39, 0.12, 0.34, '#8fa9aa');
+            px(0.5, -0.42, 0.1, 0.55, '#24251e');
             px(0.58, -0.51, 0.08, 0.08, '#d6bd68');
             return;
           }
 
           const palettes = {
-            coal: { wall: '#333528', side: '#151913', roof: '#b7c98b', trim: '#0a0d09' },
-            lumber: { wall: '#473926', side: '#1c1710', roof: '#a8c77d', trim: '#0b0d08' },
-            ore: { wall: '#4a3c2a', side: '#1a1510', roof: '#9d865b', trim: '#070806' },
-            mail: { wall: '#6f4a31', side: '#2a2017', roof: '#d6bd68', trim: '#0b0d08' },
-            depot: { wall: '#1d2424', side: '#0c1111', roof: '#82aeb8', trim: '#070908' }
+            coal: { wall: '#203923', side: '#07120d', roof: '#6c7e45', trim: '#07120d' },
+            lumber: { wall: '#203d24', side: '#07120d', roof: '#a8c77d', trim: '#07120d' },
+            ore: { wall: '#5d4b2c', side: '#07120d', roof: '#8b7f5e', trim: '#07120d' },
+            mail: { wall: '#5d4b2c', side: '#24251e', roof: '#d6bd68', trim: '#07120d' },
+            depot: { wall: '#24251e', side: '#07120d', roof: '#8fa9aa', trim: '#07120d' }
           };
           const key = station.kind === 'depot' ? 'depot' : station.produces || station.accepts[0] || 'mail';
           const p = palettes[key] || palettes.mail;
-          px(-0.74, 0.22, 1.52, 0.3, '#040605');
+          px(-0.74, 0.22, 1.52, 0.3, '#07120d');
           px(-0.44, -0.72, 0.9, 0.76, p.trim);
           px(-0.36, -0.64, 0.74, 0.62, p.wall);
           px(0.16, -0.54, 0.22, 0.52, p.side);
           px(-0.29, -0.95, 0.58, 0.22, p.roof);
-          px(-0.36, -0.78, 0.74, 0.08, '#050706');
-          px(-0.24, -0.48, 0.15, 0.18, '#d8d0af');
-          px(0.08, -0.5, 0.15, 0.18, '#d8d0af');
+          px(-0.36, -0.78, 0.74, 0.08, '#07120d');
+          px(-0.24, -0.48, 0.15, 0.18, '#d6bd68');
+          px(0.08, -0.5, 0.15, 0.18, '#d6bd68');
           if (key === 'coal') {
-            px(-0.9, -0.06, 0.54, 0.16, '#050605');
-            px(-0.82, -0.14, 0.36, 0.08, '#293033');
-            px(-0.66, -0.2, 0.18, 0.06, '#3e4548');
+            px(-0.9, -0.06, 0.54, 0.16, '#07120d');
+            px(-0.82, -0.14, 0.36, 0.08, '#24251e');
+            px(-0.66, -0.2, 0.18, 0.06, '#5d4b2c');
           } else if (key === 'ore') {
-            px(-0.88, -0.02, 0.26, 0.15, '#1a1712');
-            px(-0.62, -0.1, 0.34, 0.19, '#5c5746');
+            px(-0.88, -0.02, 0.26, 0.15, '#07120d');
+            px(-0.62, -0.1, 0.34, 0.19, '#5d4b2c');
             px(-0.5, -0.18, 0.16, 0.08, '#8b7f5e');
-            px(0.52, -0.04, 0.38, 0.12, '#2b2418');
-            px(0.62, -0.14, 0.18, 0.08, '#6d5c3b');
+            px(0.52, -0.04, 0.38, 0.12, '#24251e');
+            px(0.62, -0.14, 0.18, 0.08, '#5d4b2c');
           } else if (key === 'lumber') {
             for (let i = 0; i < 4; i++) {
-              px(0.5, -0.12 + i * 0.08, 0.48, 0.04, i % 2 ? '#8a6335' : '#b08345');
+              px(0.5, -0.12 + i * 0.08, 0.48, 0.04, i % 2 ? '#8b7f5e' : '#8b7f5e');
             }
-            px(0.48, -0.13, 0.04, 0.34, '#2b1d10');
+            px(0.48, -0.13, 0.04, 0.34, '#24251e');
           } else if (key === 'depot') {
-            px(-0.24, -0.42, 0.46, 0.4, '#070908');
-            px(-0.18, -0.36, 0.12, 0.3, '#78a8b1');
-            px(0.06, -0.36, 0.12, 0.3, '#78a8b1');
+            px(-0.24, -0.42, 0.46, 0.4, '#07120d');
+            px(-0.18, -0.36, 0.12, 0.3, '#8fa9aa');
+            px(0.06, -0.36, 0.12, 0.3, '#8fa9aa');
           } else {
-            px(-0.68, -0.05, 0.18, 0.18, '#9f6b4f');
-            px(0.56, 0.01, 0.18, 0.18, '#b77a57');
-            px(0.5, -0.76, 0.08, 0.58, '#302116');
-            px(0.47, -0.85, 0.14, 0.1, '#9f6b4f');
+            px(-0.68, -0.05, 0.18, 0.18, '#8b7f5e');
+            px(0.56, 0.01, 0.18, 0.18, '#8b7f5e');
+            px(0.5, -0.76, 0.08, 0.58, '#24251e');
+            px(0.47, -0.85, 0.14, 0.1, '#8b7f5e');
           }
         }
 
@@ -7779,57 +7779,57 @@
         spritePalette(cargoType) {
           if (cargoType === 'coal') {
             return {
-              outline: '#030504',
-              shadow: '#050706',
-              base: '#172534',
-              side: '#070b0f',
-              top: '#314555',
-              light: '#d7c267',
-              window: '#82aeb8',
-              cargo: '#070808',
-              cargo2: '#3a4245',
+              outline: '#07120d',
+              shadow: '#07120d',
+              base: '#24251e',
+              side: '#07120d',
+              top: '#203d24',
+              light: '#d6bd68',
+              window: '#8fa9aa',
+              cargo: '#07120d',
+              cargo2: '#203d24',
               stripe: '#a64435'
             };
           }
           if (cargoType === 'lumber') {
             return {
-              outline: '#030504',
-              shadow: '#0c0905',
-              base: '#263422',
-              side: '#18120b',
-              top: '#714b29',
+              outline: '#07120d',
+              shadow: '#07120d',
+              base: '#203923',
+              side: '#07120d',
+              top: '#5d4b2c',
               light: '#d6bd68',
-              window: '#81999c',
-              cargo: '#52391f',
-              cargo2: '#a1703b',
+              window: '#8fa9aa',
+              cargo: '#5d4b2c',
+              cargo2: '#8b7f5e',
               stripe: '#a8c77d'
             };
           }
           if (cargoType === 'ore') {
             return {
-              outline: '#030504',
-              shadow: '#080704',
-              base: '#2a241b',
-              side: '#120f0b',
-              top: '#6d5a39',
+              outline: '#07120d',
+              shadow: '#07120d',
+              base: '#24251e',
+              side: '#07120d',
+              top: '#5d4b2c',
               light: '#d6bd68',
               window: '#8fa9aa',
-              cargo: '#3b3a32',
+              cargo: '#203d24',
               cargo2: '#8b7f5e',
-              stripe: '#b08345'
+              stripe: '#8b7f5e'
             };
           }
           return {
-            outline: '#030504',
-            shadow: '#080b0e',
-            base: '#173047',
-            side: '#0c1721',
-            top: '#4f6772',
-            light: '#d7c267',
-            window: '#b6c8c6',
-            cargo: '#233f58',
-            cargo2: '#61747f',
-            stripe: '#984739'
+            outline: '#07120d',
+            shadow: '#07120d',
+            base: '#24251e',
+            side: '#07120d',
+            top: '#2d6a35',
+            light: '#d6bd68',
+            window: '#a8c77d',
+            cargo: '#203d24',
+            cargo2: '#8b7f5e',
+            stripe: '#a64435'
           };
         }
 
@@ -7837,19 +7837,19 @@
           const accent = {
             coal: '#a64435',
             lumber: '#a8c77d',
-            ore: '#b08345',
+            ore: '#8b7f5e',
             mail: '#d6bd68'
           }[cargoType] || '#d6bd68';
           return {
-            outline: '#030504',
-            shadow: '#050706',
-            base: '#162335',
-            side: '#070b0f',
-            top: '#415d66',
-            light: '#d7c267',
-            window: '#9ec6ca',
-            cargo: '#101820',
-            cargo2: '#50616a',
+            outline: '#07120d',
+            shadow: '#07120d',
+            base: '#24251e',
+            side: '#07120d',
+            top: '#5d4b2c',
+            light: '#d6bd68',
+            window: '#8fa9aa',
+            cargo: '#07120d',
+            cargo2: '#5d4b2c',
             stripe: accent
           };
         }
@@ -7884,7 +7884,7 @@
           const front = bodyLen * 0.5;
           const rear = -bodyLen * 0.5;
           g.clearRect(0, 0, w, h);
-          this.trainBox(g, center, axis, 1.5, 3.6, bodyLen + 4, bodyWidth + 2, 'rgba(0, 0, 0, 0.45)', 2);
+          this.trainBox(g, center, axis, 1.5, 3.6, bodyLen + 4, bodyWidth + 2, 'rgba(7, 18, 13, 0.45)', 2);
           this.trainBox(g, center, axis, 0, 0, bodyLen, bodyWidth + 4, p.outline, 2);
           this.trainBox(g, center, axis, 0, 0, bodyLen - 3, bodyWidth, options.engine ? p.base : p.side, 2);
           this.trainBox(g, center, axis, 0, -2.2, bodyLen - 7, bodyWidth * 0.38, options.engine ? p.top : p.base, 2);
@@ -7893,9 +7893,9 @@
           this.trainBox(g, center, axis, rear - 2.2, 0, 4.0, 3.2, p.outline, 2);
 
           for (const wheelAlong of [-bodyLen * 0.28, bodyLen * 0.25]) {
-            this.trainBox(g, center, axis, wheelAlong, bodyWidth * 0.55, 5.5, 3.2, '#020302', 2);
-            this.trainBox(g, center, axis, wheelAlong, -bodyWidth * 0.55, 5.0, 2.4, '#020302', 2);
-            this.trainCell(g, center, axis, wheelAlong, bodyWidth * 0.55, 2, 1.2, '#68736d');
+            this.trainBox(g, center, axis, wheelAlong, bodyWidth * 0.55, 5.5, 3.2, '#07120d', 2);
+            this.trainBox(g, center, axis, wheelAlong, -bodyWidth * 0.55, 5.0, 2.4, '#07120d', 2);
+            this.trainCell(g, center, axis, wheelAlong, bodyWidth * 0.55, 2, 1.2, '#8b7f5e');
           }
 
           if (options.engine) {
@@ -7904,22 +7904,22 @@
             this.trainBox(g, center, axis, front - 13, -2.4, 3.6, 2.8, p.window, 2);
             this.trainBox(g, center, axis, rear + 4.2, 1.8, 5.5, 3.6, p.stripe, 2);
             this.trainBox(g, center, axis, front - 11, 1.6, 4.2, 4.2, p.side, 2);
-            this.trainCell(g, center, axis, front + 3.2, -0.6, 3.1, 1.8, '#fff0a3');
+            this.trainCell(g, center, axis, front + 3.2, -0.6, 3.1, 1.8, '#fff8e8');
             this.trainCell(g, center, axis, front + 0.6, 0.9, 2.2, 1.4, cargoPalette.stripe);
             this.trainCell(g, center, axis, rear - 0.3, -1.4, 2.4, 1.2, cargoPalette.light);
-            this.trainBox(g, center, axis, -2.2, -4.6, bodyLen - 11, 1.4, '#d8d0af', 1.5);
+            this.trainBox(g, center, axis, -2.2, -4.6, bodyLen - 11, 1.4, '#d6bd68', 1.5);
           } else if (options.cargoType === 'coal') {
             this.trainBox(g, center, axis, 0, -0.4, bodyLen - 8, bodyWidth - 2, p.cargo, 2);
             for (let i = 0; i < 5; i++) {
               const along = rear + 6 + i * 4.5;
-              this.trainCell(g, center, axis, along, -2 + (i % 2) * 2.4, 3, 2, i % 2 ? p.cargo2 : '#050705');
+              this.trainCell(g, center, axis, along, -2 + (i % 2) * 2.4, 3, 2, i % 2 ? p.cargo2 : '#07120d');
             }
             this.trainBox(g, center, axis, 0, -4.4, bodyLen - 8, 1.4, p.top, 1.5);
           } else if (options.cargoType === 'lumber') {
             for (let i = 0; i < 4; i++) {
               this.trainBox(g, center, axis, 0, -3 + i * 1.8, bodyLen - 7, 1.2, i % 2 ? p.cargo : p.cargo2, 1.5);
             }
-            this.trainCell(g, center, axis, front - 4, 3.4, 2.4, 2.4, '#c8a05c');
+            this.trainCell(g, center, axis, front - 4, 3.4, 2.4, 2.4, '#d6bd68');
           } else if (options.cargoType === 'ore') {
             this.trainBox(g, center, axis, 0, -0.2, bodyLen - 8, bodyWidth - 3, p.side, 2);
             for (let i = 0; i < 6; i++) {
@@ -7930,7 +7930,7 @@
             for (let i = 0; i < 5; i++) {
               this.trainBox(g, center, axis, rear + 5.5 + i * 4.2, -2.1, 2.4, 3.2, p.window, 1.5);
             }
-            this.trainBox(g, center, axis, 0, -4.3, bodyLen - 9, 1.2, '#d8d0af', 1.5);
+            this.trainBox(g, center, axis, 0, -4.3, bodyLen - 9, 1.2, '#d6bd68', 1.5);
           }
         }
 
@@ -7969,13 +7969,13 @@
           canvas.height = 34 + rows.length * cellH;
           const sheet = canvas.getContext('2d');
           sheet.imageSmoothingEnabled = false;
-          sheet.fillStyle = '#07100b';
+          sheet.fillStyle = '#07120d';
           sheet.fillRect(0, 0, canvas.width, canvas.height);
           sheet.fillStyle = '#d6bd68';
           sheet.font = 'bold 12px monospace';
           sheet.fillText('OpenTTD-style original train sprite sheet: 8 facings, explicit anchors', 10, 18);
           sheet.font = '9px monospace';
-          sheet.fillStyle = 'rgba(248,241,222,0.66)';
+          sheet.fillStyle = 'rgba(255, 248, 232, 0.66)';
           sheet.fillText('Generated locally for QA; no OpenGFX pixels copied.', 10, 30);
           rows.forEach((row, rowIndex) => {
             const top = 34 + rowIndex * cellH;
@@ -7989,9 +7989,9 @@
               const car = this.makeTrainSprite({ dir, orientation, cargoType: row.cargoType, loaded: true, engine: false, phase: 1 });
               const midX = x + cellW * 0.5;
               const baseY = top + 48;
-              sheet.strokeStyle = 'rgba(205,187,120,0.18)';
+              sheet.strokeStyle = 'rgba(214, 189, 104, 0.18)';
               sheet.strokeRect(x + 2, top + 2, cellW - 4, cellH - 4);
-              sheet.strokeStyle = 'rgba(215,190,112,0.36)';
+              sheet.strokeStyle = 'rgba(214, 189, 104, 0.36)';
               sheet.beginPath();
               sheet.moveTo(midX - 24, baseY);
               sheet.lineTo(midX + 24, baseY);
@@ -8062,7 +8062,7 @@
           const sy = Math.sin(railAngle) * shadowLength * 0.5;
           g.save();
           g.imageSmoothingEnabled = false;
-          g.strokeStyle = 'rgba(2, 3, 2, 0.48)';
+          g.strokeStyle = 'rgba(7, 18, 13, 0.48)';
           g.lineWidth = Math.max(2, Math.round(sprite.height * scale * 0.13));
           g.lineCap = 'butt';
           g.beginPath();
@@ -8071,13 +8071,13 @@
           g.stroke();
           g.drawImage(sprite, x, y, Math.round(sprite.width * scale), Math.round(sprite.height * scale));
           if (localDevToolsEnabled && searchParams.has('trainAlign')) {
-            g.strokeStyle = 'rgba(255, 236, 152, 0.92)';
+            g.strokeStyle = 'rgba(255, 248, 232, 0.92)';
             g.lineWidth = 1;
             g.beginPath();
             g.moveTo(Math.round(p.x - sx), Math.round(p.y - sy));
             g.lineTo(Math.round(p.x + sx), Math.round(p.y + sy));
             g.stroke();
-            g.fillStyle = 'rgba(136, 220, 232, 0.95)';
+            g.fillStyle = 'rgba(168, 199, 125, 0.95)';
             g.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3);
           }
           g.restore();
@@ -8088,9 +8088,9 @@
           const w = compact ? Math.min(166, size.w * 0.43) : Math.min(380, size.w - 28);
           const x = compact ? 14 : size.w - w - 14;
           const y = 14;
-          g.fillStyle = 'rgba(7, 14, 10, 0.74)';
+          g.fillStyle = 'rgba(7, 18, 13, 0.74)';
           g.fillRect(x, y, w, compact ? 96 : 126);
-          g.strokeStyle = 'rgba(205,187,120,0.22)';
+          g.strokeStyle = 'rgba(214, 189, 104, 0.22)';
           g.strokeRect(x, y, w, compact ? 96 : 126);
           g.fillStyle = '#d6bd68';
           g.font = `bold ${compact ? 9 : 12}px monospace`;
@@ -8099,7 +8099,7 @@
           g.font = `bold ${compact ? 14 : 18}px monospace`;
           g.fillText(`${this.trains.length} trains`, x + 13, y + 48);
           g.fillText(`${Math.round(this.stats.delivered)} cargo`, x + 13, y + 72);
-          g.fillStyle = 'rgba(248,241,222,0.7)';
+          g.fillStyle = 'rgba(255, 248, 232, 0.7)';
           g.font = `${compact ? 9 : 12}px monospace`;
           if (compact) {
             g.fillText(`${this.reservations.size} paths`, x + 13, y + 91);
