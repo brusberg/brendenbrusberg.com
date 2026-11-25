@@ -75,9 +75,17 @@
             // as there are vines -- two, in a 156px margin, which is exactly what it
             // looked like. A branch ending below its parent is also what a plant
             // actually does.
-            const BRANCH_DROP = 0.40;
-            const BRANCH_DROP_MIN = 0.08;
-            const TOP_FRAC_FLOOR = 0.22;
+            const BRANCH_DROP = 0.50;
+            const BRANCH_DROP_MIN = 0.06;
+            const TOP_FRAC_FLOOR = 0.16;
+            // The trunks vary too, not just the branches. Without this a vine's own
+            // stem always reaches its stratum exactly, so the tallest tips still
+            // line up even once the branches are scattered.
+            const TRUNK_JITTER = 0.14;
+            // Sprouting gets likelier the higher a bud has climbed, so the planting
+            // opens into a canopy instead of being evenly thin. Multiplier at the
+            // ceiling relative to the base; 0 would be the old uniform behaviour.
+            const CANOPY_GAIN = 2.4;
 
             // A bud that has topped out is PARKED, not discarded. The column's
             // height changes on every panel switch -- 192px on Stats against
@@ -439,7 +447,7 @@
                 const v = vines[vines.length - 1];
                 v.forkBoost = Math.max(1, Math.min(2.2, 1 / Math.max(0.35, v.topFrac)));
                 const trunk = newBud(i, 0, 0, -Math.PI / 2, 1 - i * 0.07, 0, -i * VINE_WAIT, 0);
-                trunk.topFrac = v.topFrac;
+                trunk.topFrac = Math.max(TOP_FRAC_FLOOR, v.topFrac - rnd() * TRUNK_JITTER);
                 buds.push(trunk);
               }
               sown = true;
@@ -560,7 +568,8 @@
                 // left a three-step window in which a fork was even possible, and
                 // the short column came out as bare stems.
                 if (!tops && b.depth < 2 && life > Math.max(2, lifeCap * 0.10)
-                    && b.sinceFork + 1 >= INTERNODE && rnd() < FORK_P * vine.forkBoost) {
+                    && b.sinceFork + 1 >= INTERNODE
+                    && rnd() < FORK_P * vine.forkBoost * (1 + CANOPY_GAIN * Math.min(1, -b.y / Math.max(1, ceiling)))) {
                   const side = rnd() < 0.5 ? -1 : 1;
                   const childA = a + side * (0.5 + rnd() * 0.4);
                   const cx = vine.ax0 + nx + Math.cos(childA) * stepLen * LOOK;
@@ -677,6 +686,44 @@
             const BASE_ALPHA = 0.72;
             const STEM_COLORS = ['#3f5a2e', '#4c6b36', '#5a7a41'];
 
+            // A criss-cross trellis of wooden slats for the vines to climb. Drawn
+            // once into an offscreen canvas and blitted, because at PX granularity
+            // a full lattice is tens of thousands of fillRects -- per frame, that
+            // would cost more than the entire garden. Rebuilt only when the backing
+            // store changes.
+            const SLAT_W = PX * 2;        // slat thickness
+            const SLAT_GAP = PX * 15;     // centre-to-centre, measured along x
+            const SLAT_DARK = '#241d12';
+            const SLAT_LIGHT = '#33291a';
+            let trellis = null, trellisW = 0, trellisH = 0;
+
+            function buildTrellis(bw, bh, scale) {
+              trellis = document.createElement('canvas');
+              trellis.width = bw;
+              trellis.height = bh;
+              trellisW = bw;
+              trellisH = bh;
+              const t = trellis.getContext('2d');
+              t.setTransform(scale, 0, 0, scale, 0, 0);
+              const w = bw / scale, h = bh / scale;
+              const gap = SLAT_GAP;
+              // Two passes at opposite diagonals. The second is drawn lighter so
+              // the crossings read as one slat lying over another rather than as a
+              // flat grid.
+              for (const [dir, colour] of [[1, SLAT_DARK], [-1, SLAT_LIGHT]]) {
+                t.fillStyle = colour;
+                // Start far enough off-canvas that both diagonals cover the corners.
+                for (let c = -h; c < w + h; c += gap) {
+                  for (let y = 0; y < h; y += PX) {
+                    const x = Math.round((c + dir * y) / PX) * PX;
+                    if (x < -SLAT_W || x > w) continue;
+                    t.fillRect(x, Math.round(y / PX) * PX, SLAT_W, PX);
+                  }
+                }
+              }
+              t.setTransform(1, 0, 0, 1, 0, 0);
+            }
+
             // One stem segment as a run of PX blocks, optionally only part of the
             // way along it. `frac` is what both the pop ease and the creeping tip
             // are built out of.
@@ -699,6 +746,10 @@
               if (el.width !== bw || el.height !== bh) { el.width = bw; el.height = bh; }
               g.setTransform(dprCapped, 0, 0, dprCapped, 0, 0);
               g.clearRect(0, 0, boxW, boxH);
+              if (!trellis || trellisW !== bw || trellisH !== bh) buildTrellis(bw, bh, dprCapped);
+              // Behind everything, and fainter than the planting.
+              g.globalAlpha = 0.5;
+              g.drawImage(trellis, 0, 0, bw, bh, 0, 0, boxW, boxH);
               // Decoration, not content: it should read as texture beside the
               // column rather than compete with the words next to it.
               g.globalAlpha = BASE_ALPHA;
@@ -828,7 +879,13 @@
   window.createFlora = function createFlora(canvas, search) {
     if (!canvas) throw new Error('createFlora needs a canvas element');
     return makeFlora(
-      { getElementById: function () { return canvas; } },
+      // getElementById hands back the caller's canvas; everything else is
+      // forwarded to the real document, because the module builds an offscreen
+      // canvas for the trellis.
+      {
+        getElementById: function () { return canvas; },
+        createElement: function (tag) { return document.createElement(tag); },
+      },
       window,
       { search: search || '' },
       URLSearchParams,

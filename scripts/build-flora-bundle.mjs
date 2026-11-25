@@ -62,7 +62,13 @@ ${module.split('\n').map((l) => (l.trim() ? '    ' + l : l)).join('\n')}
   window.createFlora = function createFlora(canvas, search) {
     if (!canvas) throw new Error('createFlora needs a canvas element');
     return makeFlora(
-      { getElementById: function () { return canvas; } },
+      // getElementById hands back the caller's canvas; everything else is
+      // forwarded to the real document, because the module builds an offscreen
+      // canvas for the trellis.
+      {
+        getElementById: function () { return canvas; },
+        createElement: function (tag) { return document.createElement(tag); },
+      },
       window,
       { search: search || '' },
       URLSearchParams,

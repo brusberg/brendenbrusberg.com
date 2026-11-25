@@ -170,7 +170,7 @@
 <div class="wrap">
 
 <header class="hero">
-  <span class="kicker">Proposal catalogue &middot; round two &middot; brendenbrusberg.com</span>
+  <span class="kicker">Proposal catalogue &middot; round three &middot; brendenbrusberg.com</span>
   <h1>Polish Review</h1>
   <p class="lede">
     Eleven proposals, each measured before it was argued for. You took the recommended option on every
@@ -366,6 +366,29 @@
             <td>&ldquo;The fill takes 14 seconds&rdquo;</td>
             <td>14.9s. A design pass claimed 25&ndash;37% overrun; measured, it is 6%, so I left it alone.</td>
           </tr>
+          <tr>
+            <td>&ldquo;87 colours against a budget of 24&rdquo;</td>
+            <td><b>There are 31, and I quoted 87 all day.</b> The audit counted every literal as
+              written, so one gold &mdash; <code>#cdbb78</code> &mdash; counted as thirteen colours
+              because it is written at thirteen opacities; <code>#f8f1de</code> counted as ten,
+              <code>#f7f1df</code> nine. Opacity is not hue. 31 is verified three independent ways:
+              re-parsing the audit&rsquo;s own 87 entries down to distinct RGB, a separate extractor over
+              the five stylesheets, and the computed values the browser actually paints. The audit now
+              budgets hues with the literal count beside it as context, and six near-duplicates have
+              been merged since &mdash; 31&nbsp;&rarr;&nbsp;25.</td>
+          </tr>
+          <tr>
+            <td>&ldquo;Lateral travel 17.8&nbsp;px against 11.0&nbsp;px&rdquo;, and the other A/B
+              figures in the table above</td>
+            <td><b>Single-seed, and noisier than I presented them.</b> The moment two arms differ they
+              consume the PRNG differently and grow entirely different gardens, so the gap carries as
+              much garden-to-garden variance as treatment effect. The sprout spread read 17.8 against
+              11.0 at one point and 13.4 against 14.2 after an unrelated retune. Both arms are now
+              averaged over <b>eight seeds</b> and the harness gates on the averaged figure: heavily
+              overlapped cells <b>28.5%</b> against <b>39.1%</b>, max cell occupancy <b>25.1</b> against
+              <b>31.9</b>, sprout lateral travel <b>16.1&nbsp;px</b> against <b>13.5&nbsp;px</b>. Still a
+              small sample &mdash; &ldquo;clearly better&rdquo;, not two-decimal facts.</td>
+          </tr>
         </tbody>
       </table></div>
     </div>
@@ -404,6 +427,455 @@
       staying in frame, resize, <code>--sweep</code>), <code>scripts/measure-static-cache.js</code> (paste
       into the console on <code>#stats</code>), <code>scripts/palette-lock.mjs --check</code>,
       <code>scripts/model-digest.mjs --compare</code>, <code>node --test tests/</code>.
+    </p>
+
+  </div>
+</section>
+
+<!-- ======================================================= ROUND THREE -->
+<section class="entry" id="round-three">
+  <div class="entry-head">
+    <span class="id" style="color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent)">R3</span>
+    <div class="t">
+      <h2>Round three &mdash; the vine, and a premise that was wrong</h2>
+      <p class="lede" style="font-size:1rem">
+        Mostly the left column, because you kept pushing on it: the vine is now a garden per panel
+        rather than one garden stretched across three shapes, and the growth has three switchable
+        treatments with a lab to watch them side by side. Then a layout bug of mine that drew a
+        192&nbsp;px band across the middle of the page at one specific range of widths, a 3.2&nbsp;MB
+        portrait in a 400&times;300 slot, and the design-token audit &mdash; where the number I had been
+        quoting all day turned out to be counting the wrong thing.
+      </p>
+      <div class="chips">
+        <span class="chip ok">a garden per panel</span>
+        <span class="chip ok">creep pinned</span>
+        <span class="chip warn">861&ndash;980px band</span>
+        <span class="chip ok">portrait 7.6&times; smaller</span>
+        <span class="chip judge">31 colours, not 87</span>
+        <span class="chip ok">watchdog +3 checks</span>
+      </div>
+      <p class="note" style="margin-top:0.6rem">
+        The ten commits this section covers are 1,756 insertions across 14 files on
+        <code>proto/polish</code>. Still nothing on <code>main</code>, still nothing pushed. Two more
+        corrections to my own claims are in the corrections table above.
+      </p>
+    </div>
+  </div>
+
+  <div class="stack">
+
+    <div class="panel">
+      <span class="label">A garden per panel, because the column is not one shape</span>
+      <p style="font-size:0.92rem">
+        Three things you pointed at turned out to be one thing: a single garden was being stretched
+        across panels that do not share a shape. The column is about <b>192&nbsp;px</b> tall on Stats,
+        <b>596&nbsp;px</b> on History and <b>1,270&nbsp;px</b> on Projects, and only the width is
+        constant. One garden is always wrong for at least two of them &mdash; grown short it looks
+        stunted in the tall box, grown tall it is clipped to its own trunks in the short one. That is
+        why the tall columns &ldquo;looked weirder&rdquo; after a switch, and why the left vines appeared
+        to have stopped.
+      </p>
+      <p style="font-size:0.92rem">
+        Each panel now keeps its own garden for the life of the page, seeded from the panel id &mdash;
+        which is the original &ldquo;a different plant per panel&rdquo; idea, now that it can survive.
+        Nothing regrows: leaving a panel stashes its garden, returning restores it exactly.
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr><th>panel</th><th class="n">column height</th><th class="n">segments grown</th><th>on return</th></tr></thead>
+        <tbody>
+          <tr><td>stats</td><td class="n">~192&nbsp;px</td><td class="n">166</td><td>byte-identical</td></tr>
+          <tr><td>history</td><td class="n">~596&nbsp;px</td><td class="n">928</td><td>byte-identical</td></tr>
+          <tr><td>projects</td><td class="n">~1,270&nbsp;px</td><td class="n">1,586</td><td>byte-identical</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:0.6rem">
+        Three distinct seeds, three gardens, each grown in its own box and restored exactly on return.
+        <code>?garden=one</code> keeps the old single garden if you want to compare them.
+      </p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">Scale from the width, budget from the height</span>
+        <p style="font-size:0.9rem">
+          Stem length used to come from the column <i>height</i>, so the garden&rsquo;s whole scale was
+          decided by whichever panel you happened to land on first. Sown on Stats it was built from
+          <b>3.5&nbsp;px</b> steps, which in the tall column reads as fine moss and needs <b>360</b>
+          steps a vine to climb; it reached <b>29%</b> of the tall column. Width is the same on every
+          panel, so it is the stable thing to scale from. The height now only re-derives the
+          <i>budget</i> &mdash; life, growth rate, fork spacing.
+        </p>
+        <p class="note">
+          Measured after: sown on Stats at 192&nbsp;px, then shown at 1,270&nbsp;px, the same garden
+          carries on to <b>95%</b> of the column with its stem length unchanged at <b>17.1&nbsp;px</b>.
+          Topped-out buds are <i>parked</i> rather than discarded, so a rising ceiling lets them carry
+          on exactly where they stopped, and the flower that marked the tip is removed because it is no
+          longer a tip. Bounded at three revivals.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="label">They no longer stop in lockstep</span>
+        <p style="font-size:0.9rem">
+          Each vine has its own growth rate, <b>0.72 to 1.28</b> centred on 1: a vine slower than 1
+          skips some steps, one faster never does. Deterministic, no extra PRNG draws, and it
+          desynchronises the whole of growth rather than only the start.
+        </p>
+        <p class="note">
+          Measured at 413&times;1315, the four vines finish at <b>12.7&nbsp;s, 12.9&nbsp;s,
+          13.6&nbsp;s and 16.4&nbsp;s</b> &mdash; a 3.7&nbsp;s spread where before they all stopped
+          together.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="label">A ragged skyline, and short columns that use their width</span>
+      <p style="font-size:0.92rem">
+        Top-out heights were drawn independently from one range, and four or five independent draws
+        cluster often enough that the skyline read flat. Each vine now takes its own band of the range
+        and jitters inside it &mdash; the same trick the base positions already use across the width
+        &mdash; and the bands are shuffled so height does not correlate with position, which would have
+        drawn a ramp. The range also widened, and it widens further as the column shortens, because a
+        ragged skyline has to be ragged in <i>pixels</i>: 0.82&ndash;1.0 of a 1,300&nbsp;px column is a
+        233&nbsp;px spread and the same fraction of a 174&nbsp;px column is 31&nbsp;px, which is how
+        every vine ended up topping out in the same stripe with the flowers bunched into one band. On a
+        192&nbsp;px column the tips now land at <b>151 / 127 / 109 / 66&nbsp;px</b>: an 85&nbsp;px
+        spread in a 192&nbsp;px box.
+      </p>
+      <p style="font-size:0.92rem">
+        That cost coverage, which is the part I did not see coming. A vine that stops at half the
+        column puts out half the plant, so <b>97%</b> of the width carrying material fell to
+        <b>68%</b>. Two fixes, both the same shape as the problem above &mdash; a fixed constant meeting
+        a variable box. A vine with less height to climb now forks proportionally more often, which is
+        what a plant with no room above it actually does; and the fork warm-up had a hard floor of 8
+        steps, which is nothing on a tall column and nearly the whole life of a vine on a short one,
+        leaving a three-step window in which forking was possible at all. Both proportional now.
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr><th>share of the column&rsquo;s width carrying material</th><th class="n">413&times;192</th><th class="n">300&times;192</th><th class="n">413&times;1315</th></tr></thead>
+        <tbody>
+          <tr><td>tuned on the tall column only</td><td class="n">37.7%</td><td class="n">34.0%</td><td class="n">94.3%</td></tr>
+          <tr><td>forks and stem spacing derived from the box</td><td class="n">97.1%</td><td class="n">82.0%</td><td class="n">94.3%</td></tr>
+          <tr class="hl"><td>after the skyline was spread out</td><td class="n">82%</td><td class="n">96%</td><td class="n">&mdash;</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:0.6rem">
+        The fork refractory and the fork probability are now derived in <code>sow()</code> from the life
+        cap against a target of <b>2.8</b> forks per stem, found with <code>--forkscan</code>: across
+        2.6&ndash;3.0 the tall column is byte-identical because the probability clamps to its floor, and
+        above 3.0 it unclamps and nearly doubles in segments. Stem spacing also tightens with the aspect
+        ratio, so 413&times;192 goes from 4 stems to 5 and 300&times;192 from 3 to 4 while the tall
+        column keeps its 4. The dash is honest: the tall column was not re-measured in the pass that
+        produced the third row. <code>scripts/measure-flora.mjs --sizes</code> reports this across six
+        column shapes.
+      </p>
+    </div>
+
+    <div class="panel">
+      <span class="label">The growth animation &mdash; four treatments, one plant</span>
+      <p style="font-size:0.92rem">
+        The jumpiness was never a frame-rate problem. <code>raw</code> steps the plant at about half the
+        paint rate, so most painted frames are identical to the one before &mdash; that <i>is</i> the
+        stutter. Three treatments sit on top of it, switchable with
+        <code>?vine=creep|pop|fine</code>, and <code>creep</code> is the one you picked, now the
+        default.
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr><th>treatment</th><th class="n">frames that move</th><th class="n">segments</th><th>what it does</th></tr></thead>
+        <tbody>
+          <tr><td>raw</td><td class="n">29%</td><td class="n">258</td><td>paints the committed segments and nothing else</td></tr>
+          <tr class="hl"><td>creep &mdash; chosen</td><td class="n">82%</td><td class="n">258</td><td>eases the tip along the bud&rsquo;s newest real segment</td></tr>
+          <tr><td>pop</td><td class="n">99%</td><td class="n">258</td><td>an alpha ramp on the newest segments</td></tr>
+          <tr><td>fine</td><td class="n">58%</td><td class="n">712</td><td>steps twice as often &mdash; a different plant</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:0.6rem">
+        <code>raw</code>, <code>creep</code> and <code>pop</code> grow the identical garden to the
+        segment, which is the claim that matters: the treatments are <b>paint-only</b>.
+        <code>fine</code> is 2.7&times; the segments, so it is a different plant and never a like-for-like
+        candidate. And <code>creep</code>&rsquo;s 82% is a ceiling, not a shortfall &mdash; everything
+        snaps to a 3&nbsp;px pixel-art grid, so a frame in which the tip advances less than one block
+        draws exactly the same image. The page says so rather than implying it fell short of 100%.
+      </p>
+      <p style="font-size:0.92rem">
+        <code>creep</code> also stopped guessing, and that was the residual jumpiness you could still
+        see. It drew a tip extrapolated along the angle the bud was currently facing, but the next angle
+        is that plus wander, plus the up-bias, plus whatever the density fan decides &mdash; so the
+        guessed tip and the committed segment routinely pointed different ways and the tip visibly
+        snapped. It now interpolates the bud&rsquo;s <b>newest real segment</b>: the model is one step
+        ahead and the render eases into a segment that already exists.
+      </p>
+      <p class="note">
+        None of this is a performance question in either direction. The vine&rsquo;s whole tick &mdash;
+        grow and paint &mdash; measures <b>0.29&nbsp;ms</b> on the real page, which is <b>0.9% of a
+        33&nbsp;ms frame</b>.
+      </p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">The lab, so you can watch all four at once</span>
+        <p style="font-size:0.9rem">
+          <code>scripts/build-vine-lab.mjs</code> reads the flora module out of <code>index.html</code>
+          between its <code>flora:begin</code>/<code>flora:end</code> markers and inlines it into
+          <code>docs/vine-lab.html</code>, which instantiates it four times &mdash; one per treatment
+          &mdash; with the same seed and one shared 30&nbsp;fps loop. There is no second copy of the
+          algorithm: what you watch is the code the site runs. Column height and speed are adjustable,
+          and replay restarts all four together.
+        </p>
+      </div>
+      <div class="panel" style="border-color:color-mix(in srgb,var(--rust) 40%,var(--line))">
+        <span class="label" style="color:var(--rust)">The motion metric took three goes</span>
+        <p style="font-size:0.9rem">
+          The first two were wrong in the same way, and both produced numbers that looked plausible
+          enough to report. It sampled one 160&nbsp;px band at the bottom of the canvas &mdash; which
+          growth leaves behind within seconds &mdash; and put <code>creep</code> at <b>66%</b>. Widening
+          it to six thin bands spread down the canvas made it <i>worse</i>, <b>25%</b>, because a
+          growing tip is a few 3&nbsp;px blocks and the odds of it falling inside a sampled band are
+          poor. Measuring a slice of a big canvas was the bug both times. It now hashes the whole canvas
+          at a stride.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel" style="border-color:color-mix(in srgb,var(--rust) 40%,var(--line))">
+        <span class="label" style="color:var(--rust)">A band across the middle of the page, and it was mine</span>
+        <p style="font-size:0.92rem">
+          <code>.info-window</code> collapses to a single column at <code>max-width: 980px</code>, but
+          the flora slot only hid itself at <b>860&nbsp;px</b>. So at every width from <b>861 to
+          980&nbsp;px</b> the slot was full width with a 12&nbsp;rem floor, and the vine became a
+          <b>192&nbsp;px</b> band wedged between the summary and the body text. Two breakpoints that
+          were meant to be one breakpoint.
+        </p>
+        <p class="note">
+          The rule now lives inside the same <code>@media</code> block as the collapse, so the two
+          cannot drift apart again. Checked at 915&nbsp;px: single column, slot
+          <code>display:none</code>, height 0.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="label">The portrait: 3.2&nbsp;MB for a 400&times;300 slot</span>
+        <div class="scroll-x"><table>
+          <thead><tr><th>&nbsp;</th><th class="n">before</th><th class="n">after</th></tr></thead>
+          <tbody>
+            <tr><td>pixels</td><td class="n">2048&times;1536</td><td class="n">800&times;600</td></tr>
+            <tr><td>bytes</td><td class="n">3,263&nbsp;KB</td><td class="n">429&nbsp;KB</td></tr>
+            <tr><td>encoding</td><td class="n">RGBA</td><td class="n">8-bit grey</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note" style="margin-top:0.6rem">
+          The only static <code>&lt;img&gt;</code> on the site, carrying <b>26&times;</b> the pixels the
+          slot can show &mdash; enough of a decode that the browser paints the alt text first, which is
+          the broken-looking image in the profile block. <b>7.6&times;</b> smaller, at 2&times; the slot
+          for retina, and <i>lossless</i> for this particular image by two measurements rather than an
+          assumption: <b>0.00%</b> of its pixels carry any colour and <b>0.00%</b> are anything but
+          fully opaque. It is a Laplacian edge pass &mdash; black and white speckle &mdash; so two of
+          its four channels were a copy of the first and the fourth was a constant.
+        </p>
+        <p class="note">
+          Deliberately not a JPEG: high-frequency speckle is the worst case for JPEG, and at q82 it is
+          315&nbsp;KB &mdash; 114&nbsp;KB less than lossless, in exchange for ringing on every speck. No
+          image library either; <code>sips</code> does the resample and the greyscale re-encode is
+          <code>node:zlib</code>, the same approach the sprite template already uses. The
+          <code>&lt;img&gt;</code> gains <code>decoding="async"</code> and
+          <code>fetchpriority="high"</code>; <code>width</code>/<code>height</code> were already
+          declared, so there was never a layout shift &mdash; only the wait.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="label">Design tokens &mdash; the audit was measuring the wrong thing</span>
+      <p style="font-size:0.92rem">
+        I had been quoting &ldquo;<b>87 colours against a budget of 24</b>&rdquo; all day, and it is not
+        a colour count. It counts every literal as written, so one gold &mdash; <code>#cdbb78</code>
+        &mdash; became <b>thirteen colours</b> because it is written at thirteen opacities.
+        <code>#f8f1de</code> became ten, <code>#f7f1df</code> nine. Opacity is not hue.
+      </p>
+      <p style="font-size:0.92rem">
+        There are <b>31</b>. Verified three independent ways, because one count disagreeing with the
+        headline is not evidence:
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr><th>method</th><th>result</th></tr></thead>
+        <tbody>
+          <tr><td>re-parsing the audit&rsquo;s own 87 entries down to distinct RGB</td><td class="n">31</td></tr>
+          <tr><td>a separate extractor over the five stylesheets</td><td class="n">31</td></tr>
+          <tr><td>the computed values the browser actually paints, across four panels and the ant iframe</td><td class="n">18 present there, 10 of them at more than one opacity</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:0.6rem">
+        Also checked that nothing hides in a syntax the extractor misses: no <code>hsl</code>, no
+        <code>lab</code>/<code>lch</code>, no <code>color()</code>, no <code>currentColor</code>, no
+        system colours &mdash; and the four apparent named colours are all <code>white-space</code>. The
+        audit now budgets <b>hues</b>, with the literal count reported beside it as context rather than
+        as the headline.
+      </p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">Six merged, 31 hues &rarr; 25</span>
+        <pre><span class="c">// 43 literals rewritten across four files</span>
+#fff9e9 <span class="a">&rarr; #fff8e8</span>  d=0.0025  cream, text and stroke only
+#f8f1de <span class="a">&rarr; #f7f1df</span>  d=0.0018  body cream, 12 opacities
+#d3b878 <span class="a">&rarr; #cdbb78</span>  d=0.0114  label gold, ant dialect
+#080c0a <span class="a">&rarr; #08100b</span>  d=0.0162  readout badge, not nested
+#111310 <span class="a">&rarr; #11140f</span>  d=0.0050  status panel, other context
+#d9c56d <span class="a">&rarr; #e1c978</span>  d=0.0193  accent gold, had drifted</pre>
+        <p class="note" style="margin-top:0.6rem">
+          Proved by computed style rather than by eye: <b>557 element rows</b> across four panels and
+          inside the ant iframe, <b>360 unchanged</b>, <b>197 changed</b>, and every one of those 197 is
+          explained by one of the six substitutions. <b>Zero unexplained differences.</b>
+          <code>index.html</code>&rsquo;s 416,837-character <code>&lt;script&gt;</code> is
+          byte-identical &mdash; the rewriter works on CSS slices and refuses to write if the non-CSS
+          parts move.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="label">Four refused, and this is the part worth reading</span>
+        <p style="font-size:0.9rem">
+          Clustering at <code>dOKLab&nbsp;0.02</code> proposes ten merges. Proximity is the wrong test
+          on its own: what matters is whether both colours are backgrounds of elements that sit
+          <i>inside one another</i>, because then the small difference <b>is</b> the boundary and
+          merging deletes it. A surface check found three such pairs, plus a fourth candidate that was
+          not a background at all:
+        </p>
+        <ul class="tight">
+          <li><code>.panel-footer</code> and <code>.popout-panel</code>, both sitting on <code>body</code></li>
+          <li>the ant page&rsquo;s <code>body</code>, sitting under <code>.profile-panel</code></li>
+          <li><code>.route-card</code>, sitting on its panel</li>
+          <li>the resume&rsquo;s <b>print ink</b>, which clustering wanted to fold into a green-tinted
+            panel background because that background wins on use count</li>
+        </ul>
+        <p class="note">
+          That leaves <b>25 against a budget of 24</b>, and I am not closing the last gap by merging
+          something I have just argued is unsafe. The remaining near-duplicate is <code>#fff8e8</code>
+          and <code>#f7f1df</code> &mdash; two creams, one per dialect &mdash; and whether those are one
+          colour is a design decision, not a distance.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel" style="border-color:color-mix(in srgb,var(--rust) 40%,var(--line))">
+      <span class="label" style="color:var(--rust)">Two holes an adversarial pass found in my own proof harness</span>
+      <div class="stack-sm">
+        <p style="font-size:0.92rem">
+          It executed the planned rewrite in a sandbox rather than reasoning about it, and found that the
+          harness meant to prove the rewrite safe could not have seen two whole classes of damage.
+        </p>
+        <p style="font-size:0.92rem">
+          <b>It could not see the ant page.</b> <code>querySelectorAll('*')</code> stops dead at an
+          iframe boundary. On the homepage that is <b>45% of the styled DOM</b>, and it is exactly the
+          half governed by <code>src/styles.css</code> &mdash; all 894 lines of the ant dialect, where
+          <b>34 of the 87 literals</b> live. It is also unreachable any other way:
+          <code>ant.html</code> redirects to <code>/#ants</code> when loaded as a top-level document, so
+          inside the frame is the only place it exists. The walk now recurses into same-origin frames
+          and labels anything it cannot enter rather than silently omitting it.
+        </p>
+        <p style="font-size:0.92rem">
+          <b>It could not see a deleted border.</b> An unresolvable custom property does not fall back to
+          the literal &mdash; it invalidates the whole declaration at computed-value time. So
+          <code>border: 1px solid var(--typo)</code> loses its width and its style, not just its colour;
+          the reviewer measured <code>border-top-width 0px</code> and
+          <code>border-top-style none</code>. The harness captured <code>border-top-width</code> and no
+          other width, and no style at all, so on an element whose text was already dark a mistyped
+          token could have deleted <i>every border on the page</i> and still produced an identical hash.
+          It now captures all four border widths and styles, outline style and width, and the background
+          shorthand&rsquo;s size, repeat and position. A <code>rows.sort()</code> that went missing while
+          I rewrote the walk is back too, so the hash depends on what is styled rather than on the order
+          the walk happened to visit it.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span class="label">The watchdog can now see the vine</span>
+      <p style="font-size:0.92rem">
+        You asked whether the watchdog had been expanded to the vines. It had not, and that is precisely
+        why it missed the page-falling bug. It watched WebGL contexts, draw rate, frame gaps, long tasks,
+        heap and uncaught errors &mdash; and a canvas quietly feeding its own height back into layout
+        produces none of those. No error, no dropped frame, no context loss, no heap climb worth
+        flagging. The page just got taller forever, and a backing store reached 42,652&nbsp;px.
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr><th>check</th><th>fires when</th><th>proven by reproducing the fault</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>canvas-runaway</code></td>
+            <td>a canvas backing store grows on four consecutive one-second samples, or exceeds
+              8192&nbsp;px on an axis</td>
+            <td class="n">flora canvas put back into normal flow at dpr&nbsp;2 &mdash; caught at
+              513&times;2228</td>
+          </tr>
+          <tr>
+            <td><code>layout-runaway</code></td>
+            <td>the document grows on four consecutive samples. A panel switch changes the height once,
+              so one or two samples is normal; four seconds of uninterrupted growth is not</td>
+            <td class="n">same reproduction &mdash; caught at 2691&nbsp;px</td>
+          </tr>
+          <tr>
+            <td><code>flora-never-settles</code></td>
+            <td>the vine is still growing after 90&nbsp;s</td>
+            <td class="n">stubbed <code>debug()</code> to report <code>settled:false</code> &mdash; fired
+              at exactly 90&nbsp;s</td>
+          </tr>
+        </tbody>
+      </table></div>
+      <p class="note" style="margin-top:0.6rem">
+        All three were proven by reproducing the fault rather than by reading the code, and all three are
+        listed in the HUD&rsquo;s problem count, so they turn it red rather than sitting in the log.
+        <code>flora-never-settles</code> attaches the panel, vine count, segment count and parked-bud
+        count to the warning &mdash; settling was the whole argument for the vine over the powder
+        automaton, so it is worth asserting rather than assuming. Zero false positives across ten
+        seconds of ordinary panel switching with a garden actively growing.
+      </p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span class="label">Still yours to decide</span>
+        <ul style="font-size:0.9rem;padding-left:1.1rem;display:grid;gap:0.4rem">
+          <li><b>The last colour.</b> 25 against a budget of 24. <code>#fff8e8</code> and
+            <code>#f7f1df</code> are the two creams, one per dialect; collapsing them is a design call,
+            not a distance.</li>
+          <li><b>What the token work is for.</b> The adversarial pass landed a finding I am not going to
+            answer on your behalf: a literal-to-token rewrite does not move the audit&rsquo;s colour
+            count at all, because the audit counts the literals inside the <code>:root</code> block it
+            would emit. If the budget is the point, merging is the lever and tokens are not. If
+            maintainability is the point, tokens are the lever and the budget is the wrong gauge.</li>
+          <li><b><code>creep</code> is pinned, not locked.</b> <code>?vine=raw|pop|fine</code> stay
+            available for comparison, and <code>docs/vine-lab.html</code> puts all four side by side.</li>
+          <li><b>The 3.2&nbsp;MB original.</b> Still in <code>public/art</code> as the source, now
+            referenced by no page, so it is dead weight in the deploy. Moving it out touches the artwork
+            asset tests, which makes it a separate decision rather than part of this one.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <span class="label">Not verified</span>
+        <ul style="font-size:0.9rem;padding-left:1.1rem;display:grid;gap:0.4rem">
+          <li>The 861&ndash;980&nbsp;px band is fixed by a rule and checked at one width inside the range,
+            915&nbsp;px. I did not walk the whole range.</li>
+          <li>&ldquo;Lossless for this particular image&rdquo; means exactly that: two measurements on
+            that one file. It is not a claim about the rest of the artwork.</li>
+          <li>The frames-that-move percentages are read in the lab at 30&nbsp;fps with a shared loop, not
+            on your display at your refresh rate. They compare treatments; they are not absolute
+            smoothness.</li>
+          <li>The A/B figures for the density field and the sprout spread are now averaged over eight
+            seeds, which is still a small sample. &ldquo;Clearly better&rdquo;, not two-decimal facts.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="note">
+      New and extended harnesses, all re-runnable: <code>scripts/measure-flora.mjs</code> gains
+      <code>--gardens</code>, <code>--finish</code>, <code>--sizes</code>, <code>--anim</code> and
+      <code>--forkscan</code>; <code>scripts/build-vine-lab.mjs</code> regenerates
+      <code>docs/vine-lab.html</code> from the live module; <code>scripts/build-portrait.mjs --check</code>
+      gates the portrait on size, width and colour type; and the colour work runs through
+      <code>scripts/audit-design.mjs</code>, <code>scripts/build-tokens.mjs</code> and
+      <code>scripts/computed-style-snapshot.js</code>.
     </p>
 
   </div>

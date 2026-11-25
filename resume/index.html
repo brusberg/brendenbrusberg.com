@@ -122,11 +122,15 @@
     .vine-margin.right { right: 0.3rem; }
     .vine-margin canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
     .page { position: relative; z-index: 1; }
-    /* Below this there is no gutter to grow in. */
-    @media (max-width: 1200px) { .vine-margin { display: none; } }
+    /* Below this the gutter is too narrow to hold a garden, not merely
+       absent. The strip is (100vw - 66rem)/2 - 0.9rem, so at a 1200px viewport
+       it is 58px -- two stems crammed into 58px read as one tangled line
+       rather than as planting. 1320px is where the strip reaches ~118px, which
+       is the spacing one stem is given. */
+    @media (max-width: 1320px) { .vine-margin { display: none; } }
 
     @media (max-width: 480px) { .top-nav { gap: 0.8rem; margin-bottom: 2rem; } .entry-heading { display: block; } .dates { margin-top: 0.35rem; } }
-    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, footer, .vine-margin { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
+    @media print { :root { color: #111; background: #fff; font-family: Georgia, serif; font-size: 10pt; } .page { max-width: none; padding: 0; } .top-nav, .vine-margin { display: none; } h1 { font-size: 26pt; } h2 { color: #a52138; } a, .location, .dates { color: #333; } section { margin-top: 1rem; } article + article { margin-top: 0.8rem; } li { margin: 0.15rem 0; } h2, h3 { break-after: avoid; } .contact a { min-height: 0; } }
   </style>
 </head>
 <body>
@@ -182,20 +186,25 @@
           <li>Increased explainability of highly sensitive model inferences across the people space to improve decision-making impact.</li>
         </ul>
       </article>
+      <article>
+        <div class="entry-heading"><h3>Data Science Intern, McKinsey &amp; Company</h3><p class="dates">2018</p></div>
+        <p class="location">New York City, NY</p>
+        <ul>
+          <li>Joined as a software engineering intern and moved onto the data science team in the first week.</li>
+        </ul>
+      </article>
     </section>
     <section aria-labelledby="education">
       <h2 id="education">Education — Stevens Institute of Technology</h2>
       <article>
         <div class="entry-heading"><h3>Master of Science, Machine Learning</h3><p class="dates">Dec 2021</p></div>
-        <p>Stevens Institute of Technology, Hoboken, NJ</p>
-        <p>GPA: 3.97</p>
+        <p class="location">Hoboken, NJ &middot; GPA 3.97</p>
         <p>Focused on advanced methods for machine learning, statistics, and analytics.</p>
       </article>
       <article>
         <div class="entry-heading"><h3>Bachelor of Science, Computer Science</h3><p class="dates">May 2021</p></div>
-        <p>Stevens Institute of Technology, Hoboken, NJ</p>
-        <p>GPA: 3.82 · Mathematics Minor · Literature Minor</p>
-        <p>Honors: Dean&rsquo;s List · Presidential Scholarship · Accelerated Masters Program</p>
+        <p class="location">Hoboken, NJ &middot; GPA 3.82 &middot; Mathematics Minor &middot; Literature Minor</p>
+        <p>Honors: Dean&rsquo;s List, Presidential Scholarship, and the Accelerated Masters Program.</p>
       </article>
     </section>
     <section aria-labelledby="tools">
@@ -207,7 +216,6 @@
       <h2 id="achievements">Achievements</h2>
       <p>Eagle Scout · Order of the Arrow</p>
     </section>
-    <footer>All opinions are my own and do not represent my employer.</footer>
   </main>
   <!-- Deferred and external on purpose. This page is the one search sends
        people to, and it is 11KB; inlining 40KB of growth algorithm into it
@@ -219,7 +227,7 @@
       // Nothing to grow into below the gutter breakpoint, and nothing to grow
       // for someone who asked not to see motion.
       if (!window.createFlora) return;
-      if (!matchMedia('(min-width: 1201px)').matches) return;
+      if (!matchMedia('(min-width: 1321px)').matches) return;
       var vines = [];
       ['vine-left', 'vine-right'].forEach(function (id) {
         var canvas = document.getElementById(id);
