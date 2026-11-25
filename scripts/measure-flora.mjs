@@ -410,9 +410,30 @@ if (process.argv.includes('--gardens')) {
   process.exit(kept && distinct ? 0 : 1);
 }
 
+// A/B arms are also averaged over several seeds. One seed is not a comparison:
+// the moment two arms differ they consume the PRNG differently and grow
+// entirely different gardens, so the gap between them carries as much
+// garden-to-garden variance as treatment effect. The sprout spread measured
+// 17.8px against 11.0px at one point and 13.4 against 14.2 later, purely from
+// retuning something unrelated. Eight seeds is enough to see past that; it is
+// still a small sample, so read these as "clearly better" or "no clear
+// difference", never to two decimal places.
+const SEEDS = ['projects', 'writing', 'history', 'stats', 'ants', 'art', 'lab1', 'lab2'];
+const meanOf = (xs) => (xs.length ? xs.reduce((a, c) => a + c, 0) / xs.length : 0);
+const over = (opts, pick) => meanOf(SEEDS.map((panel) => pick(run({ ...opts, panel }))));
+
 const withDensity = run({});
 const withoutDensity = run({ rewrite: NO_DENSITY });
 const withoutSpread = run({ rewrite: NO_SPREAD });
+
+const avg = {
+  overlapOn: over({}, (r) => densityMetrics(r.state).heavyOverlapPct),
+  overlapOff: over({ rewrite: NO_DENSITY }, (r) => densityMetrics(r.state).heavyOverlapPct),
+  maxOccOn: over({}, (r) => densityMetrics(r.state).maxCellOccupancy),
+  maxOccOff: over({ rewrite: NO_DENSITY }, (r) => densityMetrics(r.state).maxCellOccupancy),
+  spreadOn: over({}, (r) => spreadMetric(r.state).meanLateralTravelPx),
+  spreadOff: over({ rewrite: NO_SPREAD }, (r) => spreadMetric(r.state).meanLateralTravelPx),
+};
 const repeat = run({});
 const reversed = run({ rewrite: REVERSED });
 const resized = run({ resizeTo: [620, 900] });
@@ -445,6 +466,15 @@ const report = {
   sproutSpread: {
     on: spreadMetric(withDensity.state),
     off: spreadMetric(withoutSpread.state)
+  },
+
+  averagedOver8Seeds: {
+    heavyOverlapPctOn: round(avg.overlapOn),
+    heavyOverlapPctOff: round(avg.overlapOff),
+    maxCellOccupancyOn: round(avg.maxOccOn),
+    maxCellOccupancyOff: round(avg.maxOccOff),
+    sproutLateralPxOn: round(avg.spreadOn),
+    sproutLateralPxOff: round(avg.spreadOff),
   },
 
   staysInFrame: { on: offColumn(withDensity.state), off: offColumn(withoutDensity.state) },
@@ -488,9 +518,13 @@ if (process.argv.includes('--json')) {
   row('coverage %', (m) => m.coveragePct);
   row('segments', (m) => m.segments);
   row('leaves', (m) => m.leaves);
-  console.log('\nsprout spread (lateral px over 8 segments)');
-  line('with the ramped up-bias', `${report.sproutSpread.on.meanLateralTravelPx}px (${report.sproutSpread.on.sproutRunsMeasured} sprouts)`);
-  line('without it', `${report.sproutSpread.off.meanLateralTravelPx}px (${report.sproutSpread.off.sproutRunsMeasured} sprouts)`);
+  const a8 = report.averagedOver8Seeds;
+  console.log('\naveraged over 8 seeds               on        off       change');
+  const row8 = (k, on, off) => console.log(`  ${k.padEnd(34)}${String(on).padEnd(10)}${String(off).padEnd(10)}${round(on - off)}`);
+  row8('heavily overlapped cells %', a8.heavyOverlapPctOn, a8.heavyOverlapPctOff);
+  row8('max cell occupancy', a8.maxCellOccupancyOn, a8.maxCellOccupancyOff);
+  row8('sprout lateral travel px', a8.sproutLateralPxOn, a8.sproutLateralPxOff);
+  console.log('  one seed is not a comparison; see the note in the source');
   console.log('\nreach (% of column height)');
   line('tallest vine', report.reach.tallestVinePct + '%');
   line('shortest vine', report.reach.shortestVinePct + '%');
@@ -514,7 +548,9 @@ if (!report.determinism.sameGeometryWithCommitOrderReversed) failures.push('grow
 if (!report.resize.vinesReanchoredToNewWidth) failures.push('a resize did not re-anchor the vines');
 if (report.staysInFrame.on.segmentsOffColumn > 0) failures.push('stems left the column');
 if (report.reach.tallestVinePct < 70) failures.push(`the garden only reached ${report.reach.tallestVinePct}% of the column`);
-if (a.heavyOverlapPct >= b2.heavyOverlapPct) failures.push('the density field did not reduce heavy overlap');
+if (report.averagedOver8Seeds.heavyOverlapPctOn >= report.averagedOver8Seeds.heavyOverlapPctOff) {
+  failures.push('the density field did not reduce heavy overlap, averaged over 8 seeds');
+}
 if (failures.length) {
   console.error('FAIL: ' + failures.join('; '));
   process.exit(1);

@@ -378,9 +378,6 @@
         height: 100%;
       }
 
-      @media (max-width: 860px) {
-        .panel-flora-slot { display: none; }
-      }
 
       .info-main h1,
       .info-main p,
@@ -964,6 +961,16 @@
           min-height: 0;
           overflow: visible;
         }
+
+        /* The vine fills the slack in the NARROW left column, so it only makes
+           sense while there is one. Once .info-window collapses to a single
+           column the slot is full width, and flex: 1 1 auto with a 12rem floor
+           turns it into a 192px band wedged between the summary and the story.
+           This rule used to live in its own @media at 860px while the collapse
+           happened at 980px, so every width from 861 to 980 drew that band.
+           Keeping the two in the same block is the point: they cannot drift
+           apart again without someone noticing. */
+        .panel-flora-slot { display: none; }
 
         .gallery-grid {
           grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
@@ -9139,8 +9146,8 @@
         // Stems are packed closer when there is no height to climb into.
         const VINE_SPACING = 118;
         const VINE_SPACING_MIN_FRAC = 0.55;
-        const RAGGED_MIN = 0.18;   // skyline spread on a tall column
-        const RAGGED_MAX = 0.42;   // ...and on a short one
+        const RAGGED_MIN = 0.24;   // skyline spread on a tall column
+        const RAGGED_MAX = 0.58;   // ...and on a short one
 
         // A bud that has topped out is PARKED, not discarded. The column's
         // height changes on every panel switch -- 192px on Stats against
@@ -9455,6 +9462,24 @@
           const ragged = RAGGED_MIN + (RAGGED_MAX - RAGGED_MIN) * (1 - slim);
           const spacing = VINE_SPACING * (VINE_SPACING_MIN_FRAC + (1 - VINE_SPACING_MIN_FRAC) * slim);
           const count = Math.max(2, Math.min(6, Math.round(boxW / spacing)));
+
+          // Top-out heights are STRATIFIED rather than drawn independently.
+          // Four or five independent draws from one range cluster often enough
+          // that the skyline reads flat, which is exactly what it looked like.
+          // Giving each vine its own band of the range and jittering inside it
+          // guarantees the spread instead of hoping for it -- the same trick the
+          // base positions already use across the width.
+          //
+          // The bands are shuffled so height does not correlate with position:
+          // handing them out left to right would draw a ramp.
+          const strata = [];
+          for (let i = 0; i < count; i += 1) strata.push(i);
+          for (let i = count - 1; i > 0; i -= 1) {
+            const j = Math.floor(rnd() * (i + 1));
+            const tmp = strata[i]; strata[i] = strata[j]; strata[j] = tmp;
+          }
+          const band = ragged / count;
+
           vines = [];
           buds = [];
           parked = [];
@@ -9466,16 +9491,23 @@
               ax01,
               ax0: ax01 * boxW,
               rate: RATE_MIN + rnd() * (RATE_MAX - RATE_MIN),
-              // A ragged skyline has to be ragged in PIXELS, not in percent.
-              // 0.82-1.0 of a 1300px column is a 233px spread and reads as a
-              // hedge; the same fraction of a 174px column is 31px, so every
-              // vine topped out in the same stripe and all the flowers bunched
-              // into one horizontal band across the top. The range widens as
-              // the column gets shorter, which leaves the tall column exactly
-              // where it was.
-              topFrac: 1 - ragged + rnd() * ragged,
+              // A ragged skyline has to be ragged in PIXELS, not in percent:
+              // 0.82-1.0 of a 1300px column is a 233px spread, and the same
+              // fraction of a 174px column is 31px -- which is why every vine
+              // used to top out in the same stripe. So the range widens as the
+              // column shortens, and each vine takes its own band of it.
+              topFrac: 1 - ragged + band * (strata[i] + 0.2 + rnd() * 0.6),
+              // A vine with less height to climb branches more. Spreading the
+              // top-out heights is what makes the skyline read, but a vine that
+              // stops at half the column also puts out half the plant, and the
+              // column went from 97% of its width carrying material to 68%.
+              // Going out instead of up recovers that, and it is what a plant
+              // with no room above it actually does.
+              forkBoost: 0,
               segs: [], leaves: [], flowers: []
             });
+            const v = vines[vines.length - 1];
+            v.forkBoost = Math.max(1, Math.min(2.2, 1 / Math.max(0.35, v.topFrac)));
             buds.push(newBud(i, 0, 0, -Math.PI / 2, 1 - i * 0.07, 0, -i * VINE_WAIT, 0));
           }
           sown = true;
@@ -9487,7 +9519,7 @@
         function newBud(v, x, y, a, lenScale, depth, life, spread) {
           return {
             v, x, y, a, lenScale, depth, life, spread,
-            stuck: 0, sinceFork: 0, revivals: 0, prog: 0, t0: -1, t1: -1, t2: -1
+            stuck: 0, sinceFork: 0, revivals: 0, prog: 0, tipSeg: null, t0: -1, t1: -1, t2: -1
           };
         }
 
@@ -9589,8 +9621,13 @@
             const petals = 5 + Math.floor(rnd() * 2);
 
             let fork = null;
-            if (!tops && b.depth < 2 && life > Math.max(8, lifeCap * 0.10)
-                && b.sinceFork + 1 >= INTERNODE && rnd() < FORK_P) {
+            // The warm-up is proportional. A hard floor of 8 steps is nothing
+            // on a tall column and almost the whole life of a vine on a short
+            // one, where a bud reaches its ceiling in about eleven steps -- it
+            // left a three-step window in which a fork was even possible, and
+            // the short column came out as bare stems.
+            if (!tops && b.depth < 2 && life > Math.max(2, lifeCap * 0.10)
+                && b.sinceFork + 1 >= INTERNODE && rnd() < FORK_P * vine.forkBoost) {
               const side = rnd() < 0.5 ? -1 : 1;
               const childA = a + side * (0.5 + rnd() * 0.4);
               const cx = vine.ax0 + nx + Math.cos(childA) * stepLen * LOOK;
@@ -9648,6 +9685,10 @@
 
             b.prog -= 1;
             b.x = p.nx; b.y = p.ny; b.a = p.a; b.life = p.life; b.sinceFork += 1;
+            // The segment this bud just laid down. creep draws THIS at a
+            // fraction rather than extrapolating a guess along b.a -- see the
+            // note in paint().
+            b.tipSeg = p.vine.segs[p.vine.segs.length - 1];
             keep(b);
 
             if (p.fork) {
@@ -9730,6 +9771,19 @@
           // drawn smoothly at 30fps without touching the model.
           const phase = settled ? 1 : Math.min(1, acc / growthMs);
 
+          // creep draws each live bud's NEWEST segment at `phase` rather than
+          // extrapolating a tip along the angle the bud is currently facing.
+          // The model is one step ahead of what is shown, so this interpolates
+          // into a segment that already exists instead of predicting one.
+          //
+          // The prediction was the residual jumpiness: a bud's next angle is
+          // the current one plus wander, plus the up-bias, plus whatever the
+          // density fan decides, so the guessed tip and the committed segment
+          // routinely pointed different ways -- the tip crept one way and then
+          // snapped to another. Interpolating a known segment cannot do that.
+          const tips = VINE_ANIM === 'creep' && !settled ? new Set() : null;
+          if (tips) for (const b of buds) if (b.tipSeg) tips.add(b.tipSeg);
+
           for (const v of vines) {
             const ox = Math.round(v.ax0);
             for (const sg of v.segs) {
@@ -9744,7 +9798,7 @@
                   continue;
                 }
               }
-              drawStem(ox, sg, 1);
+              drawStem(ox, sg, tips && tips.has(sg) ? phase : 1);
             }
             for (const l of v.leaves) {
               g.fillStyle = l.d === 0 ? '#6d8f4a' : '#7fa054';
@@ -9763,28 +9817,6 @@
               g.fillRect(fx, fy, PX, PX);
             }
           }
-          // The creeping tip: a partial segment ahead of every live bud, along
-          // the angle it is currently heading. The model has not taken this
-          // step yet, so nothing here is recorded or deposited -- it is a
-          // drawing of a step in progress, and it is thrown away and redrawn
-          // every frame.
-          if (VINE_ANIM === 'creep' && !settled && phase > 0) {
-            for (const b of buds) {
-              if (b.life < 0) continue;
-              const v = vines[b.v];
-              const ox = Math.round(v.ax0);
-              const sub = Math.min(1, b.prog + v.rate * phase);
-              const len = stemLen * b.lenScale * STEP_FRAC * STEP_SCALE * sub;
-              g.fillStyle = STEM_COLORS[b.depth > 2 ? 2 : b.depth];
-              drawStem(ox, {
-                x1: b.x, y1: b.y,
-                x2: b.x + Math.cos(b.a) * len,
-                y2: b.y + Math.sin(b.a) * len,
-                d: b.depth
-              }, 1);
-            }
-          }
-
           g.globalAlpha = 1;
           g.setTransform(1, 0, 0, 1, 0, 0);
           dirty = false;
