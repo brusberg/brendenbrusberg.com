@@ -40,16 +40,18 @@
     },
   ];
 
+  // Hand-written first. The order is the point: what you typed yourself leads,
+  // and what a model helped with follows.
   const GROUPS = [
-    {
-      mode: 'vibe',
-      label: 'Vibe coded',
-      note: 'Built by prompting, reviewing and steering a model. I decided what it should be and what was good enough.',
-    },
     {
       mode: 'hand',
       label: 'Written by hand',
       note: 'Typed line by line, usually to learn the thing rather than to ship it fast.',
+    },
+    {
+      mode: 'vibe',
+      label: 'Vibe coded',
+      note: 'Built by prompting, reviewing and steering a model. I decided what it should be and what was good enough.',
     },
   ];
 
