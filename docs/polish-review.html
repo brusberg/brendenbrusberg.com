@@ -1,0 +1,1466 @@
+<title>Polish Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;450;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: a numbered spine on the left, a reading column, and a plan that
+     follows you down the page. Parts-catalogue logic, not a landing page. */
+  :root {
+    --bg: #0a0d0a;
+    --panel: #11160f;
+    --sunk: #080b08;
+    --line: #262e22;
+    --line-soft: #1b211a;
+    --fg: #e8e5d6;
+    --dim: #8e9686;
+    --gold: #d6bd68;
+    --gold-soft: rgba(214, 189, 104, 0.14);
+    --green: #8ab06b;
+    --rust: #d9794f;
+    --ice: #6f9bb5;
+    --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f2e9; --panel: #fffdf5; --sunk: #eae7db; --line: #d4cfbd; --line-soft: #e2ded0;
+      --fg: #1b2019; --dim: #5a6253; --gold: #7d6718; --gold-soft: rgba(125, 103, 24, 0.12);
+      --green: #41632b; --rust: #a64a22; --ice: #2f5e79;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f2e9; --panel: #fffdf5; --sunk: #eae7db; --line: #d4cfbd; --line-soft: #e2ded0;
+    --fg: #1b2019; --dim: #5a6253; --gold: #7d6718; --gold-soft: rgba(125, 103, 24, 0.12);
+    --green: #41632b; --rust: #a64a22; --ice: #2f5e79;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.62; }
+  .wrap {
+    max-width: 1180px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 4rem;
+  }
+  h1, h2, h3, h4 { font-family: var(--display); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.1rem, 5.5vw, 3.4rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.04; }
+  h2 { font-size: clamp(1.35rem, 2.8vw, 1.75rem); font-weight: 700; letter-spacing: -0.015em; }
+  h3 { font-size: 1.02rem; font-weight: 700; }
+  h4 { font-size: 0.95rem; font-weight: 700; }
+  p { margin: 0; }
+  a { color: var(--gold); text-underline-offset: 2px; }
+  code, .mono { font-family: var(--mono); font-size: 0.85em; }
+  .col { max-width: 70ch; }
+  .dim { color: var(--dim); }
+  .stack { display: grid; gap: 1rem; }
+  .stack-sm { display: grid; gap: 0.5rem; }
+
+  /* ---- hero ---- */
+  header.hero { padding-block: 3.2rem 2rem; border-bottom: 1px solid var(--line); display: grid; gap: 1.1rem; }
+  .kicker { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .lede { color: var(--dim); font-size: 1.06rem; max-width: 64ch; }
+  .runbar { display: flex; flex-wrap: wrap; gap: 0.5rem 1.6rem; font-family: var(--mono); font-size: 0.76rem; color: var(--dim); padding-top: 0.4rem; }
+  .runbar b { color: var(--fg); font-weight: 600; }
+
+  /* ---- proposal entry ---- */
+  .entry { border-bottom: 1px solid var(--line); padding-block: 2.4rem; display: grid; gap: 1.2rem; }
+  .entry-head { display: grid; grid-template-columns: auto 1fr; gap: 0.9rem 1.1rem; align-items: start; }
+  .id {
+    font-family: var(--mono); font-size: 0.78rem; font-weight: 600; color: var(--gold);
+    border: 1px solid var(--line); padding: 0.3rem 0.5rem; line-height: 1; white-space: nowrap;
+  }
+  .entry-head .t { display: grid; gap: 0.45rem; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.07em; text-transform: uppercase;
+    border: 1px solid var(--line); color: var(--dim); padding: 0.14rem 0.42rem; white-space: nowrap;
+  }
+  .chip.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+  .chip.judge { color: var(--ice); border-color: color-mix(in srgb, var(--ice) 45%, transparent); }
+  .chip.warn { color: var(--rust); border-color: color-mix(in srgb, var(--rust) 45%, transparent); }
+  .chip.built { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); padding: 1rem 1.05rem; min-width: 0; }
+  .label { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); display: block; margin-bottom: 0.55rem; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.42rem 0.65rem; border-bottom: 1px solid var(--line-soft); }
+  th { font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); font-weight: 400; }
+  td.n, th.n { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .scroll-x { overflow-x: auto; }
+  tr.hl td { color: var(--gold); }
+
+  pre { background: var(--sunk); border: 1px solid var(--line); margin: 0; padding: 0.8rem 0.9rem; overflow-x: auto; font-family: var(--mono); font-size: 0.78rem; line-height: 1.6; }
+  pre .a { color: var(--green); }
+  pre .d { color: var(--rust); }
+  pre .c { color: var(--dim); }
+
+  /* ---- options as selectable cards ---- */
+  .opts { display: grid; gap: 0.7rem; }
+  .opt {
+    display: grid; grid-template-columns: auto 1fr; gap: 0.75rem;
+    border: 1px solid var(--line); background: var(--panel); padding: 0.85rem 0.95rem; cursor: pointer;
+  }
+  .opt:hover { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); }
+  .opt input { margin: 0.28rem 0 0 0; accent-color: var(--gold); width: 1rem; height: 1rem; }
+  .opt:has(input:checked) { border-color: var(--gold); background: var(--gold-soft); }
+  .opt .body { display: grid; gap: 0.4rem; min-width: 0; }
+  .opt .row { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; align-items: baseline; }
+  .opt .why { font-size: 0.9rem; color: var(--dim); }
+  .opt .meta { font-family: var(--mono); font-size: 0.7rem; color: var(--dim); }
+  .rec { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+
+  /* ---- implementation drawer ---- */
+  details.impl { border: 1px solid var(--line); background: var(--sunk); }
+  details.impl > summary {
+    cursor: pointer; list-style: none; padding: 0.6rem 0.9rem;
+    font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.04em; color: var(--gold);
+    display: flex; gap: 0.5rem; align-items: center;
+  }
+  details.impl > summary::-webkit-details-marker { display: none; }
+  details.impl > summary::before { content: "+"; font-weight: 600; }
+  details.impl[open] > summary::before { content: "\2212"; }
+  details.impl > .inner { padding: 0 0.9rem 0.9rem; display: grid; gap: 0.85rem; }
+  .files { font-family: var(--mono); font-size: 0.74rem; color: var(--dim); display: grid; gap: 0.2rem; }
+  .files b { color: var(--fg); font-weight: 600; }
+
+  /* ---- demos ---- */
+  .demo { border: 1px solid var(--line); background: var(--sunk); min-width: 0; }
+  .demo-bar { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; padding: 0.5rem 0.65rem; border-bottom: 1px solid var(--line); }
+  button {
+    font-family: var(--mono); font-size: 0.73rem; background: transparent; color: var(--fg);
+    border: 1px solid var(--line); padding: 0.3rem 0.6rem; cursor: pointer;
+  }
+  button:hover { border-color: var(--gold); }
+  button[aria-pressed="true"] { background: var(--gold); color: #0a0d0a; border-color: var(--gold); }
+  button:focus-visible, summary:focus-visible, .opt:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+  canvas { display: block; width: 100%; max-width: 100%; }
+
+  .grid2 { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .grid3 { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+
+  /* ---- plan ---- */
+  .plan { border: 1px solid var(--gold); background: var(--panel); padding: 1.1rem; display: grid; gap: 0.9rem; }
+  .plan ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.45rem; font-size: 0.92rem; }
+  .plan li::marker { color: var(--gold); font-family: var(--mono); font-size: 0.8rem; }
+  .plan-empty { color: var(--dim); font-size: 0.92rem; }
+  .totals { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; font-family: var(--mono); font-size: 0.74rem; color: var(--dim); }
+  .totals b { color: var(--fg); }
+
+  ul.tight { margin: 0; padding-left: 1.05rem; font-size: 0.92rem; }
+  ul.tight li { margin-bottom: 0.3rem; }
+  ul.tight li::marker { color: var(--gold); }
+  .note { font-size: 0.85rem; color: var(--dim); }
+  .tree { font-family: var(--mono); font-size: 0.8rem; line-height: 1.75; }
+  .tree summary { cursor: pointer; list-style: none; }
+  .tree summary::-webkit-details-marker { display: none; }
+  .tree summary::before { content: "\25B8 "; color: var(--gold); }
+  .tree details[open] > summary::before { content: "\25BE "; }
+  .tree .leaf { margin-left: 1.2rem; color: var(--dim); }
+  .tree .leaf::before { content: "\2014 "; color: var(--line); }
+  .tree .leaf b { color: var(--fg); font-weight: 600; }
+  .tree .q { color: var(--rust); }
+
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="kicker">Proposal catalogue &middot; brendenbrusberg.com</span>
+  <h1>Polish Review</h1>
+  <p class="lede">
+    Seven proposals, each measured before it was argued for, and each one built on a branch so you
+    can see it rather than imagine it. Pick an option per entry and the plan at the bottom writes
+    itself. Nothing is applied to <code>main</code>.
+  </p>
+  <div class="runbar">
+    <span><b>9</b> proposals</span>
+    <span><b>33</b> options</span>
+    <span><b>6</b> built on the branch</span>
+    <span><b>5</b> corrections to my own earlier claims</span>
+    <span>branch <b>proto/polish</b></span>
+  </div>
+</header>
+
+<!-- ======================================================= P1 -->
+<section class="entry" data-proposal="P1" data-title="Ant stage height">
+  <div class="entry-head">
+    <span class="id">P1</span>
+    <div class="t">
+      <h2>The ant stage cannot see your window</h2>
+      <div class="chips">
+        <span class="chip ok">measured</span>
+        <span class="chip built">built</span>
+        <span class="chip">effort: S</span>
+        <span class="chip">risk: low</span>
+        <span class="chip">impact: high</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="col">
+    You thought the stage could be taller. It is worse than that: the height is independent of the
+    browser window. A 950&nbsp;px window and a 1400&nbsp;px window both produce a 553&nbsp;px stage.
+  </p>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="label">the cause, found in the stylesheet</span>
+      <pre><span class="c">/* src/styles.css:884 */</span>
+.is-embedded .site-shell {
+  grid-template-rows: clamp(18rem, <span class="d">35vw</span>, <span class="d">34rem</span>);
+}</pre>
+      <p class="note" style="margin-top:0.6rem">
+        The embedded stage sizes itself from <strong>35% of its own width</strong>, capped at 34&nbsp;rem.
+        Window height is not in the formula at all. 35% of the 1481&nbsp;px frame is
+        <strong>518.35&nbsp;px</strong>; the measured sim row was <strong>518.344&nbsp;px</strong>. Above a
+        1554&nbsp;px viewport it is pinned at 544&nbsp;px forever.
+      </p>
+    </div>
+    <div class="panel">
+      <span class="label">measured: today vs the three options</span>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Strategy</th><th class="n">950px window</th><th class="n">1400px window</th><th class="n">page scroll</th></tr></thead>
+          <tbody>
+            <tr><td>today</td><td class="n">553</td><td class="n">553</td><td class="n">+174</td></tr>
+            <tr><td>fit</td><td class="n">379</td><td class="n">—</td><td class="n">0</td></tr>
+            <tr class="hl"><td>peek</td><td class="n">689</td><td class="n">900</td><td class="n">+310</td></tr>
+            <tr><td>max</td><td class="n">821</td><td class="n">900</td><td class="n">+442</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:0.6rem">All three now track the window. Today's row does not.</p>
+    </div>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P1" value="peek" data-effort="2" data-rec="1">
+        <span class="body">
+          <span class="row"><h4>Peek &mdash; stage takes most of the screen</h4><span class="rec">recommended</span></span>
+          <span class="why">689&nbsp;px at your window, 900 at a tall one. A sliver of the profile block stays visible, which is what tells a visitor there is more below. The colony is the reason the page exists; it should dominate.</span>
+          <span class="meta">+136px vs today &middot; page scrolls 310px &middot; built</span>
+        </span></label>
+      <label class="opt"><input type="radio" name="P1" value="max" data-effort="2">
+        <span class="body">
+          <span class="row"><h4>Max &mdash; stage takes everything but the footer</h4></span>
+          <span class="why">821&nbsp;px. The most colony, and the profile block lives entirely below the fold. Stronger as a first impression, weaker if you want people to read who you are without scrolling.</span>
+          <span class="meta">+268px vs today &middot; page scrolls 442px &middot; built</span>
+        </span></label>
+      <label class="opt"><input type="radio" name="P1" value="fit" data-effort="2">
+        <span class="body">
+          <span class="row"><h4>Fit &mdash; whole panel on one screen</h4></span>
+          <span class="why">379&nbsp;px, nothing scrolls. Tidy, and the honest trade is that the colony gets <em>smaller</em> than today, because the profile block is 430&nbsp;px on its own.</span>
+          <span class="meta">&minus;174px vs today &middot; no scroll &middot; built</span>
+        </span></label>
+      <label class="opt"><input type="radio" name="P1" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span>
+          <span class="why">Keep the 35vw rule. Worth knowing you are choosing a stage that ignores window height and is capped at 544&nbsp;px on large monitors.</span>
+          <span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>index.html</b> &mdash; new <code>sizeAntStage()</code>, hooked into <code>setPanel</code> and <code>resize</code><br>
+      <b>src/styles.css:884</b> &mdash; embedded shell fills the frame instead of sizing from <code>35vw</code></div>
+    <pre><span class="c">// index.html — the parent is the only party that knows the window</span>
+<span class="a">function sizeAntStage() {</span>
+<span class="a">  const app = document.querySelector('.app');</span>
+<span class="a">  antStageOwnedByParent = window.innerWidth &gt; 860;</span>
+<span class="a">  if (!antStageOwnedByParent) { app.style.removeProperty('--ant-frame-height'); return; }</span>
+<span class="a">  const cs = getComputedStyle(app);</span>
+<span class="a">  const padding = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);</span>
+<span class="a">  const gap = parseFloat(cs.rowGap) || 0;</span>
+<span class="a">  const profileH = document.querySelector('.home-profile')?.offsetHeight || 0;</span>
+<span class="a">  const footerH = document.querySelector('.panel-footer')?.offsetHeight || 0;</span>
+<span class="a">  const peek = Math.min(120, profileH * 0.28);          // 'peek' strategy</span>
+<span class="a">  const avail = window.innerHeight - padding - gap * 2 - peek - footerH;</span>
+<span class="a">  app.style.setProperty('--ant-frame-height',</span>
+<span class="a">    `${Math.round(Math.max(360, Math.min(900, avail)))}px`);</span>
+<span class="a">}</span>
+
+<span class="c">/* src/styles.css — stop deriving height from the frame's own width */</span>
+<span class="d">- .is-embedded .site-shell { grid-template-rows: clamp(18rem, 35vw, 34rem); }</span>
+<span class="a">+ .is-embedded, .is-embedded body, .is-embedded .page-shell { height: 100%; }</span>
+<span class="a">+ .is-embedded .site-shell { height: 100%; grid-template-rows: 100%; }</span></pre>
+    <p class="note">
+      The frame still reports its own height for the stacked layout; the parent simply stops trusting
+      it above 860&nbsp;px. Mobile rules never read the new value, so phone layout is untouched.
+      All three strategies are switchable on the branch with <code>?stage=fit|peek|max</code>.
+    </p>
+  </div></details>
+</section>
+
+<!-- ======================================================= P2 -->
+<section class="entry" data-proposal="P2" data-title="Julia seed marker">
+  <div class="entry-head">
+    <span class="id">P2</span>
+    <div class="t">
+      <h2>The Julia seed marker</h2>
+      <div class="chips">
+        <span class="chip ok">measured</span>
+        <span class="chip built">built</span>
+        <span class="chip judge">design call</span>
+        <span class="chip">effort: S</span>
+        <span class="chip">risk: low</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="col">
+    You called it harsh. Here is the number behind that: the ring is drawn
+    <code>smoothstep(.023,.019,abs(d-.045))</code>, which at a 518&nbsp;px pane is a
+    <strong>19.7&nbsp;px thick filled donut</strong>, composited at full strength. It is not a thin
+    cursor that got ugly &mdash; it is a disc. The replacement is a 6.2&nbsp;px line.
+  </p>
+
+  <div class="demo">
+    <div class="demo-bar">
+      <button id="jCur" aria-pressed="true">current</button>
+      <button id="jNew" aria-pressed="false">proposed</button>
+      <button id="jIdle">watch it idle</button>
+      <span class="mono dim" style="font-size:0.7rem">drag inside to move the seed</span>
+      <span class="mono" id="jOut" style="margin-left:auto;font-size:0.7rem;color:var(--gold)"></span>
+    </div>
+    <canvas id="julia" height="330" aria-label="Interactive Mandelbrot comparing the current and proposed seed markers"></canvas>
+  </div>
+  <p class="note">
+    Both markers are the real shader functions &mdash; current copied verbatim from
+    <code>index.html:8931</code>, proposed copied from the branch. The fractal behind them is a compact
+    stand-in, not the site's own colouring.
+  </p>
+
+  <div class="grid3">
+    <div class="panel"><span class="label">ring thickness</span>
+      <div class="mono" style="font-size:0.95rem">19.7px &rarr; <b style="color:var(--gold)">6.2px</b></div>
+      <p class="note" style="margin-top:0.4rem">At a 518px pane. The old band filled radius 13.5&ndash;33.2px.</p></div>
+    <div class="panel"><span class="label">centre</span>
+      <div class="mono" style="font-size:0.95rem">solid &rarr; <b style="color:var(--gold)">open</b></div>
+      <p class="note" style="margin-top:0.4rem">The old dot covered the pixel you were selecting.</p></div>
+    <div class="panel"><span class="label">at rest</span>
+      <div class="mono" style="font-size:0.95rem">100% &rarr; <b style="color:var(--gold)">30%</b></div>
+      <p class="note" style="margin-top:0.4rem">After 2.5s still. Wakes on hover or pick.</p></div>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P2" value="full" data-effort="2" data-rec="1">
+        <span class="body"><span class="row"><h4>Thin ring + idle fade + label</h4><span class="rec">recommended</span></span>
+          <span class="why">All three parts. The ring becomes a crosshair with an open centre and a dark outer edge so it reads on bright filaments; it eases to 30% after 2.5&nbsp;s; a label follows it, reading "tap to choose a Julia seed" until the first pick and the coordinate after.</span>
+          <span class="meta">shader + ~40 lines + one CSS rule &middot; built</span></span></label>
+      <label class="opt"><input type="radio" name="P2" value="ring" data-effort="1">
+        <span class="body"><span class="row"><h4>Thin ring only</h4></span>
+          <span class="why">Fix the thickness and leave the behaviour alone. Removes the harshness without introducing anything that moves or appears on its own.</span>
+          <span class="meta">shader only &middot; ~8 lines</span></span></label>
+      <label class="opt"><input type="radio" name="P2" value="hide" data-effort="2">
+        <span class="body"><span class="row"><h4>Thin ring + fade to invisible</h4></span>
+          <span class="why">Literally what you described: it disappears when untouched. Cleanest at rest. The cost is that the right-hand Julia pane loses its only visual link to the seed that generated it.</span>
+          <span class="meta">one constant different from the recommendation</span></span></label>
+      <label class="opt"><input type="radio" name="P2" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span><span class="why">Keep the disc.</span><span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>index.html</b> &mdash; fragment shader <code>marker()</code> &rarr; <code>markerLayers()</code>, new <code>u_markerFade</code> uniform, <code>markerFade()</code> / <code>wakeMarker()</code> on MandelbrotScene, <code>.marker-label</code> element and style</div>
+    <pre><span class="c">// the whole of the old marker</span>
+<span class="d">float ring   = smoothstep(.023,.019,abs(d-.045));  // 19.7px thick</span>
+<span class="d">float center = smoothstep(.012,.003,d);            // covers the target</span>
+<span class="d">return max(ring,center);</span>
+
+<span class="c">// proposed</span>
+<span class="a">float ring  = smoothstep(.0060,.0028,abs(d-r));          // ~3px line</span>
+<span class="a">float shade = smoothstep(.0105,.0060,abs(d-(r+.0055))); // dark outer edge</span>
+<span class="a">float halo  = step(r,d)*(1.-smoothstep(r,.090,d))*.18;  // outward only</span>
+<span class="a">float band  = step(.013,d)*step(d,.034);</span>
+<span class="a">float tick  = max(smoothstep(.0038,.0016,ay),smoothstep(.0038,.0016,ax))*band;</span>
+<span class="a">return vec2(min(1.,ring+tick*.85), min(1.,shade*.5+halo));</span>
+
+<span class="c">// fade: full for 2.5s, then smoothstep down to 0.3 — never to zero,</span>
+<span class="c">// because the marker is what links the two panes</span>
+<span class="a">markerFade() {</span>
+<span class="a">  const idle = (performance.now() - this.markerActivity) / 1000;</span>
+<span class="a">  if (idle &lt; 2.5) return 1;</span>
+<span class="a">  const t = Math.min(1, idle - 2.5);</span>
+<span class="a">  return 1 - (t * t * (3 - 2 * t)) * 0.7;</span>
+<span class="a">}</span></pre>
+    <div class="panel"><span class="label">correction to my earlier note on mobile</span>
+      <p class="note">
+        I previously wrote that the marker needed a 44&nbsp;px touch target. That was wrong, and reading
+        <code>pointerUp</code> is what corrected it: the marker is not dragged &mdash; tapping anywhere in
+        the left pane moves it there. The whole pane is already the hit target. The real mobile problem
+        is discoverability, which is what the label fixes, and label placement, which flips above or
+        below the marker so a thumb never covers it.
+      </p></div>
+  </div></details>
+</section>
+
+<!-- ======================================================= P3 -->
+<section class="entry" data-proposal="P3" data-title="Living left column">
+  <div class="entry-head">
+    <span class="id">P3</span>
+    <div class="t">
+      <h2>The empty left column</h2>
+      <div class="chips">
+        <span class="chip ok">measured</span>
+        <span class="chip built">built</span>
+        <span class="chip judge">the fun one</span>
+        <span class="chip">effort: M</span>
+        <span class="chip">risk: low</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="col">
+    On the Projects panel at a 1512&times;950 window, <code>.info-main</code> is
+    <strong>434 &times; 1509&nbsp;px</strong> and holds <strong>172&nbsp;px</strong> of content. That is
+    <strong>1,338&nbsp;px empty &mdash; 89% of the column</strong>, on wide screens only. The narrow
+    layout stacks and the column disappears, which is why the phone version already feels right.
+  </p>
+
+  <div class="grid2">
+    <div class="demo">
+      <div class="demo-bar"><span class="label" style="margin:0">A &middot; seeded vine</span>
+        <button id="vineSeed" style="margin-left:auto">re-seed</button><button id="vineFast">finish</button></div>
+      <canvas id="vine" height="400" aria-label="Demo: a pixel vine growing up a tall narrow column"></canvas>
+    </div>
+    <div class="demo">
+      <div class="demo-bar"><span class="label" style="margin:0">B &middot; powder</span>
+        <button id="powMode" aria-pressed="false" style="margin-left:auto">sand</button><button id="powClear">clear</button></div>
+      <canvas id="powder" height="400" aria-label="Demo: a falling-sand automaton with sand and ant particles"></canvas>
+    </div>
+  </div>
+  <p class="note">Drag inside either. Both are seeded, so the same seed replays the same result exactly.</p>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P3" value="vine" data-effort="4" data-rec="1">
+        <span class="body"><span class="row"><h4>Seeded vine</h4><span class="rec">recommended</span></span>
+          <span class="why">An L-system climbs the column, forks, opens leaves, resolves flowers at the tips, then rests. Vertical growth suits a 1:3 column natively. The seed comes from the panel id, so each panel always grows the same plant and it reads as illustration rather than noise.</span>
+          <span class="meta">~120 lines &middot; settles, then costs nothing &middot; built &amp; running on the branch</span></span></label>
+      <label class="opt"><input type="radio" name="P3" value="powder" data-effort="4">
+        <span class="body"><span class="row"><h4>Powder / ant automaton</h4></span>
+          <span class="why">The Powder Game feel you named. Genuinely hypnotic and it invites the cursor. The honest cost: it never settles, so it holds the CPU the whole time the panel is open, and it competes with the ant colony that is already the centrepiece.</span>
+          <span class="meta">~90 lines &middot; never idles &middot; needs a particle cap</span></span></label>
+      <label class="opt"><input type="radio" name="P3" value="art" data-effort="6">
+        <span class="body"><span class="row"><h4>Authored pixel-art frames</h4></span>
+          <span class="why">You draw the growth stages and the column plays them. Most yours of the three, and it pairs with the train sprite sheet in P5. Fixed, though: the same plant every visit, and the work lands on you before anything ships.</span>
+          <span class="meta">art-bound &middot; trivial code &middot; zero runtime cost</span></span></label>
+      <label class="opt"><input type="radio" name="P3" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it empty</h4></span>
+          <span class="why">Whitespace is a legitimate choice, and this column is only empty on wide screens.</span><span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>index.html</b> &mdash; <code>&lt;canvas class="panel-flora"&gt;</code> in <code>.info-main</code>, <code>panelFlora</code> module, one call added to the existing frame loop and one to <code>renderInfo</code></div>
+    <pre><span class="c">// Ticks inside the existing capped loop — no second rAF.</span>
+  activeScene.tick(dt, size, t);
+<span class="a">  panelFlora.tick(dt * 1000);</span>
+
+<span class="c">// Fill time is specified, not emergent: a 300px column and a 1300px one</span>
+<span class="c">// both finish in ~14s because the step interval is derived from the</span>
+<span class="c">// number of steps the column actually needs.</span>
+<span class="a">const FILL_SECONDS = 14;</span>
+<span class="a">growthMs = Math.max(24, (FILL_SECONDS * 1000) / (lifeCap / 0.95));</span>
+
+<span class="c">// Deterministic: seed derived from the panel id.</span>
+<span class="a">rnd = makeRnd(hash(`flora:${panelId}`));</span></pre>
+    <div class="panel"><span class="label">constraints it already respects</span>
+      <ul class="tight">
+        <li>No second animation loop; it ticks inside the capped frame loop.</li>
+        <li>Hidden below 860&nbsp;px, where the column does not exist.</li>
+        <li>Settles and stops. Under <code>prefers-reduced-motion</code> it jumps straight to the finished plant.</li>
+        <li>Drawn at 72% alpha so it reads as texture beside the words rather than competing with them.</li>
+      </ul></div>
+    <div class="panel"><span class="label">what I could not verify</span>
+      <p class="note">
+        The preview environment throttles <code>requestAnimationFrame</code> to about 4&nbsp;fps while
+        reporting <code>document.hidden === false</code>, so I could not watch the growth at its real
+        speed. Growth accumulates real elapsed time, so the frame rate changes smoothness and not
+        speed &mdash; but the 14-second fill is arithmetic, not an observation.
+      </p></div>
+  </div></details>
+</section>
+
+<!-- ======================================================= P4 -->
+<section class="entry" data-proposal="P4" data-title="Stats readability">
+  <div class="entry-head">
+    <span class="id">P4</span>
+    <div class="t">
+      <h2>Two visual misreads in the stats</h2>
+      <div class="chips"><span class="chip ok">measured</span><span class="chip built">built</span>
+        <span class="chip ok">test added</span><span class="chip">effort: S</span><span class="chip">risk: low</span></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="label">false precision</span>
+      <div class="mono" style="font-size:clamp(1.3rem,3.6vw,1.9rem);font-variant-numeric:tabular-nums">
+        <span id="ageTen">—</span></div>
+      <p class="note" style="margin-top:0.5rem">
+        <code>toFixed(10)</code>. The last digit is <code>1e-10</code> years &mdash;
+        <strong>3.2 milliseconds</strong> &mdash; against a <strong>100&nbsp;ms</strong> timer. Those digits
+        jump by about 32 counts between redraws. The eye reads churn, not precision.
+      </p>
+      <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--line-soft)">
+        <span class="label">proposed &middot; 6 decimals</span>
+        <div class="mono" style="font-size:clamp(1.3rem,3.6vw,1.9rem);font-variant-numeric:tabular-nums">
+          <span id="ageSix">—</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <span class="label">a daily value recomputed 10&times; a second</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th>&nbsp;</th><th class="n">before</th><th class="n">after</th></tr></thead>
+        <tbody>
+          <tr><td>loop iterations / call</td><td class="n">172 &amp; rising daily</td><td class="n">&le; 6, forever</td></tr>
+          <tr><td>cost / call (today)</td><td class="n">0.0215 ms</td><td class="n">0.003 ms</td></tr>
+          <tr><td>cost / call (10-yr span)</td><td class="n">0.4206 ms</td><td class="n">0.0009 ms</td></tr>
+          <tr><td>timer</td><td class="n">10 Hz, all panels</td><td class="n">1/min</td></tr>
+          <tr class="hl"><td>displayed value</td><td class="n">1822</td><td class="n">1822</td></tr>
+        </tbody></table></div>
+      <p class="note" style="margin-top:0.6rem">
+        <code>businessDaysBetween</code> walked one calendar day per iteration from June 2026, growing
+        by a step every day, forever &mdash; and ran on every panel, including while you watch the ants.
+        <strong>463&times; faster</strong> over a ten-year span.
+      </p>
+    </div>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P4" value="all" data-effort="2" data-rec="1">
+        <span class="body"><span class="row"><h4>All three</h4><span class="rec">recommended</span></span>
+          <span class="why">6 decimals, closed-form day count, and split the 10&nbsp;Hz timer so only the age ticks fast. Plus the countries row goes full-width so eight names stop fighting a one-line label.</span>
+          <span class="meta">~30 lines &middot; verified against the original across 7,000 ranges &middot; built</span></span></label>
+      <label class="opt"><input type="radio" name="P4" value="decimals" data-effort="1">
+        <span class="body"><span class="row"><h4>Just the decimals</h4></span>
+          <span class="why">The readability half. Leaves the loop alone, which is genuinely small today.</span>
+          <span class="meta">one line</span></span></label>
+      <label class="opt"><input type="radio" name="P4" value="perf" data-effort="1">
+        <span class="body"><span class="row"><h4>Just the performance</h4></span>
+          <span class="why">Keep the ten decimals if you like the drama; stop recomputing a daily value ten times a second.</span>
+          <span class="meta">~25 lines + test</span></span></label>
+      <label class="opt"><input type="radio" name="P4" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span><span class="why">It is small today and it does work.</span><span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>index.html</b> &mdash; <code>formatLiveAge</code>, <code>businessDaysBetween</code>, timers, <code>.stat-line-wide</code><br>
+      <b>public/panels/stats.js</b> &mdash; countries row<br>
+      <b>tests/business-days.test.mjs</b> &mdash; new</div>
+    <pre><span class="d">- return years.toFixed(10);</span>
+<span class="a">+ return years.toFixed(6);</span>
+
+<span class="d">- setInterval(updateLiveStats, 100);   // both counters, every panel</span>
+<span class="a">+ setInterval(updateLiveAge, 100);     // genuinely changes every tick</span>
+<span class="a">+ setInterval(updateLiveWorkDays, 60000);  // changes at midnight</span>
+
+<span class="c">// weekdays in (a, b] — O(1) plus at most six steps</span>
+<span class="a">function weekdaysAfterUpTo(a, b) {</span>
+<span class="a">  const days = Math.round((b - a) / 86400000);</span>
+<span class="a">  const weeks = Math.floor(days / 7);</span>
+<span class="a">  let count = weeks * 5;</span>
+<span class="a">  const cursor = new Date(a);</span>
+<span class="a">  cursor.setDate(cursor.getDate() + weeks * 7);</span>
+<span class="a">  for (let i = weeks * 7; i &lt; days; i += 1) {</span>
+<span class="a">    cursor.setDate(cursor.getDate() + 1);</span>
+<span class="a">    if (isWeekday(cursor)) count += 1;</span>
+<span class="a">  }</span>
+<span class="a">  return count;</span>
+<span class="a">}</span></pre>
+    <div class="panel"><span class="label">why this one has a test</span>
+      <p class="note">
+        My first closed form was <strong>wrong</strong>: it disagreed with the original on 1,029 of 7,000
+        ranges, all of them backwards spans, because the old loop counts the half-open interval
+        <code>[end, start)</code> when stepping down and my version counted <code>(end, start]</code>. The
+        test caught it. The committed version shifts the endpoints to match and now agrees on all
+        7,000. Without the sweep I would have shipped a subtly wrong date function.
+      </p></div>
+  </div></details>
+</section>
+
+<!-- ======================================================= P5 -->
+<section class="entry" data-proposal="P5" data-title="Train sim art direction">
+  <div class="entry-head">
+    <span class="id">P5</span>
+    <div class="t">
+      <h2>Making the train sim yours</h2>
+      <div class="chips"><span class="chip ok">counted</span><span class="chip built">template generated</span>
+        <span class="chip judge">direction</span><span class="chip">effort: L</span><span class="chip warn">risk: art-bound</span></div>
+    </div>
+  </div>
+
+  <p class="col">
+    The train scene is <strong>5,803 lines</strong> with <strong>90 separate <code>draw*</code> helpers</strong>,
+    building every bench, lamp, crate and locomotive out of <code>fillRect</code> calls. Nobody hand-authors
+    a bench as four rectangles because they wanted <em>that</em> bench &mdash; which is exactly what reads as
+    generated. An atlas you draw replaces a rectangle solver's taste with yours.
+  </p>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="label">the architecture is already there</span>
+      <ul class="tight">
+        <li>8 directions already named &mdash; <code>E SE S SW W NW N NE</code> (index.html:1978)</li>
+        <li>projection already declared <code>2:1</code>, <code>tileH = tileW &times; 0.5</code></li>
+        <li>terrain already composites to an offscreen cache canvas (index.html:4197)</li>
+        <li>a 9-argument <code>drawImage</code> sub-rect blit already exists in the file (index.html:8037)</li>
+      </ul>
+      <p class="note" style="margin-top:0.6rem">This is a swap, not a rewrite.</p>
+    </div>
+    <div class="panel">
+      <span class="label">generated template &middot; 40 boards, 64&times;32 cells</span>
+      <canvas id="atlas" height="300" aria-label="Preview of the generated sprite atlas template: labelled boards with 2:1 guide diamonds"></canvas>
+      <p class="note" style="margin-top:0.5rem">
+        <code>scripts/build-sprite-template.mjs</code> writes a real PNG at 1&times; and 4&times; plus
+        <code>train-atlas.json</code>. Zero dependencies &mdash; the PNG is encoded with node's zlib. Each
+        board carries a 2:1 footprint diamond and an anchor cross marking where the renderer pins the
+        sprite to the tile.
+      </p>
+    </div>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P5" value="palette" data-effort="2" data-rec="1">
+        <span class="body"><span class="row"><h4>Palette lock first</h4><span class="rec">recommended start</span></span>
+          <span class="why">Change nothing structural. Force every existing <code>fillRect</code> through a fixed 16-colour palette so the whole scene reads as deliberate pixel art before a single sprite is drawn. Cheapest way to kill the generated look, and it composes with everything below.</span>
+          <span class="meta">one quantise helper &middot; an afternoon &middot; no art needed</span></span></label>
+      <label class="opt"><input type="radio" name="P5" value="hero" data-effort="6">
+        <span class="body"><span class="row"><h4>Hero atlas &mdash; ~20 cells</h4></span>
+          <span class="why">Locomotives in 8 directions, station, depot, 4 terrain tiles. The things people actually look at. Everything else keeps its procedural drawing as a fallback until you feel like replacing it.</span>
+          <span class="meta">~20 boards to draw &middot; one loader + one blit &middot; an evening of pixel art</span></span></label>
+      <label class="opt"><input type="radio" name="P5" value="full" data-effort="10">
+        <span class="body"><span class="row"><h4>Full atlas &mdash; all 40</h4></span>
+          <span class="why">Replace every helper. Most coherent result and it deletes thousands of lines. Also weeks of drawing, during which the sim looks half-finished.</span>
+          <span class="meta">40 boards &middot; highest payoff, highest stall risk</span></span></label>
+      <label class="opt"><input type="radio" name="P5" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span><span class="why">The procedural scene is genuinely impressive as engineering.</span><span class="meta">no change</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation</summary><div class="inner">
+    <div class="files"><b>scripts/build-sprite-template.mjs</b> &mdash; new, generates the boards<br>
+      <b>public/art/train-atlas-template.png</b> &mdash; 530&times;440, draw into this<br>
+      <b>public/art/train-atlas-template@4x.png</b> &mdash; 2120&times;1760 working copy<br>
+      <b>public/art/train-atlas.json</b> &mdash; 40 cells with rects and anchors</div>
+    <pre><span class="c">// the blit, once sprites exist — the 9-arg form already in the file</span>
+<span class="a">const s = atlas.sprites[name];</span>
+<span class="a">g.drawImage(sheet, s.x, s.y, s.w, s.h,</span>
+<span class="a">            screenX - s.anchorX * scale, screenY - s.anchorY * scale,</span>
+<span class="a">            s.w * scale, s.h * scale);</span>
+
+<span class="c">// and the fallback, so a half-finished atlas is never a broken scene</span>
+<span class="a">if (!sheetReady || !atlas.sprites[name]) return drawProcedural(name, g, view, x, y);</span></pre>
+    <p class="note">
+      Regenerate any time with <code>node scripts/build-sprite-template.mjs</code>. Rename or add cells
+      in the <code>GROUPS</code> table at the top and both the PNG and the JSON follow.
+    </p>
+  </div></details>
+</section>
+
+<!-- ======================================================= P6 -->
+<section class="entry" data-proposal="P6" data-title="Copy">
+  <div class="entry-head">
+    <span class="id">P6</span>
+    <div class="t"><h2>Copy</h2>
+      <div class="chips"><span class="chip built">built</span><span class="chip">effort: XS</span><span class="chip">risk: none</span></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><span class="label">the parenthetical</span>
+      <pre><span class="d">- Working in New York City (NYC).</span>
+<span class="a">+ Working in New York City.</span></pre>
+      <p class="note" style="margin-top:0.55rem">
+        Agreed &mdash; it reads as the page explaining an abbreviation to itself. Worth knowing the string
+        appears <strong>five</strong> times: once visible, three times in meta descriptions and once in
+        JSON-LD. I changed only the visible one, because the others are doing keyword work for search.
+      </p></div>
+    <div class="panel"><span class="label">countries</span>
+      <pre><span class="d">- America, Mexico, Japan, Czechia,
+-   South Korea, Germany, UK, Spain</span>
+<span class="a">+ America, Mexico, Japan &times;2, Czechia &times;4,
++   South Korea, Germany, UK, Spain, Belgium</span></pre>
+      <p class="note" style="margin-top:0.55rem">
+        One flag: you said Brussels, and the row is labelled <em>countries visited</em>. Brussels is a
+        city in Belgium, so I wrote Belgium. If you meant to list cities, the label should change
+        instead &mdash; say which and I will do that one.
+      </p></div>
+  </div>
+  <div class="stack-sm"><span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P6" value="visible" data-effort="1" data-rec="1">
+        <span class="body"><span class="row"><h4>Visible copy only</h4><span class="rec">recommended</span></span>
+          <span class="why">Fix the sentence people read; leave the meta tags doing their SEO job.</span><span class="meta">built</span></span></label>
+      <label class="opt"><input type="radio" name="P6" value="everywhere" data-effort="1">
+        <span class="body"><span class="row"><h4>All five occurrences</h4></span>
+          <span class="why">Consistent everywhere. Small SEO cost: "NYC" is a real search term and the meta description is where it earns its keep.</span><span class="meta">5 strings</span></span></label>
+      <label class="opt"><input type="radio" name="P6" value="none" data-effort="0">
+        <span class="body"><span class="row"><h4>Leave it</h4></span><span class="why">—</span><span class="meta">no change</span></span></label>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= P7 -->
+<section class="entry" data-proposal="P7" data-title="Motion follow-up">
+  <div class="entry-head">
+    <span class="id">P7</span>
+    <div class="t"><h2>A side effect of the frame cap, unresolved</h2>
+      <div class="chips"><span class="chip warn">regression I introduced</span><span class="chip judge">needs your eye</span><span class="chip">effort: XS</span></div></div>
+  </div>
+  <p class="col">
+    The art panel's card physics clamp at <code>Math.min(1.4, dt * 60)</code>. At the old 120&nbsp;fps,
+    <code>dt*60</code> was 0.5 and the clamp never engaged. At the committed 30&nbsp;fps it is 2.0, so the
+    clamp now engages on <em>every frame</em> and the cards drift at roughly <strong>70%</strong> of their
+    intended rate. That is a consequence of a change I already committed, and I have not measured how
+    visible it is.
+  </p>
+  <div class="stack-sm"><span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P7" value="raise" data-effort="1" data-rec="1">
+        <span class="body"><span class="row"><h4>Raise the clamp to 2.2</h4><span class="rec">recommended</span></span>
+          <span class="why">Restores the intended speed at 30&nbsp;fps while still guarding against a huge delta after a stall. The clamp exists for stability, not for speed.</span><span class="meta">one constant</span></span></label>
+      <label class="opt"><input type="radio" name="P7" value="watch" data-effort="0">
+        <span class="body"><span class="row"><h4>Look at it first</h4></span>
+          <span class="why">70% of the previous drift may simply look calmer. Decide with your eyes before touching it.</span><span class="meta">no change yet</span></span></label>
+      <label class="opt"><input type="radio" name="P7" value="revert" data-effort="2">
+        <span class="body"><span class="row"><h4>Make the art panel exempt from the cap</h4></span>
+          <span class="why">Let that one panel run uncapped so the physics keep their old feel. Costs the battery saving on the panel with the most elements.</span><span class="meta">one lookup entry</span></span></label>
+    </div>
+  </div>
+</section>
+
+
+<!-- ======================================================= P8 -->
+<section class="entry" data-proposal="P8" data-title="Colony cost over time">
+  <div class="entry-head">
+    <span class="id">P8</span>
+    <div class="t">
+      <h2>The colony gets more expensive as it grows</h2>
+      <div class="chips"><span class="chip ok">measured</span><span class="chip warn">exponent unproven</span>
+        <span class="chip">effort: S&ndash;L</span><span class="chip">impact: high on phones</span></div>
+    </div>
+  </div>
+
+  <p class="col">
+    This is the best candidate I found for "over time it happens". The ant model's cost grows sharply
+    with colony size, and the colony grows the longer the page is open. Drawing does not: it is flat.
+  </p>
+
+  <div class="grid2">
+    <div class="panel">
+      <span class="label">measured on this Mac, model vs draw</span>
+      <div class="scroll-x"><table>
+        <thead><tr><th class="n">ants</th><th class="n">model ms/s</th><th class="n">draw ms/s</th><th class="n">spread (worst/median)</th></tr></thead>
+        <tbody>
+          <tr><td class="n">3</td><td class="n">4.1</td><td class="n">14.3</td><td class="n">1.4&times;</td></tr>
+          <tr><td class="n">11</td><td class="n">37.7</td><td class="n">14.1</td><td class="n">1.6&times;</td></tr>
+          <tr class="hl"><td class="n">21</td><td class="n">58.6</td><td class="n">14.6</td><td class="n">2.8&times;</td></tr>
+        </tbody></table></div>
+      <p class="note" style="margin-top:0.6rem">
+        Drawing is flat because it rasterises the same canvas whatever is on it. The model is not.
+        Somewhere around <strong>8&ndash;10 ants the model overtakes rendering</strong> and keeps going.
+      </p>
+    </div>
+    <div class="panel">
+      <span class="label">what this means off this machine</span>
+      <p style="font-size:0.93rem">
+        58&nbsp;ms of CPU per wall-clock second is <strong>6% of one core</strong> on an M5 Pro. A mid-range
+        phone is roughly 10&times; slower on single-thread JS, which puts the same colony at
+        <strong>~60% of a core, continuously</strong>, before drawing, the page, or the browser.
+      </p>
+      <p style="font-size:0.93rem;margin-top:0.6rem">
+        And the simulation uses a fixed-timestep accumulator. When it cannot keep up it runs
+        <em>more</em> updates per frame to catch up, which costs more, which makes it fall further
+        behind &mdash; bounded only by the <code>MAX_DELTA</code> clamp, at which point the colony
+        visibly slows down rather than stopping. That is what "chugs" looks like.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="label">what I could not establish, and why</span>
+    <ul class="tight">
+      <li><strong>The complexity class.</strong> Two runs gave exponents of 1.92 / 1.87; a third gave 1.71 / 0.68. I will not call it O(n&sup2;) on that evidence.</li>
+      <li><strong>Which phase is hot.</strong> I tried stubbing phases and comparing. That method is invalid here: the model is stateful, so removing a phase changes the trajectory and the next updates do different work. The negative "shares" it produced are the giveaway.</li>
+      <li><strong>I found an O(n&sup2;) shape and it was a red herring.</strong> <code>rebalanceTasks</code> runs a <code>find</code> whose predicate does a <code>filter</code> inside a <code>while</code> whose condition is another <code>filter</code> &mdash; textbook quadratic. It measured at roughly 2&ndash;6% of model cost, because it only runs every 1.5 simulated seconds and exits early when the allocation is already balanced. Worth tidying; not the cause.</li>
+      <li><strong>The environment.</strong> The preview pane throttles rAF to ~4&nbsp;fps and the timing variance was large. Every number above is an order-of-magnitude claim, not a benchmark.</li>
+    </ul>
+  </div>
+
+  <div class="stack-sm">
+    <span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P8" value="profile" data-effort="1" data-rec="1">
+        <span class="body"><span class="row"><h4>Profile it properly first</h4><span class="rec">recommended</span></span>
+          <span class="why">Open the real site in Chrome DevTools, record 30&nbsp;s of a grown colony with 6&times; CPU throttling, and read the flame chart. That answers in ten minutes what my ad-hoc timing could not, and it tells you which of the options below is worth doing.</span>
+          <span class="meta">no code &middot; ten minutes &middot; produces the evidence I lack</span></span></label>
+      <label class="opt"><input type="radio" name="P8" value="cap" data-effort="2">
+        <span class="body"><span class="row"><h4>Cap the catch-up</h4></span>
+          <span class="why">Bound how many fixed steps one frame may run. Stops the death spiral: when the model falls behind, the colony slows down smoothly instead of the page locking up. A safety net rather than a fix, and it works without knowing the cause.</span>
+          <span class="meta">~5 lines in AntPatchSimulation &middot; bounded, testable</span></span></label>
+      <label class="opt"><input type="radio" name="P8" value="colony" data-effort="3">
+        <span class="body"><span class="row"><h4>Cap the colony</h4></span>
+          <span class="why">Put a ceiling on ant count, or retire old workers as new ones hatch. Keeps cost bounded forever and is arguably truer to a real colony. It does change the simulation's behaviour, which is a design decision rather than an optimisation.</span>
+          <span class="meta">changes the sim &middot; your call, not mine</span></span></label>
+      <label class="opt"><input type="radio" name="P8" value="tidy" data-effort="2">
+        <span class="body"><span class="row"><h4>Tidy rebalanceTasks anyway</h4></span>
+          <span class="why">Replace the nested filters with a single tally pass. Provably equivalent, a few lines, and removes a quadratic that will bite later even though it is not biting now.</span>
+          <span class="meta">~12 lines &middot; not the cause &middot; cheap hygiene</span></span></label>
+    </div>
+  </div>
+
+  <details class="impl"><summary>Implementation &mdash; the two bounded options</summary><div class="inner">
+    <pre><span class="c">// Cap the catch-up (src/sim/AntPatchSimulation.ts, advanceFrame)</span>
+  this.accumulator += delta;
+<span class="a">  let steps = 0;</span>
+  while (this.accumulator &gt;= FRAME_STEP<span class="a"> &amp;&amp; steps &lt; MAX_CATCHUP_STEPS</span>) {
+    this.update(FRAME_STEP);
+    this.accumulator -= FRAME_STEP;
+<span class="a">    steps += 1;</span>
+  }
+<span class="a">  // Drop the arrears instead of trying to pay them back next frame.</span>
+<span class="a">  if (steps === MAX_CATCHUP_STEPS) this.accumulator = 0;</span>
+
+<span class="c">// Tidy rebalanceTasks (src/sim/AntModel.ts) — one tally instead of</span>
+<span class="c">// a filter per candidate per iteration. Same result, O(n).</span>
+<span class="a">const counts = { forage: 0, dig: 0, nurse: 0 };</span>
+<span class="a">for (const ant of this.ants) counts[ant.task] += 1;</span>
+  for (const task of this.taskOrder()) {
+<span class="d">-   while (this.ants.filter((a) =&gt; a.task === task).length &lt; desired[task]) {</span>
+<span class="a">+   while (counts[task] &lt; desired[task]) {</span>
+      const donor = this.ants.find((ant) =&gt;
+        !ant.carryingFood &amp;&amp; !ant.carryingCareFood &amp;&amp; ant.task !== task &amp;&amp;
+<span class="d">-       this.ants.filter((c) =&gt; c.task === ant.task).length &gt; desired[ant.task]);</span>
+<span class="a">+       counts[ant.task] &gt; desired[ant.task]);</span>
+      if (!donor) break;
+<span class="a">+     counts[donor.task] -= 1; counts[task] += 1;</span>
+      donor.task = task;  <span class="c">/* ...unchanged... */</span></pre>
+    <p class="note">
+      Neither is built. The catch-up cap is a five-line change I would make blind; the tally is
+      provably equivalent and easy to test by comparing colony snapshots after N updates. The colony
+      cap is a design decision and I would not make it without you.
+    </p>
+  </div></details>
+</section>
+
+<!-- ======================================================= P9 -->
+<section class="entry" data-proposal="P9" data-title="Page weight">
+  <div class="entry-head">
+    <span class="id">P9</span>
+    <div class="t"><h2>Page weight &mdash; checked, and mostly fine</h2>
+      <div class="chips"><span class="chip ok">measured</span><span class="chip">effort: L</span><span class="chip">impact: slow networks only</span></div></div>
+  </div>
+  <p class="col">
+    You listed page loading, so I measured it rather than assuming. On localhost it is quick:
+    first contentful paint at <strong>72&nbsp;ms</strong>, DOM interactive at <strong>39&nbsp;ms</strong>,
+    load complete at <strong>83&nbsp;ms</strong>, and only <strong>97 DOM nodes</strong>. There is no
+    rendering problem to fix.
+  </p>
+  <div class="grid2">
+    <div class="panel"><span class="label">the one number worth knowing</span>
+      <div class="mono" style="font-size:1.4rem">74 KB <span class="dim">wire</span> &middot; 376 KB <span class="dim">decoded</span></div>
+      <p class="note" style="margin-top:0.5rem">
+        That is the HTML alone, and it is render-blocking: an 827-line <code>&lt;style&gt;</code> and a
+        ~7,900-line inline <code>&lt;script&gt;</code> in one document. Localhost hides this entirely. On
+        a slow connection it is roughly a second and a half before anything can paint, and the parse
+        cost lands on the phone's single thread before the page responds.
+      </p></div>
+    <div class="panel"><span class="label">honest assessment</span>
+      <p style="font-size:0.93rem">
+        I would not spend a weekend on this. The page is one document with 97 nodes; splitting the
+        script out buys a cacheable second request and loses the single-file simplicity that makes
+        this site pleasant to work on. It only matters if real visitors are on slow connections,
+        which Vercel Analytics can tell you and I cannot.
+      </p>
+      <p class="note" style="margin-top:0.6rem">Listed so that "I checked page loading" is on the record with a number attached.</p></div>
+  </div>
+  <div class="stack-sm"><span class="label">choose one</span>
+    <div class="opts" data-opts>
+      <label class="opt"><input type="radio" name="P9" value="none" data-effort="0" data-rec="1">
+        <span class="body"><span class="row"><h4>Leave it</h4><span class="rec">recommended</span></span>
+          <span class="why">Measured, not a problem, and the alternative costs more than it returns.</span><span class="meta">no change</span></span></label>
+      <label class="opt"><input type="radio" name="P9" value="check" data-effort="1">
+        <span class="body"><span class="row"><h4>Check real visitors first</h4></span>
+          <span class="why">Look at the connection and device mix in Vercel Analytics before deciding. Data I do not have.</span><span class="meta">no code</span></span></label>
+      <label class="opt"><input type="radio" name="P9" value="split" data-effort="8">
+        <span class="body"><span class="row"><h4>Extract the inline script</h4></span>
+          <span class="why">Move the ~7,900 inline lines into <code>src/</code> modules. Becomes cacheable, gets type-checked and minified by the build that currently only sees <code>src/</code>. Big change, and it is really the modularisation job rather than a loading fix.</span>
+          <span class="meta">days &middot; touches everything &middot; see docs/site-health.md</span></span></label>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= PLAN -->
+<section class="entry" id="plan-section">
+  <div class="entry-head"><span class="id">&#9633;</span>
+    <div class="t"><h2>Your plan</h2>
+      <div class="chips"><span class="chip">updates as you choose</span></div></div></div>
+  <div class="plan">
+    <div id="planEmpty" class="plan-empty">Nothing selected yet. Pick an option in any entry above.</div>
+    <ol id="planList" hidden></ol>
+    <div class="totals" id="planTotals" hidden></div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <button id="planCopy">copy plan</button>
+      <button id="planRecommended">take all recommendations</button>
+      <button id="planClear">clear</button>
+    </div>
+    <p class="note" id="planMsg" hidden></p>
+  </div>
+</section>
+
+<!-- ======================================================= EVIDENCE -->
+<section class="entry">
+  <div class="entry-head"><span class="id">&#8623;</span>
+    <div class="t"><h2>What I explored, and what I got wrong</h2>
+      <div class="chips"><span class="chip">evidence trail</span></div></div></div>
+
+  <div class="panel tree">
+    <details open><summary>corrections to my own earlier claims</summary>
+      <div class="leaf"><b>Ant stage.</b> I first said a circular <code>svh</code> feedback loop. Wrong. It is <code>35vw</code> capped at <code>34rem</code> in the embedded branch. Arithmetic confirmed it: 35% of 1481&nbsp;px is 518.35, measured 518.344.</div>
+      <div class="leaf"><b>Marker on mobile.</b> I said it needed a 44&nbsp;px touch target. Wrong. Reading <code>pointerUp</code> showed the marker is not dragged; tapping anywhere in the pane moves it. The pane is already the target.</div>
+      <div class="leaf"><b>Business days.</b> My first closed form disagreed with the original on 1,029 of 7,000 ranges. Fixed, and now covered by a test.</div>
+      <div class="leaf"><b>"Profile model.update, not rendering."</b> I said that in my last message and it is wrong at small colonies: drawing costs 14&nbsp;ms/s against the model's 4 at three ants. The model only overtakes rendering around 8&ndash;10 ants. Both halves matter; which one dominates depends on how long the page has been open.</div>
+      <div class="leaf"><b>The quadratic I found was not the cause.</b> <code>rebalanceTasks</code> is genuinely O(n&sup2;)-shaped and measured at 2&ndash;6% of model cost. I nearly reported it as the answer because it looked like one.</div>
+      <div class="leaf"><b>My phase-attribution method was invalid.</b> Stubbing a phase to measure its share does not work on a stateful simulation: the trajectory diverges and the remaining updates do different work. It produced negative percentages, which is how I noticed.</div>
+    </details>
+    <details><summary>measured on the live page</summary>
+      <div class="leaf"><b>553 px</b> stage at both a 950 and a 1400&nbsp;px window</div>
+      <div class="leaf"><b>434 &times; 1509 px</b> left column holding <b>172 px</b> of content</div>
+      <div class="leaf"><b>19.7 px</b> marker ring thickness at a 518&nbsp;px pane</div>
+      <div class="leaf"><b>172 iterations</b> per work-days call, <b>0.0215 ms</b>, 10&times; per second</div>
+      <div class="leaf"><b>5,803 lines / 90 helpers</b> in the train scene</div>
+      <div class="leaf"><b>4.1 &rarr; 58.6 ms/s</b> model cost as the colony grows from 3 to 21 ants; draw flat at ~14</div>
+      <div class="leaf"><b>72 ms</b> first contentful paint, <b>97</b> DOM nodes, <b>376 KB</b> decoded HTML</div>
+    </details>
+    <details><summary>branches I deliberately did not take</summary>
+      <div class="leaf q">splitting the 8,900-line index.html into modules &mdash; real, but not "a small change"</div>
+      <div class="leaf q">the duplicate ant simulation (src/sim plus an inline copy) &mdash; separate job</div>
+      <div class="leaf q">the 83-colour / 3-token design drift &mdash; already written up in docs/site-health.md</div>
+      <div class="leaf q">low-end device profiling &mdash; no such device here</div>
+    </details>
+    <details><summary>what I could not verify in this environment</summary>
+      <div class="leaf q">The preview throttles <code>requestAnimationFrame</code> to <b>~4&nbsp;fps</b> while reporting <code>document.hidden === false</code>. No wall-clock animation timing is trustworthy here, including the vine's fill rate and anything about perceived smoothness.</div>
+      <div class="leaf q">No phone, so every mobile claim is reasoning rather than observation.</div>
+      <div class="leaf q">No low-end GPU, so the 30&nbsp;fps cap's real benefit is still unmeasured.</div>
+    </details>
+  </div>
+
+  <div class="grid2">
+    <div class="panel"><span class="label">what I would explore next, in order</span>
+      <ol class="tight" style="padding-left:1.2rem">
+        <li><b>A real flame chart of the ant model</b> under CPU throttling. I measured that it grows and roughly how much, but not what inside it is hot &mdash; see P8. This is the one that matters.</li>
+        <li><b>Static map cache churn.</b> It re-renders on a key change; I did not check how often that key moves during normal panning. The only one of my original four still untouched.</li>
+        <li><b>The P7 clamp</b>, with your eyes rather than my arithmetic.</li>
+        <li><b>Real-visitor data.</b> Device and connection mix from Vercel Analytics would settle P9 and tell you whether the phone numbers in P8 matter.</li>
+        <li class="q" style="color:var(--dim)">Done tonight: cold-load timing (P9) and model-vs-draw cost (P8), both of which were on this list.</li>
+      </ol></div>
+    <div class="panel"><span class="label">how to look at any of this</span>
+      <pre><span class="c"># the prototypes live on a worktree branch</span>
+cd ../bb-proto
+git log --oneline fix/webgl-context-loss..HEAD
+pnpm run build &amp;&amp; pnpm exec vite preview --port 4318
+
+<span class="c"># stage strategies</span>
+open 'http://localhost:4318/?stage=peek#ants'
+open 'http://localhost:4318/?stage=max#ants'
+
+<span class="c"># regenerate the sprite boards</span>
+node scripts/build-sprite-template.mjs</pre>
+      <p class="note" style="margin-top:0.6rem">
+        Four commits on <code>proto/polish</code>, 1,155 insertions. Nothing is merged, nothing is pushed.
+      </p></div>
+  </div>
+</section>
+
+<footer style="padding-block:2rem" class="col">
+  <p class="note">
+    Measurements taken 25 November 2026 at a 1512&times;950 viewport unless stated. Every number here
+    came from the running page or from a script in the repo, not from reading the source and guessing.
+  </p>
+</footer>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private window */ } },
+    del(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
+  };
+
+  /* ------------------------------------------------ plan selection */
+  const KEY = 'polish-review:selection';
+  const planList = document.getElementById('planList');
+  const planEmpty = document.getElementById('planEmpty');
+  const planTotals = document.getElementById('planTotals');
+  const planMsg = document.getElementById('planMsg');
+
+  const entries = () => [...document.querySelectorAll('[data-proposal]')];
+
+  function readSelection() {
+    const out = [];
+    for (const section of entries()) {
+      const id = section.dataset.proposal;
+      const checked = section.querySelector('input[type=radio]:checked');
+      if (!checked || checked.value === 'none') continue;
+      const card = checked.closest('.opt');
+      out.push({
+        id,
+        proposal: section.dataset.title,
+        option: card.querySelector('h4').textContent.trim(),
+        effort: Number(checked.dataset.effort || 0),
+        meta: (card.querySelector('.meta')?.textContent || '').trim(),
+      });
+    }
+    return out;
+  }
+
+  function renderPlan() {
+    const sel = readSelection();
+    const persisted = {};
+    document.querySelectorAll('input[type=radio]:checked').forEach((r) => { persisted[r.name] = r.value; });
+    store.set(KEY, persisted);
+
+    if (!sel.length) {
+      planEmpty.hidden = false; planList.hidden = true; planTotals.hidden = true;
+      return;
+    }
+    planEmpty.hidden = true; planList.hidden = false; planTotals.hidden = false;
+    planList.innerHTML = sel.map((s) =>
+      `<li><b>${s.id}</b> &mdash; ${esc(s.proposal)}: ${esc(s.option)}<br><span class="note">${esc(s.meta)}</span></li>`).join('');
+    const effort = sel.reduce((n, s) => n + s.effort, 0);
+    const built = sel.filter((s) => /built/.test(s.meta)).length;
+    planTotals.innerHTML =
+      `<span><b>${sel.length}</b> selected</span>` +
+      `<span>effort <b>${effort}</b> pts</span>` +
+      `<span><b>${built}</b> already built on the branch</span>` +
+      `<span>roughly <b>${effort <= 4 ? 'an afternoon' : effort <= 10 ? 'a weekend' : 'more than a weekend'}</b></span>`;
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('input[type=radio]')) renderPlan();
+  });
+
+  // restore any earlier selection
+  (() => {
+    const saved = store.get(KEY, null);
+    if (!saved) return;
+    for (const [name, value] of Object.entries(saved)) {
+      const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (el) el.checked = true;
+    }
+  })();
+
+  document.getElementById('planRecommended').addEventListener('click', () => {
+    document.querySelectorAll('input[data-rec="1"]').forEach((r) => { r.checked = true; });
+    renderPlan();
+  });
+  document.getElementById('planClear').addEventListener('click', () => {
+    document.querySelectorAll('input[type=radio]').forEach((r) => { r.checked = false; });
+    store.del(KEY);
+    renderPlan();
+  });
+  document.getElementById('planCopy').addEventListener('click', async () => {
+    const sel = readSelection();
+    const text = sel.length
+      ? ['Polish review — selected plan', '']
+          .concat(sel.map((s) => `${s.id}  ${s.proposal}\n    ${s.option}\n    ${s.meta}`))
+          .concat(['', 'Prototypes: branch proto/polish in ../bb-proto'])
+          .join('\n')
+      : 'Nothing selected.';
+    try {
+      await navigator.clipboard.writeText(text);
+      planMsg.hidden = false; planMsg.textContent = 'Plan copied to the clipboard.';
+    } catch {
+      planMsg.hidden = false; planMsg.textContent = text;
+    }
+  });
+
+  renderPlan();
+
+  /* ------------------------------------------------ P2: julia demo */
+  const jc = document.getElementById('julia');
+  if (jc) {
+    const gl = jc.getContext('webgl2', { antialias: false, depth: false });
+    const out = document.getElementById('jOut');
+    let mode = 'current', marker = { x: 0.515, y: 0.60 }, lastMove = performance.now();
+    let prog = null, vao = null, uni = null, dead = false, forceIdle = false;
+
+    const VS = `#version 300 es
+in vec2 a_position; void main(){ gl_Position = vec4(a_position,0.,1.); }`;
+    const FS = `#version 300 es
+precision highp float;
+uniform vec2 u_resolution; uniform vec2 u_marker; uniform float u_mode; uniform float u_fade;
+out vec4 out_color;
+vec3 pal(float v, float inside){
+  if (inside > .5) return vec3(.017,.028,.022);
+  float t = pow(v, .62);
+  vec3 cold = vec3(.045,.095,.105);
+  vec3 mid  = vec3(.17,.40,.28);
+  vec3 warm = vec3(.84,.74,.42);
+  return t < .5 ? mix(cold, mid, t * 2.) : mix(mid, warm, (t - .5) * 2.);
+}
+float esc(vec2 p){ vec2 z=vec2(0.); float i=0.;
+  for(int k=0;k<96;k++){ z=vec2(z.x*z.x-z.y*z.y, 2.*z.x*z.y)+p; if(dot(z,z)>16.) break; i+=1.; }
+  return i/96.; }
+/* verbatim from index.html:8931 */
+float markerCurrent(vec2 local){
+  vec2 p=(local-u_marker)*vec2((u_resolution.x)/u_resolution.y,1.);
+  float d=length(p);
+  float ring=smoothstep(.023,.019,abs(d-.045));
+  float center=smoothstep(.012,.003,d);
+  return max(ring,center);
+}
+/* from the proto/polish branch */
+vec2 markerNew(vec2 local){
+  vec2 p=(local-u_marker)*vec2((u_resolution.x)/u_resolution.y,1.);
+  float d=length(p); float r=.046;
+  float ring=smoothstep(.0060,.0028,abs(d-r));
+  float shade=smoothstep(.0105,.0060,abs(d-(r+.0055)));
+  float halo=step(r,d)*(1.-smoothstep(r,.090,d))*.18;
+  float ax=abs(p.x), ay=abs(p.y);
+  float band=step(.013,d)*step(d,.034);
+  float tick=max(smoothstep(.0038,.0016,ay),smoothstep(.0038,.0016,ax))*band;
+  return vec2(min(1.,ring+tick*.85), min(1.,shade*.5+halo));
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution;
+  float aspect=u_resolution.x/u_resolution.y;
+  vec2 p=vec2(-0.62,0.)+(uv-.5)*vec2(aspect,1.)*2.5;
+  float v=esc(p);
+  vec3 color=pal(v, v>.985?1.:0.);
+  color*=.76+.26*smoothstep(.92,.2,length(uv-.5));
+  if(u_mode<.5){ color=mix(color,vec3(1.,.91,.55),markerCurrent(uv)); }
+  else { vec2 m=markerNew(uv)*u_fade;
+         color=mix(color,vec3(0.),m.y);
+         color=mix(color,vec3(1.,.93,.62),m.x); }
+  out_color=vec4(color,1.);
+}`;
+
+    const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader'); return s; };
+    const build = () => {
+      const p = gl.createProgram();
+      gl.attachShader(p, sh(gl.VERTEX_SHADER, VS));
+      gl.attachShader(p, sh(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) || 'link');
+      prog = p;
+      vao = gl.createVertexArray(); const b = gl.createBuffer();
+      gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(p, 'a_position');
+      gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      uni = { res: gl.getUniformLocation(p,'u_resolution'), marker: gl.getUniformLocation(p,'u_marker'),
+              mode: gl.getUniformLocation(p,'u_mode'), fade: gl.getUniformLocation(p,'u_fade') };
+    };
+    // the page under review lost its context permanently; this one does not
+    jc.addEventListener('webglcontextlost', (e) => { e.preventDefault(); prog = null; });
+    jc.addEventListener('webglcontextrestored', () => { try { build(); } catch { dead = true; } });
+
+    const fit = () => { const r = jc.getBoundingClientRect(); const d = Math.min(2, devicePixelRatio || 1);
+      jc.width = Math.max(240, Math.round(r.width * d)); jc.height = Math.round(330 * d); };
+
+    const frame = () => {
+      if (!gl || dead) return;
+      if (prog) {
+        gl.viewport(0, 0, jc.width, jc.height);
+        gl.useProgram(prog); gl.bindVertexArray(vao);
+        gl.uniform2f(uni.res, jc.width, jc.height);
+        gl.uniform2f(uni.marker, marker.x, marker.y);
+        gl.uniform1f(uni.mode, mode === 'current' ? 0 : 1);
+        const idle = forceIdle ? 9 : (performance.now() - lastMove) / 1000;
+        let fade = 1;
+        if (mode !== 'current' && idle > 2.5) {
+          const t = Math.min(1, idle - 2.5);
+          fade = 1 - (t * t * (3 - 2 * t)) * 0.7;
+        }
+        gl.uniform1f(uni.fade, fade);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+      requestAnimationFrame(frame);
+    };
+    if (gl) { try { fit(); build(); frame(); } catch { dead = true; } addEventListener('resize', fit); }
+
+    const report = () => {
+      const a = jc.width / jc.height;
+      const cx = -0.62 + (marker.x - 0.5) * a * 2.5;
+      const cy = (marker.y - 0.5) * 2.5;
+      if (out) out.textContent = `c = ${cx.toFixed(3)} ${cy >= 0 ? '+' : '−'} ${Math.abs(cy).toFixed(3)}i`;
+    };
+    report();
+
+    const set = (ev) => { const r = jc.getBoundingClientRect();
+      marker = { x: Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)),
+                 y: Math.min(1, Math.max(0, 1 - (ev.clientY - r.top) / r.height)) };
+      lastMove = performance.now(); forceIdle = false; report(); };
+    let drag = false;
+    jc.addEventListener('pointerdown', (e) => { drag = true; jc.setPointerCapture(e.pointerId); set(e); });
+    jc.addEventListener('pointermove', (e) => { if (drag) set(e); else { lastMove = performance.now(); forceIdle = false; } });
+    jc.addEventListener('pointerup', () => { drag = false; });
+
+    const bc = document.getElementById('jCur'), bn = document.getElementById('jNew');
+    const setMode = (m) => { mode = m; lastMove = performance.now(); forceIdle = false;
+      bc.setAttribute('aria-pressed', String(m === 'current'));
+      bn.setAttribute('aria-pressed', String(m === 'proposed')); };
+    bc.addEventListener('click', () => setMode('current'));
+    bn.addEventListener('click', () => setMode('proposed'));
+    document.getElementById('jIdle').addEventListener('click', () => { setMode('proposed'); forceIdle = true; });
+  }
+
+  /* ------------------------------------------------ seeded rng */
+  const mulberry = (a) => () => {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  /* ------------------------------------------------ P3a: vine */
+  const vc = document.getElementById('vine');
+  if (vc) {
+    const g = vc.getContext('2d');
+    const PX = 3;
+    let rnd = null, segs = [], buds = [], leaves = [], flowers = [], done = false, seed = 20261125;
+    let stemLen = 9, lifeCap = 60, acc = 0, last = performance.now();
+
+    const measure = () => { const h = 400; stemLen = Math.max(7, Math.min(20, h / 40)); lifeCap = Math.ceil(h / (stemLen * 0.5) * 0.95); };
+    const reset = (s) => { seed = s; rnd = mulberry(s); segs = []; leaves = []; flowers = []; done = false; acc = 0;
+      measure(); const w = vc.clientWidth || 300;
+      buds = [{ x: w * (0.30 + rnd() * 0.40), y: 0, a: -Math.PI / 2, ls: 1, depth: 0, life: 0 }]; };
+
+    const grow = () => {
+      if (done || !rnd) return;
+      const h = 400; const next = [];
+      for (const b of buds) {
+        const a = b.a + (rnd() - 0.5) * 0.40 + (-Math.PI / 2 - b.a) * 0.28;
+        const len = stemLen * b.ls;
+        const nx = b.x + Math.cos(a) * len * 0.5, ny = b.y + Math.sin(a) * len * 0.5;
+        segs.push({ x1: b.x, y1: b.y, x2: nx, y2: ny, d: b.depth });
+        if (rnd() < 0.15) leaves.push({ x: nx, y: ny, s: 2 + Math.floor(rnd() * 2), d: b.depth, dir: rnd() < 0.5 ? -1 : 1 });
+        const life = b.life + 1;
+        if (-ny > h - 16 || life > lifeCap - b.depth * Math.round(lifeCap * 0.26)) {
+          flowers.push({ x: nx, y: ny, petals: 5 + Math.floor(rnd() * 2) }); continue;
+        }
+        next.push({ x: nx, y: ny, a, ls: b.ls, depth: b.depth, life });
+        if (b.depth < 2 && life > Math.max(6, lifeCap * 0.10) && rnd() < 0.085) {
+          next.push({ x: nx, y: ny, a: a + (rnd() < 0.5 ? 1 : -1) * (0.5 + rnd() * 0.4), ls: b.ls * 0.75, depth: b.depth + 1, life: 0 });
+        }
+      }
+      buds = next;
+      if (!buds.length) done = true;
+    };
+
+    const paint = () => {
+      const w = vc.clientWidth || 300, h = 400, d = Math.min(2, devicePixelRatio || 1);
+      if (vc.width !== Math.round(w * d)) { vc.width = Math.round(w * d); vc.height = Math.round(h * d); }
+      g.setTransform(d, 0, 0, d, 0, 0);
+      g.clearRect(0, 0, w, h);
+      g.save(); g.globalAlpha = 0.92; g.translate(0, h - 4);
+      const snap = (v) => Math.round(v / PX) * PX;
+      for (const s of segs) {
+        g.fillStyle = s.d === 0 ? '#3f5a2e' : s.d === 1 ? '#4c6b36' : '#5a7a41';
+        const steps = Math.max(1, Math.ceil(Math.hypot(s.x2 - s.x1, s.y2 - s.y1) / PX));
+        for (let i = 0; i <= steps; i++) {
+          const x = snap(s.x1 + (s.x2 - s.x1) * (i / steps)), y = snap(s.y1 + (s.y2 - s.y1) * (i / steps));
+          g.fillRect(x, y, PX, PX); if (s.d === 0) g.fillRect(x + PX, y, PX, PX);
+        }
+      }
+      for (const l of leaves) { g.fillStyle = l.d === 0 ? '#6d8f4a' : '#7fa054';
+        const lx = snap(l.x), ly = snap(l.y);
+        g.fillRect(lx, ly, PX * l.s * l.dir, PX); g.fillRect(lx, ly - PX, PX * (l.s - 1) * l.dir, PX); }
+      for (const f of flowers) { const fx = snap(f.x), fy = snap(f.y);
+        g.fillStyle = 'rgba(214,189,104,.92)';
+        for (let i = 0; i < f.petals; i++) { const a = (i / f.petals) * Math.PI * 2;
+          g.fillRect(snap(fx + Math.cos(a) * PX * 1.7), snap(fy + Math.sin(a) * PX * 1.7), PX, PX); }
+        g.fillStyle = '#fff8e8'; g.fillRect(fx, fy, PX, PX); }
+      g.restore();
+      g.fillStyle = cssVar('--dim'); g.font = '10px ui-monospace, monospace';
+      g.fillText(done ? `seed ${seed} · settled` : `seed ${seed} · growing`, 8, 14);
+    };
+
+    const loop = (t) => { const dt = t - last; last = t; acc += dt;
+      while (acc > 55 && !done) { grow(); acc -= 55; }
+      paint(); if (!done) requestAnimationFrame(loop); };
+
+    const finish = () => { let n = 0; while (!done && n < 900) { grow(); n++; } paint(); };
+    reset(seed);
+    if (reduced) finish(); else requestAnimationFrame(loop);
+    document.getElementById('vineSeed').addEventListener('click', () => {
+      reset((Math.random() * 1e6) | 0); last = performance.now();
+      if (reduced) finish(); else requestAnimationFrame(loop); });
+    document.getElementById('vineFast').addEventListener('click', finish);
+    addEventListener('resize', paint);
+  }
+
+  /* ------------------------------------------------ P3b: powder */
+  const pc = document.getElementById('powder');
+  if (pc) {
+    const g = pc.getContext('2d');
+    const CELL = 4, EMPTY = 0, SAND = 1, WALL = 2, ANT = 3;
+    const COLORS = { 1: '#c9a84c', 2: '#55614a', 3: '#d9794f' };
+    let cols = 0, rows = 0, grid = null, antMode = false;
+    const rnd = mulberry(4242);
+
+    const alloc = () => {
+      const w = pc.clientWidth || 300, h = 400, d = Math.min(2, devicePixelRatio || 1);
+      pc.width = Math.round(w * d); pc.height = Math.round(h * d);
+      g.setTransform(d, 0, 0, d, 0, 0);
+      cols = Math.floor(w / CELL); rows = Math.floor(h / CELL);
+      grid = new Uint8Array(cols * rows);
+      for (let x = 0; x < cols; x++) grid[(rows - 1) * cols + x] = WALL;
+    };
+    const at = (x, y) => y * cols + x;
+
+    const step = () => {
+      for (let y = rows - 2; y >= 0; y--) {
+        for (let i = 0; i < cols; i++) {
+          const x = rnd() < 0.5 ? i : cols - 1 - i;
+          const v = grid[at(x, y)];
+          if (v === SAND) {
+            if (grid[at(x, y + 1)] === EMPTY) { grid[at(x, y)] = EMPTY; grid[at(x, y + 1)] = SAND; }
+            else { const nx = x + (rnd() < 0.5 ? -1 : 1);
+              if (nx >= 0 && nx < cols && grid[at(nx, y + 1)] === EMPTY) { grid[at(x, y)] = EMPTY; grid[at(nx, y + 1)] = SAND; } }
+          } else if (v === ANT) {
+            if (grid[at(x, y + 1)] === EMPTY) { grid[at(x, y)] = EMPTY; grid[at(x, y + 1)] = ANT; }
+            else { const nx = x + (rnd() < 0.5 ? -1 : 1);
+              if (nx >= 0 && nx < cols && grid[at(nx, y)] === EMPTY) { grid[at(x, y)] = EMPTY; grid[at(nx, y)] = ANT; } }
+          }
+        }
+      }
+    };
+
+    const paint = () => {
+      const w = pc.clientWidth || 300, h = 400;
+      g.clearRect(0, 0, w, h);
+      let live = 0;
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const v = grid[at(x, y)]; if (!v) continue;
+        if (v !== WALL) live++;
+        g.fillStyle = COLORS[v]; g.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+      g.fillStyle = cssVar('--dim'); g.font = '10px ui-monospace, monospace';
+      g.fillText(`${cols}×${rows} · ${live} particles · never settles`, 8, 14);
+    };
+
+    alloc();
+    for (let i = 0; i < 420; i++) grid[at(Math.floor(rnd() * cols), Math.floor(rnd() * rows * 0.35))] = SAND;
+
+    let down = false;
+    const add = (ev) => { const r = pc.getBoundingClientRect();
+      const x = Math.floor((ev.clientX - r.left) / CELL), y = Math.floor((ev.clientY - r.top) / CELL);
+      for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows - 1 && rnd() < 0.6) grid[at(nx, ny)] = antMode ? ANT : SAND;
+      } };
+    pc.addEventListener('pointerdown', (e) => { down = true; pc.setPointerCapture(e.pointerId); add(e); });
+    pc.addEventListener('pointermove', (e) => { if (down) add(e); });
+    pc.addEventListener('pointerup', () => { down = false; });
+
+    const pm = document.getElementById('powMode');
+    pm.addEventListener('click', () => { antMode = !antMode;
+      pm.setAttribute('aria-pressed', String(antMode)); pm.textContent = antMode ? 'ants' : 'sand'; });
+    document.getElementById('powClear').addEventListener('click', () => {
+      grid.fill(0); for (let x = 0; x < cols; x++) grid[at(x, rows - 1)] = WALL; paint(); });
+
+    // A slow trickle from the top: without it the pile settles within a few
+    // seconds and the panel looks static, which misrepresents the option.
+    let emitAcc = 0;
+    const emit = () => {
+      const x = 2 + Math.floor(rnd() * (cols - 4));
+      for (let dx = 0; dx < 2; dx++) if (rnd() < 0.8) grid[at(Math.min(cols - 1, x + dx), 0)] = rnd() < 0.12 ? ANT : SAND;
+      // keep the panel from filling up forever
+      let count = 0;
+      for (let i = 0; i < grid.length; i++) if (grid[i] === SAND || grid[i] === ANT) count++;
+      if (count > cols * rows * 0.42) {
+        for (let x2 = 0; x2 < cols; x2++) grid[at(x2, rows - 2)] = EMPTY;
+      }
+    };
+
+    let acc = 0, last = performance.now();
+    const loop = (t) => {
+      const dt = t - last; last = t; acc += dt; emitAcc += dt;
+      if (emitAcc > 110) { emit(); emitAcc = 0; }
+      if (acc > 33) { step(); acc = 0; paint(); }
+      requestAnimationFrame(loop);
+    };
+    if (reduced) { for (let i = 0; i < 140; i++) step(); paint(); } else requestAnimationFrame(loop);
+    addEventListener('resize', () => { alloc(); paint(); });
+  }
+
+  /* ------------------------------------------------ P5: atlas preview */
+  const ac = document.getElementById('atlas');
+  if (ac) {
+    const g = ac.getContext('2d');
+    const CELLS = [
+      ['grass',1,1],['dirt',1,1],['water',1,1],['field',1,1],['rock',1,1],['sand',1,1],
+      ['rail-ne-sw',1,1],['rail-nw-se',1,1],['curve-n',1,1],['curve-e',1,1],['crossing',1,1],['buffer',1,1],
+      ['station',2,2],['depot',2,2],['signal',1,2],['tree',1,2],
+      ['loco-e',1,2],['loco-se',1,2],['loco-s',1,2],['loco-sw',1,2],
+    ];
+    const paint = () => {
+      const w = ac.clientWidth || 320, h = 300, d = Math.min(2, devicePixelRatio || 1);
+      ac.width = Math.round(w * d); ac.height = Math.round(h * d);
+      g.setTransform(d, 0, 0, d, 0, 0);
+      g.clearRect(0, 0, w, h);
+      const gold = cssVar('--gold'), dim = cssVar('--dim'), rust = cssVar('--rust');
+      const cols = w < 380 ? 4 : 6, pad = 5;
+      const cw = Math.floor((w - pad * (cols + 1)) / cols), chh = Math.round(cw * 0.5);
+      g.font = '8px ui-monospace, monospace'; g.textBaseline = 'middle';
+      let col = 0, row = 0;
+      for (const [name, span, tall] of CELLS) {
+        if (col + span > cols) { col = 0; row += 1; }
+        const x = pad + col * (cw + pad);
+        const y = 20 + row * (chh * 2 + 18);
+        const bw = cw * span + pad * (span - 1), bh = chh * tall;
+        if (y + bh > h - 2) { col += span; continue; }
+        g.strokeStyle = dim; g.globalAlpha = 0.5; g.lineWidth = 1;
+        g.strokeRect(x + 0.5, y + 0.5, bw - 1, bh - 1);
+        g.globalAlpha = 0.85; g.strokeStyle = gold;
+        const by = y + bh - chh;
+        g.beginPath();
+        g.moveTo(x + bw / 2, by); g.lineTo(x + bw - 1, by + chh / 2);
+        g.lineTo(x + bw / 2, by + chh - 1); g.lineTo(x + 1, by + chh / 2); g.closePath(); g.stroke();
+        g.globalAlpha = 1; g.fillStyle = rust;
+        g.fillRect(x + bw / 2 - 2, by + chh / 2, 5, 1); g.fillRect(x + bw / 2, by + chh / 2 - 2, 1, 5);
+        g.fillStyle = dim; g.textAlign = 'left';
+        g.fillText(name, x, y - 6);
+        col += span;
+      }
+      g.fillStyle = dim; g.textAlign = 'left';
+      g.fillText('64×32 cells · 2:1 · gold = tile footprint · orange = anchor', pad, 9);
+    };
+    paint();
+    addEventListener('resize', paint);
+  }
+
+  /* ------------------------------------------------ P4: live age */
+  const birth = new Date(1998, 3, 20).getTime();
+  const YEAR = 1000 * 60 * 60 * 24 * 365.2425;
+  const ten = document.getElementById('ageTen'), six = document.getElementById('ageSix');
+  if (ten && six) {
+    const tick = () => { const y = (Date.now() - birth) / YEAR; ten.textContent = y.toFixed(10); six.textContent = y.toFixed(6); };
+    tick(); setInterval(tick, 100);
+  }
+})();
+</script>
