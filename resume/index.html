@@ -75,6 +75,21 @@
     .top-nav { justify-content: space-between; margin-bottom: 2.5rem; }
     .top-nav a, .contact a { display: inline-flex; align-items: center; min-height: 44px; }
     .download { padding: 0.5rem 1rem; border: 1px solid #655c38; border-radius: 0.25rem; text-decoration: none; }
+    /* Search sends more people to this page than to the homepage, so this link
+       is the way most visitors reach the rest of the site. It was plain text at
+       body size next to a Download button with full button chrome, which had
+       the emphasis exactly backwards. */
+    .back {
+      padding: 0.55rem 1.1rem;
+      border: 1px solid #e1c978;
+      border-radius: 0.25rem;
+      font-size: 1.08rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: rgba(225, 201, 120, 0.08);
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .back:hover { background: #e1c978; color: #08100b; }
     h1 { font-size: clamp(2.2rem, 7vw, 3.7rem); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 0.8rem; }
     .role { font-size: 1.2rem; margin: 0 0 0.35rem; }
     .location, .dates { color: #cec8b9; }
@@ -97,13 +112,13 @@
 <body>
   <main class="page">
     <nav class="top-nav" aria-label="Resume navigation">
-      <a href="/">← Back to my website</a>
+      <a class="back" href="/">← Back to my website</a>
       <a class="download" href="/assets/brenden-brusberg-resume.pdf?v=20261020" download>Download PDF</a>
     </nav>
     <header>
       <h1>Brenden Brusberg</h1>
       <p class="role">Data Science Specialist · McKinsey &amp; Company</p>
-      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City (NYC)</p>
+      <p class="location">Data scientist based in Jersey City, NJ · Working in New York City</p>
       <nav class="contact" aria-label="Contact and profiles">
         <a href="mailto:brenbrus@gmail.com">Email</a>
         <a href="https://www.linkedin.com/in/brendends/">LinkedIn</a>
