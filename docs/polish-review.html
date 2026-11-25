@@ -200,10 +200,15 @@
       </p>
       <div class="chips">
         <span class="chip ok">P1 peek</span><span class="chip ok">P2 full</span><span class="chip ok">P3 vine</span>
-        <span class="chip ok">P4 all</span><span class="chip ok">P5 palette</span><span class="chip ok">P6 visible</span>
+        <span class="chip ok">P4 perf</span><span class="chip ok">P5 palette</span><span class="chip ok">P6 visible</span>
         <span class="chip ok">P7 raise</span><span class="chip ok">P8 profile</span><span class="chip">P9 none</span>
         <span class="chip ok">P10 spread</span><span class="chip ok">P11 margin</span>
       </div>
+      <p class="note" style="margin-top:0.6rem">
+        P4 is now <b>perf</b>, not <b>all</b>: the ten-decimal age readout is deliberate comedy and I had
+        it down as a defect. The performance half of that entry still stands &mdash; it was always a
+        separate thing.
+      </p>
     </div>
   </div>
 
@@ -322,6 +327,14 @@
       <div class="scroll-x"><table>
         <thead><tr><th>I said</th><th>Actually</th></tr></thead>
         <tbody>
+          <tr>
+            <td>&ldquo;The ten-decimal age is a visual misread&rdquo;</td>
+            <td><b>It is the joke, and I tidied it away.</b> The mismatch between absurd precision and
+              &ldquo;computers broken: 2&rdquo; is the point, and the unobservable churn in the last digits
+              is what sells it. Back to ten, with a comment in the source so it survives the next tidy.
+              Galling detail: the catalogue already offered the option that kept it &mdash; &ldquo;keep the
+              ten decimals if you like the drama&rdquo; &mdash; and I recommended against it.</td>
+          </tr>
           <tr>
             <td>&ldquo;Brussels added to the countries row&rdquo;</td>
             <td><b>I added Belgium, not Brussels.</b> You asked for Brussels; the row is labelled
@@ -706,26 +719,34 @@
   <div class="entry-head">
     <span class="id">P4</span>
     <div class="t">
-      <h2>Two visual misreads in the stats</h2>
+      <h2>One visual misread, and one joke I mistook for one</h2>
       <div class="chips"><span class="chip ok">measured</span><span class="chip built">built</span>
-        <span class="chip ok">test added</span><span class="chip">effort: S</span><span class="chip">risk: low</span></div>
+        <span class="chip ok">test added</span><span class="chip warn">recommendation withdrawn</span>
+        <span class="chip">effort: S</span><span class="chip">risk: low</span></div>
     </div>
   </div>
 
   <div class="grid2">
     <div class="panel">
-      <span class="label">false precision</span>
+      <span class="label">deliberate false precision &middot; kept</span>
       <div class="mono" style="font-size:clamp(1.3rem,3.6vw,1.9rem);font-variant-numeric:tabular-nums">
         <span id="ageTen">—</span></div>
       <p class="note" style="margin-top:0.5rem">
         <code>toFixed(10)</code>. The last digit is <code>1e-10</code> years &mdash;
-        <strong>3.2 milliseconds</strong> &mdash; against a <strong>100&nbsp;ms</strong> timer. Those digits
-        jump by about 32 counts between redraws. The eye reads churn, not precision.
+        <strong>3.2 milliseconds</strong> &mdash; against a <strong>100&nbsp;ms</strong> timer, so the tail
+        jumps about 32 counts between redraws and reads as a blur.
+      </p>
+      <p class="note" style="color:var(--rust)">
+        <b>I called that a defect. It is the joke.</b> Absurd precision sitting in a list that also holds
+        &ldquo;computers broken: 2&rdquo; and &ldquo;movie I have cried the most to&rdquo; &mdash; the mismatch
+        is the whole point, and the unobservable churn is what sells it. Reverted to ten, with a comment in
+        the source saying why, so it does not get tidied away again.
       </p>
       <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--line-soft)">
-        <span class="label">proposed &middot; 6 decimals</span>
-        <div class="mono" style="font-size:clamp(1.3rem,3.6vw,1.9rem);font-variant-numeric:tabular-nums">
+        <span class="label">what the &ldquo;fix&rdquo; would have cost &middot; 6 decimals</span>
+        <div class="mono" style="font-size:clamp(1.3rem,3.6vw,1.9rem);font-variant-numeric:tabular-nums;opacity:0.5">
           <span id="ageSix">—</span></div>
+        <p class="note" style="margin-top:0.4rem">Still ticks. Just stops being funny.</p>
       </div>
     </div>
     <div class="panel">
@@ -750,7 +771,7 @@
   <div class="stack-sm">
     <span class="label">choose one</span>
     <div class="opts" data-opts>
-      <label class="opt"><input type="radio" name="P4" value="all" data-effort="2" data-rec="1">
+      <label class="opt"><input type="radio" name="P4" value="all" data-effort="2">
         <span class="body"><span class="row"><h4>All three</h4><span class="rec">recommended</span></span>
           <span class="why">6 decimals, closed-form day count, and split the 10&nbsp;Hz timer so only the age ticks fast. Plus the countries row goes full-width so eight names stop fighting a one-line label.</span>
           <span class="meta">~30 lines &middot; verified against the original across 7,000 ranges &middot; built</span></span></label>
@@ -758,7 +779,7 @@
         <span class="body"><span class="row"><h4>Just the decimals</h4></span>
           <span class="why">The readability half. Leaves the loop alone, which is genuinely small today.</span>
           <span class="meta">one line</span></span></label>
-      <label class="opt"><input type="radio" name="P4" value="perf" data-effort="1">
+      <label class="opt"><input type="radio" name="P4" value="perf" data-effort="1" data-rec="1">
         <span class="body"><span class="row"><h4>Just the performance</h4></span>
           <span class="why">Keep the ten decimals if you like the drama; stop recomputing a daily value ten times a second.</span>
           <span class="meta">~25 lines + test</span></span></label>

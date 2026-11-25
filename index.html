@@ -8662,9 +8662,15 @@
       function formatLiveAge() {
         const elapsedMs = Date.now() - birthTimestampMs;
         const years = elapsedMs / (1000 * 60 * 60 * 24 * 365.2425);
-        // 10 decimals put the last digit at 1e-10 years = 3.2ms, while the
-        // timer redraws every 100ms: those digits were unobservable churn.
-        return years.toFixed(6);
+        // Ten decimals, on purpose. The last digit is 1e-10 years = 3.2ms
+        // against a 100ms redraw, so the tail is a visible blur -- and that is
+        // the joke: absurd precision sitting in a list that also contains
+        // "computers broken: 2" and "movie I have cried the most to".
+        //
+        // It briefly got "fixed" to six on the grounds that the extra digits
+        // were unobservable churn. They are unobservable churn. That is what
+        // makes it funny. Leave it at ten.
+        return years.toFixed(10);
       }
 
       function updateLiveAge() {
