@@ -20,6 +20,10 @@ const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 let simulation: AntPatchSimulation | null = null;
 let trackerTimer = 0;
+// Embedded in the portfolio page, this frame is hidden rather than unloaded
+// when you leave the ant panel. The parent tells us whether its panel is on
+// screen; default true so the standalone page and the first paint are unaffected.
+let shouldRun = true;
 let currentAllocation: TaskAllocation = {
   forage: 0.62,
   dig: 0.34,
@@ -60,10 +64,35 @@ function start(): void {
     updateTracker();
     trackerTimer = window.setInterval(updateTracker, 500);
     loading?.setAttribute('hidden', 'true');
+    // Belt and braces, and deliberately not load-bearing today: this is a
+    // deferred module script, so readyState is already 'interactive' and the
+    // branch at the bottom of this file calls start() synchronously, before the
+    // setRunning listener exists -- shouldRun is therefore still its default
+    // here. The DOMContentLoaded branch beside that call is the one this guards:
+    // on that path the listener is live first and a pause can land before the
+    // simulation does, with nothing for the message to act on.
+    applyRunState();
   } catch (error) {
     console.error(error);
     showError('WebGL is not available in this browser.');
   }
+}
+
+/** Start or stop the render loop and the tracker timer to match `shouldRun`. */
+function applyRunState(): void {
+  if (!simulation) return;
+
+  if (shouldRun) {
+    simulation.start();
+    if (!trackerTimer) {
+      trackerTimer = window.setInterval(updateTracker, 500);
+    }
+    return;
+  }
+
+  simulation.stop();
+  window.clearInterval(trackerTimer);
+  trackerTimer = 0;
 }
 
 function updateAllocation(allocation: TaskAllocation): void {
@@ -255,4 +284,18 @@ if (window.parent !== window.self) {
       reportHeight();
     });
   }
+}
+
+// The portfolio page keeps this frame loaded behind its other panels, so it has
+// to say when the colony is actually being looked at. Without this the render
+// loop and the 500ms tracker keep running, and a visitor reading another panel
+// pays for a simulation nobody can see.
+if (window.parent !== window.self) {
+  window.addEventListener('message', (event: MessageEvent) => {
+    if (event.origin !== window.location.origin) return;
+    const data = event.data as { type?: string; running?: boolean } | null;
+    if (data?.type !== 'portfolio:setRunning') return;
+    shouldRun = Boolean(data.running);
+    applyRunState();
+  });
 }
