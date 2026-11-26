@@ -1238,6 +1238,20 @@
       // height rather than leaving its stylesheet to infer it from a width
       // media query: inside the frame, a media query sees the panel's width,
       // not the window's. styles.css keys its `height: 100%` chain off this.
+      // The ant frame is hidden when you leave its panel, never unloaded, so
+      // without being told otherwise it keeps its render loop and its model
+      // timer running behind every other panel for the rest of the visit.
+      let antStageRunning = false;
+
+      function pushAntRunState() {
+        const frameWindow = stageFrame && stageFrame.contentWindow;
+        if (!frameWindow) return;
+        frameWindow.postMessage(
+          { type: 'portfolio:setRunning', running: antStageRunning },
+          location.origin,
+        );
+      }
+
       function markAntFrameOwnership() {
         const doc = stageFrame && stageFrame.contentDocument;
         if (!doc || !doc.documentElement) return;
@@ -1288,7 +1302,13 @@
 
       addEventListener('resize', sizeAntStage);
       // A reload of the frame drops the class, so re-apply it on every load.
-      if (stageFrame) stageFrame.addEventListener('load', markAntFrameOwnership);
+      if (stageFrame) {
+        stageFrame.addEventListener('load', () => {
+          // A reload drops the class and comes back running, so restate both.
+          markAntFrameOwnership();
+          pushAntRunState();
+        });
+      }
       if (location.hash === '#resume') location.replace('/resume/');
       const ctx = canvas.getContext('2d');
       const localDevToolsEnabled = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname);
@@ -1571,11 +1591,15 @@
         mount() {
           stageFrame.classList.add('is-active');
           if (this.shouldReloadFrame()) this.reloadFrame();
+          antStageRunning = true;
+          pushAntRunState();
           readout.textContent = 'Original ant simulation from the portfolio dev server';
         }
 
         unmount() {
           stageFrame.classList.remove('is-active');
+          antStageRunning = false;
+          pushAntRunState();
         }
 
         tick() {
@@ -1631,8 +1655,14 @@
           this.buffer = null;
           this.uniforms = null;
           this.fallback = true;
-          canvas.style.visibility = 'visible';
-          glCanvas.style.visibility = 'hidden';
+          // Only the panel actually on screen may swap to the 2D fallback.
+          // glLost() is broadcast to every cached scene, and glCanvas is shared
+          // with the art panel, so an inactive fractal scene must not hide a
+          // canvas somebody else is drawing into.
+          if (activeId === 'mandelbrot') {
+            canvas.style.visibility = 'visible';
+            glCanvas.style.visibility = 'hidden';
+          }
         }
 
         glRestored() {
@@ -8578,6 +8608,13 @@
           if (activeScene) {
             try {
               activeScene.unmount();
+              // Before the remount, not after: glLost() swapped the canvases to
+              // show the 2D fallback, and mount() writes visibility only when it
+              // FAILS. Without this the context comes back, the scene ticks, and
+              // it all draws into a canvas that is still hidden -- a blank stage
+              // until you switch panels and return. Ordered first so a mount that
+              // genuinely fails can still raise its own fallback over us.
+              syncStageCanvases();
               activeScene.mount(canvas);
               resize();
             } catch (error) {
@@ -8654,11 +8691,27 @@
         document.body.scrollTop = 0;
       }
 
+      // Which of the two stacked stage canvases is on screen is a property of
+      // the PANEL, not of any one scene: the fractal and the art panel both
+      // draw into the WebGL canvas, ants and stats into the 2D one. Keeping the
+      // rule in one callable place means a scene that swaps them to show its
+      // fallback cannot leave them swapped -- which is exactly what a lost GPU
+      // context did, hiding the WebGL canvas with nothing to put it back.
+      function syncStageCanvases(id = activeId) {
+        canvas.style.visibility = id === 'mandelbrot' || id === 'ants' ? 'hidden' : 'visible';
+        glCanvas.style.visibility = id === 'mandelbrot' || id === 'art' ? 'visible' : 'hidden';
+      }
+
       function setPanel(id, push = true) {
         const requestedHash = String(id || 'ants').replace(/^#/, '');
         id = normalizePanelId(requestedHash);
         if (!panelData[id]) id = 'ants';
         const shouldRewriteAlias = panelAliases[requestedHash] && panelAliases[requestedHash] === id;
+        // #story-popout is a child of <body>, a sibling of .app, so it is not
+        // torn down with the panel that opened it and no descendant selector can
+        // reach it. Leaving it up strands an artwork or poem over the next panel
+        // with body scrolling still locked -- the marker-label bug one level up.
+        closePopout();
         if (activeScene) activeScene.unmount();
         activeId = id;
         activeScene = ensureScene(id);
@@ -8667,8 +8720,7 @@
         document.querySelector('.app').classList.toggle('is-openttd-panel', id === 'stats');
         document.querySelector('.app').classList.toggle('is-mandelbrot-panel', id === 'mandelbrot');
         document.querySelector('.app').classList.toggle('is-art-panel', id === 'art');
-        canvas.style.visibility = id === 'mandelbrot' || id === 'ants' ? 'hidden' : 'visible';
-        glCanvas.style.visibility = id === 'mandelbrot' || id === 'art' ? 'visible' : 'hidden';
+        syncStageCanvases(id);
         stageFrame.classList.toggle('is-active', id === 'ants');
         readout.style.display = id === 'ants' || id === 'stats' || id === 'art' ? 'none' : '';
         if (shouldRewriteAlias && location.hash.slice(1) !== id) {
