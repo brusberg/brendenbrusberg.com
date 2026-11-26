@@ -64,9 +64,13 @@ function start(): void {
     updateTracker();
     trackerTimer = window.setInterval(updateTracker, 500);
     loading?.setAttribute('hidden', 'true');
-    // A pause can arrive before the simulation exists -- the parent may switch
-    // panels while this frame is still loading -- so settle the run state here
-    // rather than trusting the message to have found something to act on.
+    // Belt and braces, and deliberately not load-bearing today: this is a
+    // deferred module script, so readyState is already 'interactive' and the
+    // branch at the bottom of this file calls start() synchronously, before the
+    // setRunning listener exists -- shouldRun is therefore still its default
+    // here. The DOMContentLoaded branch beside that call is the one this guards:
+    // on that path the listener is live first and a pause can land before the
+    // simulation does, with nothing for the message to act on.
     applyRunState();
   } catch (error) {
     console.error(error);
