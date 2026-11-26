@@ -288,6 +288,13 @@
         transition: opacity 180ms ease-out;
       }
 
+      /* Scoped to its own panel as well as removed on unmount. The label's
+         parent outlives every scene, so ownership here is otherwise implicit
+         and one missed teardown puts fractal text over someone else's panel. */
+      .app:not(.is-mandelbrot-panel) .marker-label {
+        display: none;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .marker-label { transition: none; }
       }
@@ -1634,11 +1641,6 @@
           this.fallback = false;
         }
 
-        unmount() {
-          this.removeMarkerLabel();
-          this.drag = null;
-        }
-
         mount() {
           this.fallback = false;
           try {
@@ -1684,6 +1686,16 @@
         }
 
         unmount() {
+          // The label is parented to .stage-wrap, which every panel shares, so
+          // it has to go when this scene does. The class used to declare
+          // unmount() twice and this one, being last, silently shadowed the
+          // one that removed it -- so it never ran, and leaving the fractal
+          // without picking a seed left "tap to choose a Julia seed" sitting at
+          // opacity 1 over whatever panel came next. (Pick a seed first and the
+          // label fades to zero on its own, which is why it only showed
+          // sometimes.) Above the early return, because a lost context nulls
+          // this.gl and the label would outlive the panel either way.
+          this.removeMarkerLabel();
           if (!this.gl) return;
           if (this.buffer) this.gl.deleteBuffer(this.buffer);
           if (this.vao) this.gl.deleteVertexArray(this.vao);
