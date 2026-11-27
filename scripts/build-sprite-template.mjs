@@ -8,9 +8,26 @@
  *   node scripts/build-sprite-template.mjs --scale 4     # 4x working copy
  *
  * Outputs:
- *   public/art/train-atlas-template.png      1x, draw directly into this
- *   public/art/train-atlas-template@4x.png   4x, easier to work in
- *   public/art/train-atlas.json              name -> {x,y,w,h} for the renderer
+ *   art-source/train-atlas-template.png      1x guides, for reference
+ *   art-source/train-atlas-template@4x.png   4x, easier to read on screen
+ *   art-source/train-atlas-blank.png         1x, empty: paint the real atlas here
+ *   art-source/train-atlas-working.ora       layered working file: Krita, GIMP
+ *   art-source/train-atlas-working.pxo       layered working file: Pixelorama.
+ *                                            Its own format, because ORA is
+ *                                            import-only there -- it can open
+ *                                            a .ora but cannot save one back.
+ *   art-source/train-atlas.json              name -> {x,y,w,h}, and the geometry
+ *                                            scripts/capture-current-atlas.js bakes to
+ *
+ * These live in art-source/ and NOT in public/, because vite copies public/
+ * wholesale into dist/ and these are working files. A 56KB .ora and two
+ * reference sheets have no reason to be served to visitors.
+ *
+ * Draw in the .ora, not in the template. The guide lines, cell frames, labels
+ * and anchor crosses are ordinary pixels in the template PNG, so anything
+ * painted straight into it ships with the art. The .ora keeps them on their own
+ * locked layer underneath an empty one; hide the guides and export to get a
+ * clean atlas at exactly the size and offsets train-atlas.json promises.
  *
  * The geometry is taken from the scene itself, not invented: the projection is
  * declared 2:1 in index.html (`tileWidthToHeight: '2:1'`, tileH = tileW * 0.5)
@@ -18,10 +35,11 @@
  * `this.trainSpriteDirs` = E SE S SW W NW N NE.
  */
 
-import { deflateSync } from 'node:zlib';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { deflateSync, deflateRawSync, inflateSync } from 'node:zlib';
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GEOMETRY, GROUPS, DIRECTIONS, layout } from './lib/atlas-cells.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -30,89 +48,11 @@ const SCALES = scaleArg === -1 ? [1, 4] : [Number(argv[scaleArg + 1]) || 1];
 
 // ---------------------------------------------------------------- the atlas
 
-const CELL_W = 64;   // one tile footprint
-const CELL_H = 32;   // 2:1
-const PAD = 2;       // transparent gutter so neighbours never bleed
-const LABEL_H = 7;   // room for the cell name above each board
-
-// cols are in cell units; `tall` cells get extra height for anything that
-// stands above the tile floor (buildings, signals, trees).
-const GROUPS = [
-  {
-    name: 'TERRAIN',
-    cells: [
-      ['grass', 1, 1], ['grass2', 1, 1], ['dirt', 1, 1], ['sand', 1, 1],
-      ['water', 1, 1], ['field', 1, 1], ['field2', 1, 1], ['rock', 1, 1],
-    ],
-  },
-  {
-    name: 'TRACK',
-    cells: [
-      ['rail-ne-sw', 1, 1], ['rail-nw-se', 1, 1], ['rail-curve-n', 1, 1], ['rail-curve-e', 1, 1],
-      ['rail-curve-s', 1, 1], ['rail-curve-w', 1, 1], ['crossing', 1, 1], ['buffer', 1, 1],
-    ],
-  },
-  {
-    name: 'STRUCTURES',
-    cells: [
-      ['station', 2, 2], ['depot', 2, 2], ['signal', 1, 2], ['water-tower', 1, 2],
-      ['house', 1, 2], ['factory', 2, 2], ['tree', 1, 2], ['lamp', 1, 2],
-    ],
-  },
-  {
-    name: 'LOCOMOTIVE',
-    cells: [
-      ['loco-e', 1, 2], ['loco-se', 1, 2], ['loco-s', 1, 2], ['loco-sw', 1, 2],
-      ['loco-w', 1, 2], ['loco-nw', 1, 2], ['loco-n', 1, 2], ['loco-ne', 1, 2],
-    ],
-  },
-  {
-    name: 'WAGON',
-    cells: [
-      ['wagon-e', 1, 2], ['wagon-se', 1, 2], ['wagon-s', 1, 2], ['wagon-sw', 1, 2],
-      ['wagon-w', 1, 2], ['wagon-nw', 1, 2], ['wagon-n', 1, 2], ['wagon-ne', 1, 2],
-    ],
-  },
-];
-
-const COLS = 8;
-
-/** Lay the groups out on a grid and return {width,height,rects}. */
-function layout() {
-  const rects = {};
-  let y = PAD;
-  const rows = [];
-  for (const group of GROUPS) {
-    y += LABEL_H + 1;                       // group heading band
-    let col = 0;
-    let rowTop = y;
-    let rowTall = 1;
-    for (const [name, wCells, hCells] of group.cells) {
-      if (col + wCells > COLS) {
-        y = rowTop + rowTall * CELL_H + LABEL_H + PAD * 2;
-        rowTop = y;
-        rowTall = 1;
-        col = 0;
-      }
-      const x = PAD + col * (CELL_W + PAD);
-      rects[name] = {
-        x,
-        y: rowTop + LABEL_H,
-        w: CELL_W * wCells + PAD * (wCells - 1),
-        h: CELL_H * hCells,
-        anchorX: Math.round((CELL_W * wCells) / 2),
-        anchorY: CELL_H * hCells - Math.round(CELL_H / 2),
-        group: group.name,
-      };
-      rowTall = Math.max(rowTall, hCells);
-      col += wCells;
-    }
-    y = rowTop + rowTall * CELL_H + LABEL_H + PAD * 3;
-    rows.push(group.name);
-  }
-  const width = PAD + COLS * (CELL_W + PAD);
-  return { width, height: y + PAD, rects };
-}
+// The cell list and its geometry live in one place now, shared with the
+// capture script, so the blank template and the baked reference sheet come out
+// the same size with the same boxes.
+const { cellW: CELL_W, tileH: CELL_H, gap: GAP, artH: ART_H, labelH: LABEL_H,
+        headH: HEAD_H, pad: PAD, footerH: FOOTER_H, floorUp: FLOOR_UP } = GEOMETRY;
 
 // ------------------------------------------------------------- tiny 3x5 font
 
@@ -134,11 +74,19 @@ const FONT = {
   6: [7, 8, 14, 9, 6],   7: [15, 1, 2, 4, 4],   8: [6, 9, 6, 9, 6],
   9: [6, 9, 7, 1, 14],
   '-': [0, 0, 15, 0, 0], '@': [6, 9, 11, 8, 7], '.': [0, 0, 0, 0, 4],
-  ' ': [0, 0, 0, 0, 0],
+  '&': [6, 9, 6, 11, 7],  ' ': [0, 0, 0, 0, 0],
 };
 
+/**
+ * Throw rather than fall back to a blank. A missing glyph used to render as
+ * nothing at all, so "NATURE & YARD" came out as "NATURE  YARD" and no one
+ * found out until they looked closely at a sheet. A build that stops is a
+ * cheaper way to learn that than a caption with a hole in it.
+ */
 function glyphRows(ch) {
-  return FONT[ch] ?? FONT[' '];
+  const rows = FONT[ch];
+  if (!rows) throw new Error(`no glyph for ${JSON.stringify(ch)} — add one to FONT in ${import.meta.url}`);
+  return rows;
 }
 
 // ------------------------------------------------------------------ raster
@@ -255,40 +203,45 @@ const LABEL = [200, 206, 190, 220];
 const HEAD = [214, 189, 104, 255];
 const ANCHOR = [224, 135, 92, 220];
 
+/** The 3x5 font has no clipping, so trim a name to what its cell can hold. */
+function fitLabel(name, maxPx) {
+  const per = GLYPH_W + 1;
+  const max = Math.floor((maxPx + 1) / per);
+  return name.length <= max ? name : `${name.slice(0, Math.max(1, max - 1))}.`;
+}
+
 function drawSheet() {
-  const { width, height, rects } = layout();
+  const { width, height, rows, rects, groups } = layout();
   const r = new Raster(width, height);
 
-  // group headings
-  const seen = new Set();
-  for (const [name, rect] of Object.entries(rects)) {
-    if (!seen.has(rect.group)) {
-      seen.add(rect.group);
-      r.text(rect.group, PAD, rect.y - LABEL_H - LABEL_H - 1, HEAD);
+  for (const row of rows) {
+    if (row.group) r.text(row.group, PAD, row.headY + 3, HEAD);
+    for (const item of row.items) {
+      const rect = rects[item.name];
+      r.text(fitLabel(item.name, rect.w - 2), rect.x + 1, row.labelY + 2, LABEL);
+      r.frame(rect.x, rect.y, rect.w, rect.h, BOARD);
+
+      // the 64x32 footprint, drawn where the floor actually sits
+      // always ONE tile across, even in a double-width cell -- the diamond is
+      // the unit of scale, not the size of the box it is drawn in.
+      const cx = Math.round(rect.x + rect.w / 2);
+      const fy = rect.y + rect.h - FLOOR_UP;
+      const half = CELL_H / 2;
+      const halfW = CELL_W / 2;
+      r.line(cx, fy - half, cx + halfW, fy, GUIDE);
+      r.line(cx + halfW, fy, cx, fy + half, GUIDE);
+      r.line(cx, fy + half, cx - halfW, fy, GUIDE);
+      r.line(cx - halfW, fy, cx, fy - half, GUIDE);
+
+      // anchor cross: where the renderer pins the sprite to the tile centre
+      const ax = rect.x + rect.anchorX;
+      const ay = rect.y + rect.anchorY;
+      r.line(ax - 2, ay, ax + 2, ay, ANCHOR);
+      r.line(ax, ay - 2, ax, ay + 2, ANCHOR);
     }
-    void name;
   }
 
-  for (const [name, rect] of Object.entries(rects)) {
-    r.frame(rect.x, rect.y, rect.w, rect.h, BOARD);
-    r.text(name, rect.x + 1, rect.y - LABEL_H + 1, LABEL);
-
-    // 2:1 footprint diamond at the base of the cell
-    const cx = rect.x + rect.w / 2;
-    const baseY = rect.y + rect.h - CELL_H;
-    r.line(Math.round(cx), baseY, rect.x + rect.w - 1, Math.round(baseY + CELL_H / 2), GUIDE);
-    r.line(rect.x + rect.w - 1, Math.round(baseY + CELL_H / 2), Math.round(cx), baseY + CELL_H - 1, GUIDE);
-    r.line(Math.round(cx), baseY + CELL_H - 1, rect.x, Math.round(baseY + CELL_H / 2), GUIDE);
-    r.line(rect.x, Math.round(baseY + CELL_H / 2), Math.round(cx), baseY, GUIDE);
-
-    // anchor cross: where the renderer pins the sprite to the tile centre
-    const ax = rect.x + rect.anchorX;
-    const ay = rect.y + rect.anchorY;
-    r.line(ax - 2, ay, ax + 2, ay, ANCHOR);
-    r.line(ax, ay - 2, ax, ay + 2, ANCHOR);
-  }
-
-  return { raster: r, rects, width, height };
+  return { raster: r, rects, width, height, groups };
 }
 
 function upscale(raster, scale) {
@@ -304,10 +257,244 @@ function upscale(raster, scale) {
   return out;
 }
 
+// ------------------------------------------------------------------- ora
+
+/** Nearest-neighbour downscale, enough for an ORA thumbnail. */
+function downscale(raster, maxW, maxH) {
+  const scale = Math.min(maxW / raster.w, maxH / raster.h, 1);
+  const w = Math.max(1, Math.round(raster.w * scale));
+  const h = Math.max(1, Math.round(raster.h * scale));
+  const out = new Raster(w, h);
+  for (let y = 0; y < h; y++) {
+    const sy = Math.min(raster.h - 1, Math.floor((y + 0.5) / scale));
+    for (let x = 0; x < w; x++) {
+      const sx = Math.min(raster.w - 1, Math.floor((x + 0.5) / scale));
+      const i = (sy * raster.w + sx) * 4;
+      const j = (y * w + x) * 4;
+      out.data[j] = raster.data[i];
+      out.data[j + 1] = raster.data[i + 1];
+      out.data[j + 2] = raster.data[i + 2];
+      out.data[j + 3] = raster.data[i + 3];
+    }
+  }
+  return out;
+}
+
+/**
+ * Minimal ZIP writer. OpenRaster is a zip, and this script has no dependencies,
+ * so here is just enough of the format: local headers, central directory, EOCD.
+ * Timestamps are pinned to the epoch the format starts at, so rebuilding an
+ * unchanged sheet produces an identical file instead of a spurious diff.
+ */
+function zip(entries) {
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  const DOS_DATE = 0x0021; // 1980-01-01
+  for (const entry of entries) {
+    const name = Buffer.from(entry.name, 'utf8');
+    const crc = crc32(entry.data) >>> 0;
+    // The mimetype entry must be stored, not deflated, and must come first.
+    const body = entry.store ? entry.data : deflateRawSync(entry.data, { level: 9 });
+    const method = entry.store ? 0 : 8;
+
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(method, 8);
+    local.writeUInt16LE(DOS_DATE, 12);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(body.length, 18);
+    local.writeUInt32LE(entry.data.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    parts.push(local, name, body);
+
+    const cen = Buffer.alloc(46);
+    cen.writeUInt32LE(0x02014b50, 0);
+    cen.writeUInt16LE(20, 4);
+    cen.writeUInt16LE(20, 6);
+    cen.writeUInt16LE(method, 10);
+    cen.writeUInt16LE(DOS_DATE, 14);
+    cen.writeUInt32LE(crc, 16);
+    cen.writeUInt32LE(body.length, 20);
+    cen.writeUInt32LE(entry.data.length, 24);
+    cen.writeUInt16LE(name.length, 28);
+    cen.writeUInt32LE(offset, 42);
+    central.push(cen, name);
+
+    offset += local.length + name.length + body.length;
+  }
+  const dir = Buffer.concat(central);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(dir.length, 12);
+  eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([...parts, dir, eocd]);
+}
+
+/**
+ * An OpenRaster working file: an empty layer to paint on, over a locked layer
+ * of guides. ORA is the interchange format Krita, Pixelorama and GIMP all read,
+ * which is why it is this and not any one app's native format.
+ */
+function pngSize(buf) {
+  if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) return null;
+  return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+}
+
+function ora(guides, blank, referencePng) {
+  const { w, h } = guides;
+  // Layers are listed top first. The reference is the baked current art with
+  // no chrome of its own, so the remake can be traced straight over what the
+  // scene draws today and the guides above it are the only labels on screen.
+  const layers = [
+    '    <layer name="atlas" src="data/atlas.png" x="0" y="0" opacity="1.0" visibility="visible" composite-op="svg:src-over"/>',
+    '    <layer name="guides (hide before export)" src="data/guides.png" x="0" y="0" opacity="1.0" visibility="visible" composite-op="svg:src-over" edit-locked="true"/>',
+  ];
+  const files = [
+    { name: 'mimetype', data: Buffer.from('image/openraster', 'ascii'), store: true },
+    { name: 'data/atlas.png', data: png(blank) },
+    { name: 'data/guides.png', data: png(guides) },
+    // Nothing is painted yet, so the flattened preview is just the guides.
+    // Apps re-render the real stack on open; this is only for readers that do not.
+    { name: 'mergedimage.png', data: png(guides) },
+    { name: 'Thumbnails/thumbnail.png', data: png(downscale(guides, 256, 256)) },
+  ];
+  if (referencePng) {
+    layers.push('    <layer name="reference: current art" src="data/reference.png" x="0" y="0" opacity="1.0" visibility="visible" composite-op="svg:src-over" edit-locked="true"/>');
+    // Embedded verbatim: it is already a PNG of exactly the right size, so
+    // there is nothing to decode and nothing that can be lost re-encoding it.
+    files.push({ name: 'data/reference.png', data: referencePng });
+  }
+  const stack = `<?xml version='1.0' encoding='UTF-8'?>
+<image version="0.0.3" w="${w}" h="${h}" xres="72" yres="72">
+  <stack>
+${layers.join('\n')}
+  </stack>
+</image>
+`;
+  files.splice(1, 0, { name: 'stack.xml', data: Buffer.from(stack, 'utf8') });
+  return zip(files);
+}
+
+// ------------------------------------------------------------------- pxo
+
+/**
+ * Minimal PNG reader: 8-bit, non-interlaced, RGB or RGBA. Enough to turn the
+ * baked reference sheet back into raw pixels, and no more. ORA embeds PNGs
+ * verbatim so it never needed this; Pixelorama stores a cel as bare bytes.
+ */
+function decodePng(buf) {
+  if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504e47) throw new Error('not a PNG');
+  let pos = 8;
+  let w = 0, h = 0, depth = 0, color = 0, interlace = 0;
+  const idat = [];
+  while (pos + 8 <= buf.length) {
+    const len = buf.readUInt32BE(pos);
+    const type = buf.toString('ascii', pos + 4, pos + 8);
+    const data = buf.subarray(pos + 8, pos + 8 + len);
+    if (type === 'IHDR') {
+      w = data.readUInt32BE(0); h = data.readUInt32BE(4);
+      depth = data[8]; color = data[9]; interlace = data[12];
+    } else if (type === 'IDAT') idat.push(data);
+    else if (type === 'IEND') break;
+    pos += 12 + len;
+  }
+  if (depth !== 8 || interlace !== 0 || (color !== 6 && color !== 2)) {
+    throw new Error(`unsupported PNG: bit depth ${depth}, colour type ${color}, interlace ${interlace}`);
+  }
+  const ch = color === 6 ? 4 : 3;
+  const stride = w * ch;
+  const raw = inflateSync(Buffer.concat(idat));
+  const out = Buffer.alloc(w * h * 4);
+  const line = Buffer.alloc(stride);
+  let prev = Buffer.alloc(stride);
+  let p = 0;
+  for (let y = 0; y < h; y++) {
+    const filter = raw[p++];
+    raw.copy(line, 0, p, p + stride);
+    p += stride;
+    for (let i = 0; i < stride; i++) {
+      const a = i >= ch ? line[i - ch] : 0;
+      const b = prev[i];
+      const c = i >= ch ? prev[i - ch] : 0;
+      let v = line[i];
+      if (filter === 1) v += a;
+      else if (filter === 2) v += b;
+      else if (filter === 3) v += (a + b) >> 1;
+      else if (filter === 4) {
+        const q = a + b - c;
+        const pa = Math.abs(q - a), pb = Math.abs(q - b), pc = Math.abs(q - c);
+        v += (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
+      }
+      line[i] = v & 0xff;
+    }
+    for (let x = 0; x < w; x++) {
+      const si = x * ch;
+      const di = (y * w + x) * 4;
+      out[di] = line[si]; out[di + 1] = line[si + 1]; out[di + 2] = line[si + 2];
+      out[di + 3] = ch === 4 ? line[si + 3] : 255;
+    }
+    prev = Buffer.from(line);
+  }
+  return { w, h, data: out };
+}
+
+/**
+ * Pixelorama's own project format, so the editor both opens AND saves without
+ * converting. ORA is import-only there -- v1.2.4's export list is PNG, WEBP,
+ * JPEG, SVG, EXR, GIF, ASE, APNG and the video formats, with no ORA -- so a
+ * .ora working file is a one-way trip into the app.
+ *
+ * A plain ZIP of one data.json plus one RAW RGBA8 buffer per cel. No mimetype
+ * to store first, no PNG anywhere: Image.create_from_data() reads the bytes
+ * straight, so a cel is exactly w*h*4, row-major from the top left.
+ *
+ * pxo_version MUST be 8. The loader reads it as dict.get("pxo_version", 1) and
+ * anything below 8 takes a compatibility path that calls shrink_to_content()
+ * on every cel -- cropping the guides and the reference to their own ink and
+ * silently throwing away the alignment this toolchain exists to guarantee.
+ */
+function pxo(guides, blank, referencePng) {
+  const { w, h } = guides;
+  // Index 0 is the BOTTOM layer, so this is the ORA stack upside down.
+  const layers = [];
+  const cels = [];
+  const add = (name, data, locked) => {
+    layers.push({ name, type: 0, new_cels_linked: false, visible: true, locked, opacity: 1.0 });
+    cels.push(Buffer.from(data));
+  };
+  if (referencePng) {
+    const ref = decodePng(referencePng);
+    if (ref.w !== w || ref.h !== h) throw new Error(`reference is ${ref.w}x${ref.h}, sheet is ${w}x${h}`);
+    add('reference: current art', ref.data, true);
+  }
+  add('guides (hide before export)', guides.data, true);
+  add('atlas', blank.data, false);
+
+  const doc = {
+    pxo_version: 8,
+    size_x: w,
+    size_y: h,
+    color_mode: 5,                     // Image.FORMAT_RGBA8
+    layers,
+    // cels are positional: cels[i] is the cel of layers[i], same length.
+    frames: [{ cels: layers.map(() => ({ opacity: 1 })) }],
+    current_layer: layers.length - 1,  // open with the paintable layer selected
+  };
+
+  const files = [{ name: 'data.json', data: Buffer.from(JSON.stringify(doc), 'utf8') }];
+  // 1-based in the path, 0-based in the arrays.
+  cels.forEach((data, i) => files.push({ name: `image_data/frames/1/layer_${i + 1}`, data }));
+  return zip(files);
+}
+
 // ------------------------------------------------------------------ main
 
-const { raster, rects, width, height } = drawSheet();
-const outDir = join(ROOT, 'public', 'art');
+const { raster, rects, width, height, groups } = drawSheet();
+const outDir = join(ROOT, 'art-source');
 mkdirSync(outDir, { recursive: true });
 
 for (const scale of SCALES) {
@@ -318,14 +505,74 @@ for (const scale of SCALES) {
 }
 
 const manifest = {
-  note: 'Generated by scripts/build-sprite-template.mjs. Coordinates are 1x pixels.',
+  note: 'Generated by scripts/build-sprite-template.mjs. Coordinates are 1x pixels. Cell names match scripts/capture-current-atlas.js.',
   projection: { tileWidthToHeight: '2:1', cell: { w: CELL_W, h: CELL_H } },
-  directions: ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'],
+  directions: DIRECTIONS,
   sheet: { width, height },
+  // Heading positions and per-cell label baselines ride along so that
+  // scripts/capture-current-atlas.js can draw its sheet straight from this
+  // file. It used to recompute the layout itself and the two drifted apart.
+  groups,
   sprites: Object.fromEntries(
-    Object.entries(rects).map(([k, v]) => [k, { x: v.x, y: v.y, w: v.w, h: v.h, anchorX: v.anchorX, anchorY: v.anchorY }]),
+    Object.entries(rects).map(([k, v]) => [
+      k,
+      { x: v.x, y: v.y, w: v.w, h: v.h, anchorX: v.anchorX, anchorY: v.anchorY, labelY: v.labelY },
+    ]),
   ),
 };
 const manifestPath = join(outDir, 'train-atlas.json');
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`wrote ${manifestPath}  ${Object.keys(rects).length} cells`);
+
+// The surface the real atlas gets painted on: same size and offsets as the
+// template, no guides baked in.
+const blank = new Raster(width, height);
+const blankPath = join(outDir, 'train-atlas-blank.png');
+writeFileSync(blankPath, png(blank));
+console.log(`wrote ${blankPath}  ${width}x${height} transparent`);
+
+// If the current art has been baked (scripts/capture-current-atlas.js), put it
+// in as the bottom layer so the remake can be traced directly over it.
+//
+// This is the ART ONLY, on transparency. The labelled sheet that script also
+// writes (train-atlas-current.png) must never go in here: it carries its own
+// background, labels, frames and footprint diamonds, so layering it under the
+// guides draws every caption twice in two different fonts.
+const referencePath = join(outDir, 'train-atlas-art.png');
+let reference = null;
+if (existsSync(referencePath)) {
+  const buf = readFileSync(referencePath);
+  const size = pngSize(buf);
+  if (size && size.w === width && size.h === height) reference = buf;
+  else console.warn(`  skipped reference layer: ${referencePath} is ${size ? `${size.w}x${size.h}` : 'not a PNG'}, sheet is ${width}x${height}`);
+}
+
+/**
+ * A working file is the one with artwork in it. Regenerating hands back an
+ * empty atlas layer, so never clobber a changed one without being told twice.
+ * Identical output is a silent no-op, so a rerun that changes nothing is quiet.
+ */
+const FORCE = process.argv.includes('--force');
+function writeWorking(path, data, label) {
+  if (existsSync(path)) {
+    if (readFileSync(path).equals(data)) {
+      console.log(`unchanged ${path}  ${label}`);
+      return;
+    }
+    if (!FORCE) {
+      const alt = path.replace(/(\.[^.]+)$/, '-new$1');
+      writeFileSync(alt, data);
+      console.warn(`KEPT ${path} — it differs from a fresh build, so anything drawn in it is safe.`);
+      console.warn(`     the new one is ${alt}; pass --force to overwrite instead.`);
+      return;
+    }
+  }
+  writeFileSync(path, data);
+  console.log(`wrote ${path}  ${label}`);
+}
+
+const layerCount = reference ? 3 : 2;
+writeWorking(join(outDir, 'train-atlas-working.ora'), ora(raster, blank, reference),
+  `${layerCount} layers — Krita, GIMP, and Pixelorama can open it`);
+writeWorking(join(outDir, 'train-atlas-working.pxo'), pxo(raster, blank, reference),
+  `${layerCount} layers — Pixelorama's own format, the one it can also SAVE`);
