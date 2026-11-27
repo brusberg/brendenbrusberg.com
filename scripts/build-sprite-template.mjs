@@ -361,9 +361,11 @@ function flatten(guides, referencePng) {
     const sa = guides.data[i + 3] / 255;
     if (!sa) continue;
     const da = out.data[i + 3] / 255;
+    // sa > 0 here (the loop skips a fully transparent source pixel), so
+    // oa > 0 too and needs no divide-by-zero guard.
     const oa = sa + da * (1 - sa);
     for (let c = 0; c < 3; c++) {
-      out.data[i + c] = Math.round((guides.data[i + c] * sa + out.data[i + c] * da * (1 - sa)) / (oa || 1));
+      out.data[i + c] = Math.round((guides.data[i + c] * sa + out.data[i + c] * da * (1 - sa)) / oa);
     }
     out.data[i + 3] = Math.round(oa * 255);
   }

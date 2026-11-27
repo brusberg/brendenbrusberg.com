@@ -1157,7 +1157,7 @@
           <h2 id="popout-title">Expanded item</h2>
           <button class="popout-close" type="button" data-popout-close>Close</button>
         </div>
-        <div class="popout-body" id="popout-body"></div>
+        <div class="popout-body" id="popout-body" tabindex="-1"></div>
       </section>
     </div>
 
@@ -8854,6 +8854,8 @@
         });
       }
 
+      let popoutOpener = null;
+
       function openPopout(id) {
         const item = popoutItems[id];
         if (!item) return;
@@ -8865,12 +8867,28 @@
         elements.popoutBody.innerHTML = item.body;
         elements.popout.hidden = false;
         document.body.style.overflow = 'hidden';
+        // The panel says role="dialog" aria-modal="true", but saying it is not
+        // doing it: focus stayed on the trigger BEHIND the overlay, whose
+        // scroll chain is the document we just locked. Arrow keys therefore
+        // reached no scroller at all and 44% of a long poem was unreadable
+        // without a mouse. Focusing the scroller is what makes the keys work,
+        // and it lets the browser keep handling arrows, PageUp/Down, Home/End
+        // and smooth scrolling itself.
+        popoutOpener = document.activeElement;
+        elements.popoutBody.focus();
       }
 
       function closePopout() {
+        const wasOpen = !elements.popout.hidden;
         elements.popout.hidden = true;
         elements.popoutBody.textContent = '';
         document.body.style.overflow = '';
+        // Hand focus back where it came from. Without this, closing drops it
+        // onto <body> and a keyboard user loses their place entirely, which
+        // would be worse than before -- the old behaviour at least left focus
+        // on the trigger.
+        if (wasOpen && popoutOpener && popoutOpener.isConnected) popoutOpener.focus();
+        popoutOpener = null;
       }
 
       function updateNav() {
@@ -8943,8 +8961,11 @@
         // which closes the popout -- so one arrow key mid-read both threw the
         // reader out of the story AND moved them to another panel.
         //
-        // Deliberately no preventDefault: the browser's own scrolling still
-        // works, which is what arrows should do inside a scrollable overlay.
+        // No preventDefault, so the browser's own scrolling runs. That only
+        // works because openPopout focuses .popout-body: this comment used to
+        // assert it worked regardless, and it did not. With focus left on the
+        // trigger behind the overlay there was no scroller in the chain, so
+        // the arrows silently did nothing.
         if (!elements.popout.hidden) return;
         if (activeScene.keyboard(event, size)) return;
         if (event.key === 'ArrowLeft') goDirection('left');
@@ -10181,12 +10202,18 @@
         // 2D canvas happened to be.
         //
         // No guard replaces it, and the cost is worth stating honestly: the
-        // fractal scene in fallback does NOT return early, it repaints the
-        // notice, and drawPixelSoil issues roughly 7,000 fillRects a frame to
-        // do it. Every other scene does return early -- on `!this.gl` -- so
-        // they cost a branch. This is the same work a machine without WebGL2
-        // has always done on this panel, where the notice renders fine, and
-        // it only happens while a context is actually lost.
+        // fractal scene in fallback does NOT return early, it repaints, and
+        // drawPixelSoil tiles the stage in ~8px cells to do it -- on the order
+        // of a few thousand fillRects a frame, scaling with the stage, not a
+        // fixed number. That repaint IS the notice, so it is the price of
+        // telling the visitor what happened, and it is the same work a machine
+        // without WebGL2 has always done on this panel.
+        //
+        // The other scenes are safe here for a different reason than an
+        // earlier version of this comment gave: they do NOT guard on
+        // `!this.gl` -- those guards all belong to MandelbrotScene -- they
+        // simply never touch GL in tick(). stats and ants draw 2D or drive an
+        // iframe, so a lost context is nothing to them.
         activeScene.tick(dt, size, t);
         panelFlora.tick(dt * 1000);
         rafId = requestAnimationFrame(frame);
