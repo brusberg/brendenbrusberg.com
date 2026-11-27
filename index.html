@@ -8897,7 +8897,30 @@
         on(button, 'click', closePopout);
       });
 
-      on(window, 'hashchange', () => goPanel(location.hash.slice(1)));
+      // A hashchange IS the navigation. The browser has already moved and the
+      // URL already reads what it will read, so this handler only has to catch
+      // the UI up -- hence push=false, and setPanel directly rather than
+      // goPanel, which defaults to push=true for the buttons that DO navigate.
+      //
+      // Answering a traversal with pushState truncated the forward entry and
+      // re-pinned the visitor one step above the entry they were reaching for.
+      // Press Back from #mandelbrot onto the hashless landing URL and setPanel
+      // coerced '' to 'ants', saw '' !== 'ants', and pushed '#ants' on top --
+      // so Back bounced forward to the ants panel and every later press was a
+      // no-op. Panel-to-panel Back worked, because there the restored hash
+      // already equals the resolved id and the push was skipped, which is why
+      // this only broke when backing out past your first click.
+      on(window, 'hashchange', () => {
+        // Nothing in this page links to #resume, but an external link to
+        // /#resume arriving while the document is already open changes the
+        // hash without a reload, so the load-time redirect below never sees
+        // it. Without this the URL would read #resume over the ants panel.
+        if (location.hash === '#resume') {
+          location.replace('/resume/');
+          return;
+        }
+        setPanel(location.hash.slice(1), false);
+      });
       on(window, 'resize', queueResize);
       if (window.visualViewport) on(window.visualViewport, 'resize', queueResize);
       on(window, 'keydown', (event) => {
@@ -9141,7 +9164,14 @@
         if (!localDevToolsEnabled) return;
         capturePanelFrame(event.detail?.which || 'active', event.detail?.includeDataUrl !== false);
       });
-      on(window, 'pagehide', disposeApp);
+      // persisted means the document is going into the back/forward cache,
+      // not away: Firefox keeps it alive and restores it with its listeners,
+      // timers and rAF intact. Disposing here handed the visitor a frozen page
+      // on Back -- every listener removed, nothing left to rebuild them, and
+      // no pageshow handler anywhere in this file to notice.
+      on(window, 'pagehide', (event) => {
+        if (!event.persisted) disposeApp();
+      });
       window.__panelPrototypeDispose = disposeApp;
 
       function pointInfo(clientX, clientY) {
