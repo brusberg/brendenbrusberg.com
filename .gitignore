@@ -37,3 +37,9 @@ analysis/
 # changed and writes the fresh build alongside it instead. Those copies are
 # transient -- you diff them, take what you want, and delete them.
 art-source/*-new.*
+
+# Personal drafts that live in the working tree but must never be published.
+# This repo IS the website, so a stray `git add -A` puts them on the public web.
+headline-research.md
+linkedin-2026-updates.md
+profile-2026-copy.md
