@@ -8568,14 +8568,11 @@
       // webglcontextlost handler that calls preventDefault(), the browser will
       // NEVER fire webglcontextrestored, and every later gl.* call is a silent
       // no-op — the page looks frozen with nothing in the console.
-      let glContextLost = false;
-
       glCanvas.addEventListener(
         'webglcontextlost',
         (event) => {
           // This is the line that makes recovery possible at all.
           event.preventDefault();
-          glContextLost = true;
           for (const scene of Object.values(scenes)) {
             try {
               scene.glLost();
@@ -8586,6 +8583,11 @@
           if (activeId === 'mandelbrot' || activeId === 'art') {
             readout.textContent = 'Graphics context lost — restoring';
           }
+          // The scenes have just raised their fallbacks, which changes which
+          // canvas needs a backing store. Nothing else resizes on this path,
+          // so without this the 2D canvas keeps whatever size it had -- 1x1,
+          // for the fractal panel -- and the fallback notice cannot paint.
+          resize();
           console.warn('[stagegl] WebGL context lost; waiting for restore');
         },
         false,
@@ -8594,7 +8596,6 @@
       glCanvas.addEventListener(
         'webglcontextrestored',
         () => {
-          glContextLost = false;
           for (const scene of Object.values(scenes)) {
             try {
               scene.glRestored();
@@ -8664,7 +8665,14 @@
         const dpr = Math.min(activeDprCap, window.devicePixelRatio || 1);
         const pixelWidth = Math.max(1, Math.floor(rect.width * dpr));
         const pixelHeight = Math.max(1, Math.floor(rect.height * dpr));
-        const needs2dCanvas = activeId !== 'ants' && activeId !== 'mandelbrot';
+        // The fractal panel draws into the GL canvas -- EXCEPT when its scene
+        // has fallen back, where it paints "WebGL2 unavailable" into the 2D one
+        // instead. Pinning that canvas to 1x1 then means the notice has nowhere
+        // to land, so a GPU reset showed a blank stage rather than an
+        // explanation. Both canvases stay sized while the fallback is up; the
+        // hidden one costs a little memory in a state that is already an error.
+        const mandelbrotFallback = activeId === 'mandelbrot' && Boolean(activeScene?.fallback);
+        const needs2dCanvas = (activeId !== 'ants' && activeId !== 'mandelbrot') || mandelbrotFallback;
         const needsGlCanvas = activeId === 'mandelbrot' || activeId === 'art';
         setBackingStore(canvas, needs2dCanvas ? pixelWidth : 1, needs2dCanvas ? pixelHeight : 1);
         setBackingStore(glCanvas, needsGlCanvas ? pixelWidth : 1, needsGlCanvas ? pixelHeight : 1);
@@ -8929,6 +8937,15 @@
           event.preventDefault();
           return;
         }
+        // While the story popout is up it owns the keyboard. Escape is handled
+        // above; everything else is ignored rather than driving the panel
+        // behind it, because arrows used to reach goDirection -> setPanel,
+        // which closes the popout -- so one arrow key mid-read both threw the
+        // reader out of the story AND moved them to another panel.
+        //
+        // Deliberately no preventDefault: the browser's own scrolling still
+        // works, which is what arrows should do inside a scrollable overlay.
+        if (!elements.popout.hidden) return;
         if (activeScene.keyboard(event, size)) return;
         if (event.key === 'ArrowLeft') goDirection('left');
         if (event.key === 'ArrowRight') goDirection('right');
@@ -10156,13 +10173,18 @@
         lastFrameTime = t;
         if (activeFrameMs) lastHeavyPanelTick = t;
         if (ctx) ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
-        // While the GL context is gone, the Mandelbrot scene has nothing to
-        // draw. Keep the loop alive — it's what notices the restore — but
-        // don't burn a frame issuing calls that silently do nothing.
-        if (glContextLost && activeId === 'mandelbrot') {
-          rafId = requestAnimationFrame(frame);
-          return;
-        }
+        // This used to skip the tick entirely while the GL context was gone,
+        // on the grounds that the Mandelbrot scene had nothing to draw. It has
+        // exactly one thing to draw: the "WebGL2 unavailable" notice, which is
+        // the only thing telling the visitor why the stage went blank. Skipping
+        // the tick is why a GPU reset showed nothing at all, whatever size the
+        // 2D canvas happened to be.
+        //
+        // No guard replaces it. tick() returns early by itself -- on
+        // `this.fallback` before it touches GL at all, and on `!this.gl`
+        // after -- so a lost context costs a branch, not a frame of no-op
+        // calls. It is the same path a machine without WebGL2 has always
+        // taken, where the notice renders fine.
         activeScene.tick(dt, size, t);
         panelFlora.tick(dt * 1000);
         rafId = requestAnimationFrame(frame);
@@ -10174,6 +10196,10 @@
         cancelAnimationFrame(rafId);
         clearInterval(liveAgeTimer);
         clearInterval(liveWorkDaysTimer);
+        // The popout is a child of <body>, so it outlives the app it belongs
+        // to, and it locks body scrolling while it is up. Tearing the app down
+        // around it stranded that lock with every closer already unbound.
+        closePopout();
         activeScene?.unmount();
         while (cleanupTasks.length) cleanupTasks.pop()();
         delete window.__panelPrototypeDispose;
