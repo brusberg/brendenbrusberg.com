@@ -1,12 +1,11 @@
 # Resume PDF
 
-`main.tex` preserves the original ModernCV classic design: Latin Modern typography, optical sizes, slanted subtitle/contact details, contact icons, red headings, margins, and one-page layout. `original-reference.pdf` is the original published LaTeX PDF used for visual comparison. The resume content is unchanged.
+`main.tex` preserves the original ModernCV classic design: Latin Modern typography, optical sizes, slanted subtitle/contact details, contact icons, red headings, margins, and one-page layout. `original-reference.pdf` is the original published LaTeX PDF, kept for comparing typography and layout. The content has since moved on from it, so compare the design, not the words.
 
 The mobile compatibility repair changes font storage rather than the design:
 
 - The original Latin Modern outlines are converted to embedded TrueType fonts, retaining their advance widths, kerning, and Unicode mappings. Derived fonts are renamed `BBResume-*` under the GUST license.
 - Font Awesome contact symbols and bullets are PDF vector paths. They look the same and no longer depend on a mobile viewer interpreting an icon font.
-- One full-width bullet explicitly retains the original pdfTeX line break and its ±2% font expansion, since XeTeX does not provide pdfTeX's automatic expansion.
 
 ## Build and publish
 
