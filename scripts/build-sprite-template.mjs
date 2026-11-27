@@ -224,14 +224,20 @@ function drawSheet() {
       // the 64x32 footprint, drawn where the floor actually sits
       // always ONE tile across, even in a double-width cell -- the diamond is
       // the unit of scale, not the size of the box it is drawn in.
+      // Inclusive pixel extents. Vertices at +-CELL_W/2 and +-CELL_H/2 look
+      // right but cover 65x33 px, not 64x32, so the right vertex landed one
+      // column past the cell and bled into the gutter. The far edges stop one
+      // pixel short instead, which is exactly one tile.
       const cx = Math.round(rect.x + rect.w / 2);
       const fy = rect.y + rect.h - FLOOR_UP;
-      const half = CELL_H / 2;
-      const halfW = CELL_W / 2;
-      r.line(cx, fy - half, cx + halfW, fy, GUIDE);
-      r.line(cx + halfW, fy, cx, fy + half, GUIDE);
-      r.line(cx, fy + half, cx - halfW, fy, GUIDE);
-      r.line(cx - halfW, fy, cx, fy - half, GUIDE);
+      const left = cx - CELL_W / 2;
+      const right = cx + CELL_W / 2 - 1;
+      const top = fy - CELL_H / 2;
+      const bottom = fy + CELL_H / 2 - 1;
+      r.line(cx, top, right, fy, GUIDE);
+      r.line(right, fy, cx, bottom, GUIDE);
+      r.line(cx, bottom, left, fy, GUIDE);
+      r.line(left, fy, cx, top, GUIDE);
 
       // anchor cross: where the renderer pins the sprite to the tile centre
       const ax = rect.x + rect.anchorX;
@@ -344,8 +350,29 @@ function pngSize(buf) {
   return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
 }
 
+/** Source-over composite, so the .ora preview shows what the stack shows. */
+function flatten(guides, referencePng) {
+  if (!referencePng) return guides;
+  const ref = decodePng(referencePng);
+  if (ref.w !== guides.w || ref.h !== guides.h) return guides;
+  const out = new Raster(guides.w, guides.h);
+  out.data.set(ref.data);
+  for (let i = 0; i < out.data.length; i += 4) {
+    const sa = guides.data[i + 3] / 255;
+    if (!sa) continue;
+    const da = out.data[i + 3] / 255;
+    const oa = sa + da * (1 - sa);
+    for (let c = 0; c < 3; c++) {
+      out.data[i + c] = Math.round((guides.data[i + c] * sa + out.data[i + c] * da * (1 - sa)) / (oa || 1));
+    }
+    out.data[i + 3] = Math.round(oa * 255);
+  }
+  return out;
+}
+
 function ora(guides, blank, referencePng) {
   const { w, h } = guides;
+  const flat = flatten(guides, referencePng);
   // Layers are listed top first. The reference is the baked current art with
   // no chrome of its own, so the remake can be traced straight over what the
   // scene draws today and the guides above it are the only labels on screen.
@@ -357,10 +384,12 @@ function ora(guides, blank, referencePng) {
     { name: 'mimetype', data: Buffer.from('image/openraster', 'ascii'), store: true },
     { name: 'data/atlas.png', data: png(blank) },
     { name: 'data/guides.png', data: png(guides) },
-    // Nothing is painted yet, so the flattened preview is just the guides.
-    // Apps re-render the real stack on open; this is only for readers that do not.
-    { name: 'mergedimage.png', data: png(guides) },
-    { name: 'Thumbnails/thumbnail.png', data: png(downscale(guides, 256, 256)) },
+    // The flattened preview, for readers that do not composite the stack
+    // themselves. It has to be the guides OVER the reference art -- shipping
+    // the guides alone showed an empty sheet in any file manager, and this
+    // file's whole point is the art underneath them.
+    { name: 'mergedimage.png', data: png(flat) },
+    { name: 'Thumbnails/thumbnail.png', data: png(downscale(flat, 256, 256)) },
   ];
   if (referencePng) {
     layers.push('    <layer name="reference: current art" src="data/reference.png" x="0" y="0" opacity="1.0" visibility="visible" composite-op="svg:src-over" edit-locked="true"/>');
@@ -527,9 +556,6 @@ console.log(`wrote ${manifestPath}  ${Object.keys(rects).length} cells`);
 // The surface the real atlas gets painted on: same size and offsets as the
 // template, no guides baked in.
 const blank = new Raster(width, height);
-const blankPath = join(outDir, 'train-atlas-blank.png');
-writeFileSync(blankPath, png(blank));
-console.log(`wrote ${blankPath}  ${width}x${height} transparent`);
 
 // If the current art has been baked (scripts/capture-current-atlas.js), put it
 // in as the bottom layer so the remake can be traced directly over it.
@@ -570,6 +596,12 @@ function writeWorking(path, data, label) {
   writeFileSync(path, data);
   console.log(`wrote ${path}  ${label}`);
 }
+
+// The blank sheet is a drawing surface too -- the header above tells you to
+// paint the real atlas into it -- so it gets the same guard as the layered
+// files. It used to be written unconditionally, which would have quietly
+// replaced a part-finished atlas with an empty one.
+writeWorking(join(outDir, 'train-atlas-blank.png'), png(blank), `${width}x${height} transparent`);
 
 const layerCount = reference ? 3 : 2;
 writeWorking(join(outDir, 'train-atlas-working.ora'), ora(raster, blank, reference),

@@ -10180,11 +10180,13 @@
         // the tick is why a GPU reset showed nothing at all, whatever size the
         // 2D canvas happened to be.
         //
-        // No guard replaces it. tick() returns early by itself -- on
-        // `this.fallback` before it touches GL at all, and on `!this.gl`
-        // after -- so a lost context costs a branch, not a frame of no-op
-        // calls. It is the same path a machine without WebGL2 has always
-        // taken, where the notice renders fine.
+        // No guard replaces it, and the cost is worth stating honestly: the
+        // fractal scene in fallback does NOT return early, it repaints the
+        // notice, and drawPixelSoil issues roughly 7,000 fillRects a frame to
+        // do it. Every other scene does return early -- on `!this.gl` -- so
+        // they cost a branch. This is the same work a machine without WebGL2
+        // has always done on this panel, where the notice renders fine, and
+        // it only happens while a context is actually lost.
         activeScene.tick(dt, size, t);
         panelFlora.tick(dt * 1000);
         rafId = requestAnimationFrame(frame);
