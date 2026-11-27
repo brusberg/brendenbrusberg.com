@@ -32,3 +32,8 @@ analysis/
 
 # local soak-test output
 .soak/
+
+# Sprite atlas: the generator refuses to clobber a working file that has
+# changed and writes the fresh build alongside it instead. Those copies are
+# transient -- you diff them, take what you want, and delete them.
+art-source/*-new.*
