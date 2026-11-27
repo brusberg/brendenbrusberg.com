@@ -73,6 +73,23 @@
     return box && { ...box, ox: a ? a.x : canvas.width / 2, oy: a ? a.y : canvas.height / 2 };
   };
 
+  // THE HALF-TILE CONVENTION, which bit this file twice.
+  //
+  // iso(x, y) is a tile's NORTH CORNER, not its centre: the centre is
+  // iso(x + 0.5, y + 0.5), half a tile (16px) lower. Painters resolve their
+  // origin one of two ways, and the caller has to make up the difference:
+  //
+  //   * through propPx / this.iso(view, x, y, z)  -> pass the tile CENTRE.
+  //     That is the overwhelming majority, and it is what the live scene
+  //     does: index.html's prop dispatch passes `prop.x + 0.5, prop.y + 0.5`
+  //     to ~45 painters.
+  //   * through this.iso(view, x + 0.5, y + 0.5)  -> pass the bare tile.
+  //     Only drawTile, drawFarmTile and drawFieldRows, and the live scene
+  //     passes those bare `prop.x, prop.y` to match.
+  //
+  // Passing (0, 0) to the first group bakes it 16px above the footprint it is
+  // supposed to stand on, which is what 42 of these 72 cells used to do.
+  //
   // Fractional tiles are fine: the track painters go through
   // screenPointForTile, which is arithmetic.
   //
@@ -82,7 +99,7 @@
   // through the tile CENTRE, and span exactly 1.0 so a cell holds one tile's
   // worth of track rather than a segment reaching into its neighbour.
   const T = (x, y) => ({ x, y });
-  const C = T(0.5, 0.5);   // the centre of tile (0,0), in track coordinates
+  const C = T(0.5, 0.5);   // the centre of tile (0,0)
   const GROUPS = [
     ['TERRAIN', [
       ['grass', (g, v) => s.drawTile(g, v, 0, 0, 'grass')],
@@ -100,57 +117,57 @@
       ['rail-curve', (g, v) => { s.drawGroundRail(g, v, C, T(1, 0.5)); s.drawGroundRail(g, v, C, T(0.5, 1)); }],
       ['rail-pair', (g, v) => s.drawRailPair(g, v, T(0, 0.5), T(1, 0.5))],
       ['sleepers', (g, v) => s.drawSleepers(g, v, T(0, 0.5), T(1, 0.5), 1)],
-      ['ballast-pile', (g, v) => s.drawBallastPile(g, v, 0, 0)],
-      ['crossing-gate', (g, v) => s.drawCrossingGate(g, v, 0, 0)],
+      ['ballast-pile', (g, v) => s.drawBallastPile(g, v, C.x, C.y)],
+      ['crossing-gate', (g, v) => s.drawCrossingGate(g, v, C.x, C.y)],
       ['one-way-arrow', (g, v) => s.drawOneWayArrow(g, v, T(0, 0.5), T(1, 0.5))],
     ]],
     ['BUILDINGS', [
-      ['industry', (g, v) => s.drawIndustryBuilding(g, v, 0, 0)],
-      ['apartment', (g, v) => s.drawApartmentBlock(g, v, 0, 0)],
-      ['country-home', (g, v) => s.drawCountryHome(g, v, 0, 0)],
-      ['town-house', (g, v) => s.drawTownHouse(g, v, 0, 0)],
-      ['row-house', (g, v) => s.drawRowHouse(g, v, 0, 0)],
-      ['shed', (g, v) => s.drawShed(g, v, 0, 0)],
-      ['water-tower', (g, v) => s.drawWaterTower(g, v, 0, 0)],
-      ['signal-box', (g, v) => s.drawSignalBox(g, v, 0, 0)],
+      ['industry', (g, v) => s.drawIndustryBuilding(g, v, C.x, C.y)],
+      ['apartment', (g, v) => s.drawApartmentBlock(g, v, C.x, C.y)],
+      ['country-home', (g, v) => s.drawCountryHome(g, v, C.x, C.y)],
+      ['town-house', (g, v) => s.drawTownHouse(g, v, C.x, C.y)],
+      ['row-house', (g, v) => s.drawRowHouse(g, v, C.x, C.y)],
+      ['shed', (g, v) => s.drawShed(g, v, C.x, C.y)],
+      ['water-tower', (g, v) => s.drawWaterTower(g, v, C.x, C.y)],
+      ['signal-box', (g, v) => s.drawSignalBox(g, v, C.x, C.y)],
     ]],
     ['STATION', [
-      ['canopy', (g, v) => s.drawPlatformCanopy(g, v, 0, 0)],
-      ['platform-edge', (g, v) => s.drawPlatformEdge(g, v, 0, 0)],
-      ['platform-post', (g, v) => s.drawPlatformPost(g, v, 0, 0)],
-      ['platform-sign', (g, v) => s.drawPlatformSign(g, v, 0, 0)],
-      ['station-clock', (g, v) => s.drawStationClock(g, v, 0, 0)],
-      ['station-lamp', (g, v) => s.drawStationLamp(g, v, 0, 0)],
-      ['name-board', (g, v) => s.drawNameBoard(g, v, 0, 0)],
-      ['bench', (g, v) => s.drawBench(g, v, 0, 0)],
+      ['canopy', (g, v) => s.drawPlatformCanopy(g, v, C.x, C.y)],
+      ['platform-edge', (g, v) => s.drawPlatformEdge(g, v, C.x, C.y)],
+      ['platform-post', (g, v) => s.drawPlatformPost(g, v, C.x, C.y)],
+      ['platform-sign', (g, v) => s.drawPlatformSign(g, v, C.x, C.y)],
+      ['station-clock', (g, v) => s.drawStationClock(g, v, C.x, C.y)],
+      ['station-lamp', (g, v) => s.drawStationLamp(g, v, C.x, C.y)],
+      ['name-board', (g, v) => s.drawNameBoard(g, v, C.x, C.y)],
+      ['bench', (g, v) => s.drawBench(g, v, C.x, C.y)],
     ]],
     ['TRACKSIDE', [
-      ['rail-fence', (g, v) => s.drawRailFence(g, v, 0, 0)],
-      ['signal-gantry', (g, v) => s.drawSignalGantry(g, v, 0, 0)],
-      ['signal-repeater', (g, v) => s.drawSignalRepeater(g, v, 0, 0)],
-      ['cable-box', (g, v) => s.drawCableBox(g, v, 0, 0)],
-      ['switch-stand', (g, v) => s.drawSwitchStand(g, v, 0, 0)],
-      ['track-tools', (g, v) => s.drawTrackTools(g, v, 0, 0)],
-      ['rail-worker', (g, v) => s.drawRailWorker(g, v, 0, 0)],
-      ['track-crate', (g, v) => s.drawTrackCrate(g, v, 0, 0)],
-      ['telegraph', (g, v) => s.drawTelegraph(g, v, 0, 0)],
-      ['line-box', (g, v) => s.drawLineBox(g, v, 0, 0)],
-      ['oil-pipe', (g, v) => s.drawOilPipe(g, v, 0, 0)],
-      ['yard-pipes', (g, v) => s.drawYardPipes(g, v, 0, 0)],
-      ['yard-lamp', (g, v) => s.drawYardLamp(g, v, 0, 0)],
-      ['retaining-wall', (g, v) => s.drawRetainingWall(g, v, 0, 0)],
-      ['coal-pile', (g, v) => s.drawCoalPile(g, v, 0, 0)],
-      ['log-pile', (g, v) => s.drawLogPile(g, v, 0, 0)],
+      ['rail-fence', (g, v) => s.drawRailFence(g, v, C.x, C.y)],
+      ['signal-gantry', (g, v) => s.drawSignalGantry(g, v, C.x, C.y)],
+      ['signal-repeater', (g, v) => s.drawSignalRepeater(g, v, C.x, C.y)],
+      ['cable-box', (g, v) => s.drawCableBox(g, v, C.x, C.y)],
+      ['switch-stand', (g, v) => s.drawSwitchStand(g, v, C.x, C.y)],
+      ['track-tools', (g, v) => s.drawTrackTools(g, v, C.x, C.y)],
+      ['rail-worker', (g, v) => s.drawRailWorker(g, v, C.x, C.y)],
+      ['track-crate', (g, v) => s.drawTrackCrate(g, v, C.x, C.y)],
+      ['telegraph', (g, v) => s.drawTelegraph(g, v, C.x, C.y)],
+      ['line-box', (g, v) => s.drawLineBox(g, v, C.x, C.y)],
+      ['oil-pipe', (g, v) => s.drawOilPipe(g, v, C.x, C.y)],
+      ['yard-pipes', (g, v) => s.drawYardPipes(g, v, C.x, C.y)],
+      ['yard-lamp', (g, v) => s.drawYardLamp(g, v, C.x, C.y)],
+      ['retaining-wall', (g, v) => s.drawRetainingWall(g, v, C.x, C.y)],
+      ['coal-pile', (g, v) => s.drawCoalPile(g, v, C.x, C.y)],
+      ['log-pile', (g, v) => s.drawLogPile(g, v, C.x, C.y)],
     ]],
     ['NATURE & YARD', [
-      ['tree', (g, v) => s.drawTree(g, v, 0, 0)],
-      ['bush', (g, v) => s.drawBush(g, v, 0, 0)],
-      ['rock', (g, v) => s.drawRock(g, v, 0, 0)],
-      ['hedge', (g, v) => s.drawHedge(g, v, 0, 0)],
-      ['fence', (g, v) => s.drawFence(g, v, 0, 0)],
-      ['crate', (g, v) => s.drawCrate(g, v, 0, 0)],
-      ['mail-van', (g, v) => s.drawMailVan(g, v, 0, 0)],
-      ['road-car', (g, v) => s.drawSmallRoadCar(g, v, 0, 0)],
+      ['tree', (g, v) => s.drawTree(g, v, C.x, C.y)],
+      ['bush', (g, v) => s.drawBush(g, v, C.x, C.y)],
+      ['rock', (g, v) => s.drawRock(g, v, C.x, C.y)],
+      ['hedge', (g, v) => s.drawHedge(g, v, C.x, C.y)],
+      ['fence', (g, v) => s.drawFence(g, v, C.x, C.y)],
+      ['crate', (g, v) => s.drawCrate(g, v, C.x, C.y)],
+      ['mail-van', (g, v) => s.drawMailVan(g, v, C.x, C.y)],
+      ['road-car', (g, v) => s.drawSmallRoadCar(g, v, C.x, C.y)],
     ]],
   ];
 
@@ -251,11 +268,14 @@
         // One 64x32 tile, at the floor. Always ONE tile across even in a
         // double-width cell: the diamond is the unit of scale, not the size of
         // the box drawn around it.
+        // Half-pixel centres, or a 1px stroke straddles two columns and the
+        // whole diamond renders soft. Inclusive extents, so it is 64x32 and
+        // stays inside the cell -- the same arithmetic the guides layer uses.
         g.beginPath();
-        g.moveTo(ax, ay - TILE_H / 2);
-        g.lineTo(ax + TILE_W / 2, ay);
-        g.lineTo(ax, ay + TILE_H / 2);
-        g.lineTo(ax - TILE_W / 2, ay);
+        g.moveTo(ax + 0.5, ay - TILE_H / 2 + 0.5);
+        g.lineTo(ax + TILE_W / 2 - 1 + 0.5, ay + 0.5);
+        g.lineTo(ax + 0.5, ay + TILE_H / 2 - 1 + 0.5);
+        g.lineTo(ax - TILE_W / 2 + 0.5, ay + 0.5);
         g.closePath();
         g.stroke();
       }
@@ -272,8 +292,13 @@
     if (chrome) {
       g.fillStyle = 'rgba(255,248,232,0.62)';
       g.font = '8px monospace';
-      g.fillText('Current procedural art from the stats panel, baked cell by cell. Diamond = one 64x32 tile, at the floor.', 2, H - 16);
-      g.fillText('Checkerboard = transparent. The wagons are painted in the panel background colour, so they read as silhouettes.', 2, H - 5);
+      // Trimmed to fit: the second line used to run off the right edge.
+      for (const [i, line] of [
+        'Current art from the stats panel, baked cell by cell. Diamond = one 64x32 tile, at the floor.',
+        'Checkerboard = transparency. Wagons are painted the panel background colour, so they read as silhouettes.',
+      ].entries()) {
+        g.fillText(fit(g, line, W - 4), 2, H - 16 + i * 11);
+      }
     }
     return out;
   };
